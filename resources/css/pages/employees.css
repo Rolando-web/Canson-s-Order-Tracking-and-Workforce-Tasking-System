@@ -1,0 +1,4 @@
+/* Employees Page Styles */
+.employees-page table tbody tr {
+    transition: background-color 0.15s ease;
+}

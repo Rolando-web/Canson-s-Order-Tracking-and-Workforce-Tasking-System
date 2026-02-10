@@ -1,0 +1,7 @@
+/* Orders Page Styles */
+.orders-page table tbody tr {
+    transition: background-color 0.15s ease;
+}
+.orders-page table tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.03);
+}

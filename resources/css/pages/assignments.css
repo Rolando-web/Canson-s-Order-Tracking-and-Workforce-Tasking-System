@@ -1,0 +1,7 @@
+/* Assignments Page Styles */
+.assignments-page .worker-item {
+    transition: background-color 0.15s ease;
+}
+.assignments-page .worker-item:hover {
+    background-color: rgba(59, 130, 246, 0.03);
+}

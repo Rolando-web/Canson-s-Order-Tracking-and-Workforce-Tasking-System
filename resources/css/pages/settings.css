@@ -1,0 +1,7 @@
+/* Settings Page Styles */
+.settings-page input:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.settings-page nav a {
+    transition: all 0.15s ease;
+}

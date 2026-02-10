@@ -1,0 +1,146 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* ==========================================================================
+   Sidebar Styles
+   ========================================================================== */
+
+/* ── Base Colors ── */
+.bg-sidebar {
+    background-color: #0c2a1a;
+}
+
+/* ── Storage Bar ── */
+.storage-bar-bg {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.storage-bar-fill {
+    background: linear-gradient(90deg, #34d399, #059669);
+}
+
+/* ── Collapsed State ── */
+.sidebar.collapsed {
+    width: 5rem; /* 80px */
+}
+
+.sidebar.collapsed .sidebar-label {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.sidebar.collapsed .sidebar-link {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+}
+
+.sidebar.collapsed .sidebar-icon {
+    margin: 0 auto;
+}
+
+/* Remove container padding when collapsed so items center */
+.sidebar.collapsed nav,
+.sidebar.collapsed > .mt-auto {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Center everything in the header when collapsed */
+.sidebar.collapsed > div:first-of-type {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.sidebar.collapsed > div:first-of-type > div:first-child {
+    justify-content: center;
+}
+
+.sidebar.collapsed #sidebarToggle {
+    display: none;
+}
+
+.sidebar.collapsed #sidebarToggleCollapsed {
+    display: flex;
+}
+
+/* ── Main Content Shift ── */
+.main-content {
+    margin-left: 16rem; /* matches w-64 */
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.main-content.sidebar-collapsed {
+    margin-left: 5rem;
+}
+
+/* ── Tooltip on collapsed hover ── */
+.sidebar.collapsed .sidebar-link {
+    position: relative;
+}
+
+.sidebar.collapsed .sidebar-link::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 0.75rem);
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #1e293b;
+    color: #f1f5f9;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 50;
+}
+
+.sidebar.collapsed .sidebar-link:hover::after {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Mobile / Responsive
+   ========================================================================== */
+
+/* On small screens the sidebar is off-canvas by default (translated left).
+   When .mobile-open is added it slides into view. */
+@media (max-width: 1023px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.mobile-open {
+        transform: translateX(0) !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+}
+
+/* Desktop: sidebar always visible */
+@media (min-width: 1024px) {
+    .sidebar {
+        transform: translateX(0);
+    }
+}

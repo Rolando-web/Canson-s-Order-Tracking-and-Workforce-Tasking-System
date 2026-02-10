@@ -1,0 +1,7 @@
+/* Schedule Page Styles */
+.schedule-page .calendar-day:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+}
+.schedule-page .calendar-day.has-event {
+    position: relative;
+}

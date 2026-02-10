@@ -1,0 +1,11 @@
+/* Inventory Page Styles */
+.inventory-page .tab-btn.active {
+    border-color: #2563eb;
+    color: #2563eb;
+}
+.inventory-page table tbody tr {
+    transition: background-color 0.15s ease;
+}
+.inventory-page table tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.03);
+}

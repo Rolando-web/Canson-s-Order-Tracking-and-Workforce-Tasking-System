@@ -1,0 +1,7 @@
+/* Analytics Page Styles */
+.analytics-page .chart-container {
+    min-height: 200px;
+}
+.analytics-page .efficiency-bar {
+    transition: width 0.6s ease;
+}
