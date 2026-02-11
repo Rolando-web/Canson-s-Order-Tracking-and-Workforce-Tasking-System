@@ -1,7 +1,322 @@
 /* Schedule Page Styles */
-.schedule-page .calendar-day:hover {
-    background-color: rgba(59, 130, 246, 0.05);
+
+/* Header Layout */
+.schedule-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
 }
-.schedule-page .calendar-day.has-event {
-    position: relative;
+
+.schedule-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.schedule-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Calendar Cells */
+.calendar-cell {
+    min-height: 120px;
+    border-bottom: 1px solid #f3f4f6;
+    border-right: 1px solid #f3f4f6;
+    padding: 0.5rem;
+    background-color: white;
+    transition: background-color 0.2s;
+}
+
+.calendar-cell:hover {
+    background-color: rgba(16, 185, 129, 0.02);
+}
+
+.calendar-cell.empty-cell {
+    background-color: #fafafa;
+}
+
+.calendar-cell.is-today {
+    background-color: rgba(16, 185, 129, 0.05);
+}
+
+/* Day Number */
+.day-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.875rem;
+    color: #374151;
+    border-radius: 9999px;
+}
+
+.day-number.today-marker {
+    background-color: #10b981;
+    color: white;
+    font-weight: 700;
+}
+
+/* Week View Specific */
+.calendar-cell.week-cell {
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+
+.week-day-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.week-day-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    letter-spacing: 0.05em;
+}
+
+.week-events {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow-y: auto;
+}
+
+/* Event Items */
+.event-item {
+    margin-top: 0.25rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.event-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.event-title {
+    font-weight: 600;
+    margin-bottom: 0.125rem;
+}
+
+.event-desc {
+    font-size: 0.7rem;
+    opacity: 0.9;
+}
+
+/* Tablet Responsive - 768px */
+@media (max-width: 768px) {
+    .schedule-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .schedule-header-left {
+        justify-content: center;
+    }
+
+    .schedule-header-right {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .schedule-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .mobile-hide {
+        display: none !important;
+    }
+
+    .calendar-cell {
+        min-height: 80px;
+        padding: 0.375rem;
+    }
+
+    .calendar-cell.week-cell {
+        min-height: 300px;
+    }
+
+    .event-item {
+        font-size: 0.625rem;
+        padding: 0.25rem 0.375rem;
+    }
+
+    .event-title {
+        font-size: 0.625rem;
+    }
+
+    .event-desc {
+        display: none;
+    }
+
+    .day-number {
+        width: 1.5rem;
+        height: 1.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Mobile Responsive - 640px */
+@media (max-width: 640px) {
+    .schedule-header {
+        gap: 0.75rem;
+    }
+
+    .schedule-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .schedule-header p {
+        font-size: 0.75rem;
+    }
+
+    .schedule-header-right {
+        gap: 0.5rem;
+    }
+
+    /* Stack view toggle and navigation */
+    .schedule-header-right > div {
+        flex: 1;
+    }
+
+    .schedule-view-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    #todayBtn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+        flex: 1;
+    }
+
+    #currentPeriod {
+        min-width: 100px;
+        font-size: 0.75rem;
+    }
+
+    .calendar-cell {
+        min-height: 60px;
+        padding: 0.25rem;
+    }
+
+    .calendar-cell.week-cell {
+        min-height: 250px;
+    }
+
+    .week-day-header {
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.375rem;
+    }
+
+    .week-day-name {
+        font-size: 0.625rem;
+    }
+
+    .day-number {
+        width: 1.25rem;
+        height: 1.25rem;
+        font-size: 0.625rem;
+    }
+
+    .event-item {
+        padding: 0.25rem;
+        font-size: 0.5rem;
+    }
+
+    .event-title {
+        font-size: 0.5rem;
+    }
+}
+
+/* Extra Small Mobile - 375px */
+@media (max-width: 375px) {
+    .schedule-header-right {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .schedule-header-right > div,
+    .schedule-header-right > button {
+        width: 100%;
+    }
+
+    .schedule-view-btn {
+        flex: 1;
+    }
+
+    .calendar-cell {
+        min-height: 50px;
+        padding: 0.125rem;
+    }
+
+    .calendar-cell.week-cell {
+        min-height: 200px;
+    }
+
+    .day-number {
+        width: 1rem;
+        height: 1rem;
+        font-size: 0.5rem;
+    }
+
+    /* In week view on very small screens, show fewer details */
+    .week-events {
+        gap: 0.25rem;
+    }
+}
+
+/* Smooth transitions */
+.calendar-cell,
+.event-item,
+button {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Button hover effects */
+button:active {
+    transform: scale(0.95);
+}
+
+/* Loading state */
+.calendar-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: #6b7280;
+}
+
+/* Scrollbar styling for week view */
+.week-events::-webkit-scrollbar {
+    width: 4px;
+}
+
+.week-events::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 2px;
+}
+
+.week-events::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 2px;
+}
+
+.week-events::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
 }

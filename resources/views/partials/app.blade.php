@@ -27,11 +27,11 @@
             <div class="flex-1">@yield('nav')</div>
         </nav>
 
-        <main class="p-6">
+        <main class=" sm:px-[120px] p-6">
             @yield('content')
         </main>
 
-        <footer class="px-6 py-4 text-sm text-gray-500">
+        <footer class="px-[120px] py-4 text-sm text-gray-500">
             @yield('footer')
         </footer>
     </div>

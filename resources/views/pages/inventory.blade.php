@@ -26,9 +26,9 @@
             <h2 class="text-2xl font-bold text-gray-900">Inventory Management</h2>
             <p class="text-gray-500 mt-1">Track stock levels and movement history</p>
         </div>
-        <div class="flex rounded-lg border border-gray-300 overflow-hidden">
-            <button class="inventory-tab-btn px-5 py-2.5 text-sm font-medium bg-emerald-600 text-white" data-tab="current-stock">Current Stock</button>
-            <button class="inventory-tab-btn px-5 py-2.5 text-sm font-medium bg-white text-gray-600 hover:bg-gray-50" data-tab="movement-history">Movement History</button>
+        <div class="flex flex-col rounded-lg border border-gray-300 overflow-hidden sm:flex-row">
+            <button class="inventory-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white" data-tab="current-stock">Current Stock</button>
+            <button class="inventory-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 md:text-sm bg-white text-gray-600 hover:bg-gray-50" data-tab="movement-history">Movement History</button>
         </div>
     </div>
 
