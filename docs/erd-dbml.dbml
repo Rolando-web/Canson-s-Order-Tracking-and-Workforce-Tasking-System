@@ -1,0 +1,245 @@
+// ============================================================
+// CANSON MANAGER - ERD (DBML Format for dbdiagram.io)
+// Copy everything below and paste into https://dbdiagram.io
+// ============================================================
+
+// =====================
+//   USERS & AUTH
+// =====================
+
+Table users {
+  id bigint [pk, increment]
+  first_name varchar(255) [not null]
+  last_name varchar(255) [not null]
+  email varchar(255) [unique, not null]
+  email_verified_at timestamp [null]
+  password varchar(255) [not null]
+  role enum('Administrator', 'Manager', 'Staff') [default: 'Staff']
+  avatar varchar(255) [null, note: 'Path to profile image']
+  remember_token varchar(100) [null]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'System users who can log in and perform actions'
+}
+
+Table password_reset_tokens {
+  email varchar(255) [pk]
+  token varchar(255) [not null]
+  created_at timestamp [null]
+}
+
+Table sessions {
+  id varchar(255) [pk]
+  user_id bigint [null, ref: > users.id]
+  ip_address varchar(45) [null]
+  user_agent text [null]
+  payload longtext [not null]
+  last_activity int [not null]
+}
+
+
+// =====================
+//   DEPARTMENTS
+// =====================
+
+Table departments {
+  id bigint [pk, increment]
+  name varchar(255) [unique, not null, note: 'General, Assembly, Packaging, QC, Logistics']
+  description text [null]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Work departments within the Canson factory'
+}
+
+
+// =====================
+//   EMPLOYEES
+// =====================
+
+Table employees {
+  id bigint [pk, increment]
+  user_id bigint [null, ref: > users.id, note: 'Nullable - not all employees have system accounts']
+  first_name varchar(255) [not null]
+  last_name varchar(255) [not null]
+  email varchar(255) [unique, not null]
+  contact_number varchar(20) [null]
+  department_id bigint [not null, ref: > departments.id]
+  status enum('Active', 'Inactive') [default: 'Active']
+  availability enum('AVAILABLE', 'BUSY', 'OFFLINE') [default: 'AVAILABLE']
+  avatar_color varchar(20) [null, note: 'CSS color class for UI avatar']
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Factory workers and staff members'
+}
+
+
+// =====================
+//   CUSTOMERS
+// =====================
+
+Table customers {
+  id bigint [pk, increment]
+  name varchar(255) [not null, note: 'e.g. St. Mary School, City High']
+  contact_person varchar(255) [null]
+  email varchar(255) [null]
+  phone varchar(20) [null]
+  address text [null]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Customer organizations that place orders'
+}
+
+
+// =====================
+//   INVENTORY
+// =====================
+
+Table inventory_items {
+  id bigint [pk, increment]
+  item_id varchar(255) [unique, not null, note: 'e.g. INV-001']
+  name varchar(255) [not null]
+  category enum('Finished Goods', 'Raw Materials') [not null]
+  stock int [default: 0]
+  unit varchar(50) [not null, note: 'pcs, sheets, liters, reams']
+  status enum('In Stock', 'Low Stock', 'Out of Stock') [default: 'In Stock']
+  is_best_seller boolean [default: false]
+  image_path varchar(255) [null]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Products and raw materials in the warehouse'
+}
+
+Table inventory_movements {
+  id bigint [pk, increment]
+  inventory_item_id bigint [not null, ref: > inventory_items.id]
+  type enum('STOCK IN', 'STOCK OUT') [not null]
+  quantity int [not null, note: 'Positive for IN, negative for OUT']
+  note text [null, note: 'e.g. Weekly supplier delivery, Order fulfillment']
+  order_id bigint [null, ref: > orders.id, note: 'If movement is related to an order']
+  performed_by bigint [not null, ref: > users.id]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Stock movement history for audit trail'
+}
+
+
+// =====================
+//   ORDERS
+// =====================
+
+Table orders {
+  id bigint [pk, increment]
+  order_number varchar(255) [unique, not null, note: 'e.g. ORD-001']
+  customer_id bigint [not null, ref: > customers.id]
+  assigned_to bigint [null, ref: > employees.id, note: 'Employee responsible for this order']
+  status enum('Pending', 'In-Progress', 'Completed', 'Cancelled') [default: 'Pending']
+  priority enum('Normal', 'High', 'Urgent') [default: 'Normal']
+  total_amount decimal(12,2) [null]
+  notes text [null]
+  order_date date [not null]
+  due_date date [null]
+  completed_at timestamp [null]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Customer orders for products'
+}
+
+Table order_items {
+  id bigint [pk, increment]
+  order_id bigint [not null, ref: > orders.id]
+  inventory_item_id bigint [not null, ref: > inventory_items.id]
+  quantity int [not null]
+  unit_price decimal(10,2) [null]
+  subtotal decimal(12,2) [null]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Line items within each order'
+}
+
+
+// =====================
+//   DISPATCH / SHIPMENTS
+// =====================
+
+Table shipments {
+  id bigint [pk, increment]
+  shipment_number varchar(255) [unique, not null, note: 'e.g. SHP-001']
+  order_id bigint [not null, ref: > orders.id]
+  customer_id bigint [not null, ref: > customers.id]
+  delivery_address text [not null]
+  status enum('Ready to Ship', 'In Transit', 'Delivered') [default: 'Ready to Ship']
+  shipped_date date [null]
+  delivered_date date [null]
+  notes text [null]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Dispatch and delivery tracking for orders'
+}
+
+
+// =====================
+//   ASSIGNMENTS / TASKS
+// =====================
+
+Table assignments {
+  id bigint [pk, increment]
+  employee_id bigint [not null, ref: > employees.id]
+  order_id bigint [null, ref: > orders.id, note: 'If task is linked to an order']
+  title varchar(255) [not null]
+  description text [null]
+  status enum('Pending', 'In Progress', 'Completed') [default: 'Pending']
+  priority enum('Low', 'Normal', 'High') [default: 'Normal']
+  assigned_date date [not null]
+  due_date date [null]
+  completed_at timestamp [null]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Work tasks assigned to employees'
+}
+
+
+// =====================
+//   PRODUCTION SCHEDULE
+// =====================
+
+Table production_schedules {
+  id bigint [pk, increment]
+  title varchar(255) [not null, note: 'e.g. Maintenance, Meeting, Special Production']
+  description text [null, note: 'e.g. Machine A Maintenance, Team Review']
+  event_date date [not null]
+  event_type enum('Production', 'Maintenance', 'Meeting', 'Holiday', 'Other') [default: 'Production']
+  color varchar(20) [null, note: 'UI color category']
+  order_id bigint [null, ref: > orders.id, note: 'If schedule is tied to an order']
+  created_by bigint [null, ref: > users.id]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Calendar events for production planning'
+}
+
+
+// =====================
+//   ANALYTICS (DERIVED)
+// =====================
+
+Table daily_production_logs {
+  id bigint [pk, increment]
+  log_date date [not null]
+  units_produced int [default: 0]
+  notes text [null]
+  created_by bigint [null, ref: > users.id]
+  created_at timestamp
+  updated_at timestamp
+
+  Note: 'Daily production output tracking for dashboard charts'
+}

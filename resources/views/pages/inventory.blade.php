@@ -45,7 +45,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">Total Items</p>
-                        <p class="text-3xl font-bold text-gray-900">5</p>
+                        <p class="text-3xl font-bold text-gray-900">{{ $totalItems }}</p>
                     </div>
                 </div>
             </div>
@@ -58,7 +58,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">Low Stock Alert</p>
-                        <p class="text-3xl font-bold text-gray-900">0</p>
+                        <p class="text-3xl font-bold text-gray-900">{{ $lowStockAlert }}</p>
                     </div>
                 </div>
             </div>
@@ -99,30 +99,35 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @php
-                        $items = [
-                            ['name' => 'Data Filer Box (Blue)', 'id' => 'INV-001', 'category' => 'Finished Goods', 'stock' => 250, 'unit' => 'pcs', 'status' => 'In Stock'],
-                            ['name' => 'Whiteboard (Standard)', 'id' => 'INV-002', 'category' => 'Finished Goods', 'stock' => 45, 'unit' => 'pcs', 'status' => 'In Stock'],
-                            ['name' => 'Corrugated Board Sheets', 'id' => 'INV-003', 'category' => 'Raw Materials', 'stock' => 1200, 'unit' => 'sheets', 'status' => 'In Stock'],
-                            ['name' => 'Glue (Industrial)', 'id' => 'INV-004', 'category' => 'Raw Materials', 'stock' => 15, 'unit' => 'liters', 'status' => 'In Stock'],
-                            ['name' => 'Storage Box (Large)', 'id' => 'INV-005', 'category' => 'Finished Goods', 'stock' => 80, 'unit' => 'pcs', 'status' => 'In Stock'],
-                        ];
-                    @endphp
                     @foreach($items as $item)
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4">
-                            <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M18 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75z"/></svg>
+                            @if($item->image_path)
+                                <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}" class="w-12 h-12 rounded-lg object-cover border border-gray-200">
+                            @else
+                                <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M18 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75z"/></svg>
+                                </div>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900">{{ $item->name }}</p>
+                                    <p class="text-xs text-gray-400">ID: {{ $item->item_id }}</p>
+                                </div>
+                                @if($item->is_best_seller)
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                        Most Sold
+                                    </span>
+                                @endif
                             </div>
                         </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ $item->category }}</td>
+                        <td class="px-6 py-4 text-sm"><span class="font-bold text-gray-900">{{ number_format($item->stock) }}</span> <span class="text-gray-400">{{ $item->unit }}</span></td>
                         <td class="px-6 py-4">
-                            <p class="text-sm font-semibold text-gray-900">{{ $item['name'] }}</p>
-                            <p class="text-xs text-gray-400">ID: {{ $item['id'] }}</p>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ $item['category'] }}</td>
-                        <td class="px-6 py-4 text-sm"><span class="font-bold text-gray-900">{{ number_format($item['stock']) }}</span> <span class="text-gray-400">{{ $item['unit'] }}</span></td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-200">{{ $item['status'] }}</span>
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-200">{{ $item->status }}</span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
