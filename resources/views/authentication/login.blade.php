@@ -39,17 +39,17 @@
             <form method="POST" action="{{ route('login') }}" class="space-y-5">
                 @csrf
 
-                {{-- Email --}}
+                {{-- Name --}}
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1.5">Username</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
                             </svg>
                         </div>
-                        <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus
-                               placeholder="you@example.com"
+                        <input id="name" name="name" type="text" value="{{ old('name') }}" required autofocus
+                               placeholder="Enter your username"
                                class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl text-sm
                                       focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent
                                       placeholder:text-gray-400 transition-shadow">

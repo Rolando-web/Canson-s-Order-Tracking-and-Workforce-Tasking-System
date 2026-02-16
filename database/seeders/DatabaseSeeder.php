@@ -15,11 +15,32 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Create Super Admin (Boss)
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'boss',
+            'password' => bcrypt('password'),
+            'role' => User::ROLE_SUPER_ADMIN,
+        ]);
+
+        // Create Admin Manager
+        User::factory()->create([
+            'name' => 'admin',
+            'password' => bcrypt('password'),
+            'role' => User::ROLE_ADMIN,
+        ]);
+
+        // Create Employee
+        User::factory()->create([
+            'name' => 'employee',
+            'password' => bcrypt('password'),
+            'role' => User::ROLE_EMPLOYEE,
+        ]);
+
+        // Create additional test employee
+        User::factory()->create([
+            'name' => 'test',
+            'password' => bcrypt('password'),
+            'role' => User::ROLE_EMPLOYEE,
         ]);
 
         $this->call([

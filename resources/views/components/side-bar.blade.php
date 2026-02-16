@@ -46,19 +46,33 @@
 
     {{-- Navigation Links --}}
     <nav class="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1">
+        {{-- Accessible to ALL authenticated users --}}
         <x-side-bar-link icon="dashboard" label="Dashboard" :active="$active === 'dashboard'" href="/dashboard" />
         <x-side-bar-link icon="schedule"  label="Schedule"  :active="$active === 'schedule'" href="/schedule" />
-        <x-side-bar-link icon="orders"    label="Orders"    :active="$active === 'orders'" href="/orders" />
-        <x-side-bar-link icon="dispatch"  label="Dispatch"  :active="$active === 'dispatch'" href="/dispatch" />
         <x-side-bar-link icon="assignments" label="Assignments" :active="$active === 'assignments'" href="/assignments" />
-        <x-side-bar-link icon="inventory" label="Inventory" :active="$active === 'inventory'" href="/inventory" />
-        <x-side-bar-link icon="analytics" label="Analytics" :active="$active === 'analytics'" href="/analytics" />
-        <x-side-bar-link icon="employees" label="Employees" :active="$active === 'employees'" href="/employees" />
+        
+        {{-- Only for Super Admin (Boss) --}}
+        @if(auth()->user()->isSuperAdmin())
+            <x-side-bar-link icon="orders"    label="Orders"    :active="$active === 'orders'" href="/orders" />
+            <x-side-bar-link icon="dispatch"  label="Dispatch"  :active="$active === 'dispatch'" href="/dispatch" />
+        @endif
+        
+        {{-- For Admin Manager and Super Admin --}}
+        @if(auth()->user()->isAdminOrAbove())
+            <x-side-bar-link icon="inventory" label="Inventory" :active="$active === 'inventory'" href="/inventory" />
+            <x-side-bar-link icon="analytics" label="Analytics" :active="$active === 'analytics'" href="/analytics" />
+            <x-side-bar-link icon="employees" label="Employees" :active="$active === 'employees'" href="/employees" />
+        @endif
     </nav>
 
     {{-- Bottom Section --}}
     <div class="mt-auto border-t border-white/10 px-3 py-4 space-y-1">
-        <x-side-bar-link icon="settings" label="Settings" :active="$active === 'settings'" href="/settings" />
+        {{-- Settings - Only for Admin and Super Admin --}}
+        @if(auth()->user()->isAdminOrAbove())
+            <x-side-bar-link icon="settings" label="Settings" :active="$active === 'settings'" href="/settings" />
+        @endif
+        
+        {{-- Logout - Available to all --}}
         <form method="POST" action="{{ route('logout') }}" class="m-0">
             @csrf
             <button type="submit" data-tooltip="Logout"

@@ -1,0 +1,190 @@
+# ROLE-BASED ACCESS CONTROL - QUICK REFERENCE
+
+## ROLES
+========================================
+
+1. EMPLOYEE (employee)
+   - Default role for new users
+   - Limited access - view only
+
+2. ADMIN MANAGER (admin)
+   - Manages day-to-day operations
+   - Cannot manage orders or dispatch
+
+3. SUPER ADMIN / BOSS (super_admin)
+   - Full system access
+   - Exclusively manages orders and dispatch
+
+## PAGE ACCESS MATRIX
+========================================
+
+| PAGE             | EMPLOYEE | ADMIN | SUPER ADMIN |
+|-----------------|----------|-------|-------------|
+| Login           | ✓        | ✓     | ✓           |
+| Dashboard       | ✓ View   | ✓     | ✓           |
+| Schedule        | ✓ View   | ✓     | ✓           |
+| Assignments     | ✓ View   | ✓     | ✓           |
+| Inventory       | ✗        | ✓     | ✓           |
+| Analytics       | ✗        | ✓     | ✓           |
+| Employees       | ✗        | ✓     | ✓           |
+| Orders          | ✗        | ✗     | ✓           |
+| Dispatch        | ✗        | ✗     | ✓           |
+| Settings        | ✗        | ✓     | ✓           |
+
+## PERMISSIONS BY ROLE
+========================================
+
+### EMPLOYEE
+- ✓ View dashboard
+- ✓ View schedule
+- ✓ View their own assignments
+- ✗ Cannot create or edit anything
+- ✗ Cannot assign tasks
+- ✗ No access to management features
+
+### ADMIN MANAGER
+- ✓ Manage employees (CRUD)
+- ✓ Manage inventory (stock in/out)
+- ✓ View analytics & reports
+- ✓ Create/edit schedule notes
+- ✓ Assign tasks to employees
+- ✓ Manage system settings
+- ✗ Cannot manage orders
+- ✗ Cannot appoint drivers (dispatch)
+
+### SUPER ADMIN (BOSS)
+- ✓ Manage orders (delivery planning)
+- ✓ Appoint drivers (dispatch)
+- ✓ All Admin Manager permissions
+- ✓ Full system access
+
+## USE CASES
+========================================
+
+### BOSS (Super Admin) Daily Tasks:
+1. Review incoming orders
+2. Decide delivery locations
+3. Select items for delivery
+4. Appoint drivers for routes
+5. Monitor overall operations
+
+### ADMIN MANAGER Daily Tasks:
+1. Monitor employee schedules
+2. Assign tasks to employees
+3. Manage inventory levels
+4. Generate reports
+5. Handle employee management
+
+### EMPLOYEE Daily Tasks:
+1. Check dashboard for updates
+2. View schedule and notes
+3. Check assigned tasks
+4. Complete assigned work
+
+## TEST ACCOUNTS
+========================================
+
+Boss Account:
+- Username: boss
+- Password: password
+- Role: super_admin
+
+Admin Manager Account:
+- Username: admin
+- Password: password
+- Role: admin
+
+Employee Account:
+- Username: employee
+- Password: password
+- Role: employee
+
+Test Employee:
+- Username: test
+- Password: password
+- Role: employee
+
+**IMPORTANT: Login uses USERNAME only - No email required (Enterprise System)**
+
+## SETUP COMMANDS
+========================================
+
+# Run migration to add role column
+php artisan migrate
+
+# Seed database with test users
+php artisan db:seed
+
+# Clear caches (if needed)
+php artisan config:clear
+php artisan route:clear
+php artisan cache:clear
+
+## CODE EXAMPLES
+========================================
+
+### Check Role in Controller:
+```php
+if (auth()->user()->isSuperAdmin()) {
+    // Super admin only code
+}
+
+if (auth()->user()->isAdminOrAbove()) {
+    // Admin and Super Admin code
+}
+
+if (auth()->user()->isEmployee()) {
+    // Employee only code
+}
+```
+
+### Check Role in Blade:
+```blade
+@if(auth()->user()->isSuperAdmin())
+    <a href="{{ route('orders') }}">Orders</a>
+@endif
+
+@if(auth()->user()->isAdminOrAbove())
+    <a href="{{ route('inventory') }}">Inventory</a>
+@endif
+```
+
+### Protect Routes:
+```php
+// Single role
+Route::get('/orders', [OrdersController::class, 'index'])
+    ->middleware('super_admin');
+
+// Multiple roles
+Route::middleware('admin_or_above')->group(function () {
+    Route::get('/inventory', [InventoryController::class, 'index']);
+});
+```
+
+## NAVIGATION VISIBILITY
+========================================
+
+Always show: Login, Logout, Dashboard, Schedule, Assignments
+
+Show for Admin & Super Admin:
+- Inventory
+- Analytics
+- Employees
+- Settings
+
+Show for Super Admin ONLY:
+- Orders
+- Dispatch
+
+## KEY REMINDERS
+========================================
+
+1. Orders and Dispatch are EXCLUSIVE to Super Admin (Boss)
+2. Admin Manager has full access EXCEPT orders and dispatch
+3. Employees have read-only access to basic pages
+4. All pages require authentication
+5. Use helper methods (isSuperAdmin(), isAdmin(), etc.) in code
+6. Default role for new users is 'employee'
+
+========================================
+For detailed information, see RBAC_GUIDE.md
