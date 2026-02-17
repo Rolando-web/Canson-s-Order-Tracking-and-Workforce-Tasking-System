@@ -37,41 +37,41 @@
     {{-- Stats Cards --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+            <div class="flex items-center">
+                <div class="w-10 h-10 flex-none rounded-xl bg-emerald-100 flex items-center justify-center">
                     <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
                     </svg>
                 </div>
-                <div>
-                    <p class="text-2xl font-bold text-gray-900">5</p>
-                    <p class="text-sm text-gray-500">Total Employees</p>
+                <div class="grow">
+                    <p class="text-2xl font-bold text-gray-900 text-end">5</p>
+                    <p class="text-sm text-gray-500 text-end">Total Employees</p>
                 </div>
             </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+            <div class="flex items-center">
+                <div class="w-10 h-10 flex-none rounded-xl bg-green-100 flex items-center justify-center">
                     <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
-                <div>
-                    <p class="text-2xl font-bold text-gray-900">4</p>
-                    <p class="text-sm text-gray-500">Active</p>
+                <div class="grow">
+                    <p class="text-2xl font-bold text-gray-900 text-end">4</p>
+                    <p class="text-sm text-gray-500 text-end">Active</p>
                 </div>
             </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+            <div class="flex items-center">
+                <div class="w-10 h-10 flex-none rounded-xl bg-gray-100 flex items-center justify-center">
                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                     </svg>
                 </div>
-                <div>
-                    <p class="text-2xl font-bold text-gray-900">1</p>
-                    <p class="text-sm text-gray-500">Inactive</p>
+                <div class="grow">
+                    <p class="text-2xl font-bold text-gray-900 text-end">1</p>
+                    <p class="text-sm text-gray-500 text-end">Inactive</p>
                 </div>
             </div>
         </div>

@@ -37,41 +37,41 @@
         {{-- Stats Cards --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div class="bg-white rounded-xl border-2 border-emerald-500 p-5">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-xl flex-none bg-emerald-100 flex items-center justify-center">
                         <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
                         </svg>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Total Items</p>
-                        <p class="text-3xl font-bold text-gray-900">{{ $totalItems }}</p>
+                    <div class="grow">
+                        <p class="text-sm text-gray-500 text-end">Total Items</p>
+                        <p class="text-3xl font-bold text-gray-900 text-end">{{ $totalItems }}</p>
                     </div>
                 </div>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 p-5">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 flex-none rounded-xl bg-red-100 flex items-center justify-center">
                         <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/>
                         </svg>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Low Stock Alert</p>
-                        <p class="text-3xl font-bold text-gray-900">{{ $lowStockAlert }}</p>
+                    <div class="grow">
+                        <p class="text-sm text-gray-500 text-end">Low Stock Alert</p>
+                        <p class="text-3xl font-bold text-gray-900 text-end">{{ $lowStockAlert }}</p>
                     </div>
                 </div>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 p-5">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 flex-none rounded-xl bg-emerald-100 flex items-center justify-center">
                         <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182"/>
                         </svg>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Transactions Today</p>
-                        <p class="text-3xl font-bold text-gray-900">0</p>
+                    <div class="grow">
+                        <p class="text-sm text-gray-500 text-end">Transactions Today</p>
+                        <p class="text-3xl font-bold text-gray-900 text-end">0</p>
                     </div>
                 </div>
             </div>

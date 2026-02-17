@@ -26,7 +26,7 @@
             <h2 class="text-2xl font-bold text-gray-900">Overview</h2>
             <p class="text-gray-500 mt-1">Welcome back, here's what's happening today.</p>
         </div>
-        <button class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+        <button class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors">
             Generate Report
         </button>
     </div>
@@ -36,15 +36,15 @@
         {{-- Total Orders --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500">Total Orders</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-1">5</p>
-                    <p class="text-xs text-green-500 mt-1">+12% from last month</p>
-                </div>
-                <div class="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center">
+                 <div class="w-8 h-8 xl:w-11 xl:h-11 rounded-xl bg-emerald-100 flex items-center justify-center">
                     <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
                     </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">Total Orders</p>
+                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">5</p>
+                    <p class="text-[0.6rem] xl:text-xs text-green-500 mt-1">+12% from last month</p>
                 </div>
             </div>
         </div>
@@ -52,15 +52,15 @@
         {{-- Pending --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500">Pending</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-1">2</p>
-                    <p class="text-xs text-gray-400 mt-1">Requires attention</p>
-                </div>
-                <div class="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center">
+                    <div class="w-8 h-8 xl:w-11 xl:h-11 rounded-xl bg-orange-100 flex items-center justify-center">
                     <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">Pending</p>
+                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">2</p>
+                    <p class="text-[0.6rem] xl:text-xs text-gray-400 mt-1">Requires attention</p>
                 </div>
             </div>
         </div>
@@ -68,15 +68,15 @@
         {{-- In Progress --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500">In Progress</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-1">2</p>
-                    <p class="text-xs text-gray-400 mt-1">Active production</p>
-                </div>
-                <div class="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center">
+                 <div class="w-8 h-8 xl:w-11 xl:h-11 rounded-xl bg-purple-100 flex items-center justify-center">
                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941"/>
                     </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">In Progress</p>
+                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">2</p>
+                    <p class="text-[0.6rem] xl:text-xs text-gray-400 mt-1">Active production</p>
                 </div>
             </div>
         </div>
@@ -84,15 +84,15 @@
         {{-- Completed --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500">Completed</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-1">1</p>
-                    <p class="text-xs text-gray-400 mt-1">This month</p>
-                </div>
-                <div class="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center">
+                <div class="w-8 h-8 xl:w-11 xl:h-11 rounded-xl bg-green-100 flex items-center justify-center">
                     <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">Completed</p>
+                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">1</p>
+                    <p class="text-[0.6rem] xl:text-xs text-gray-400 mt-1">This month</p>
                 </div>
             </div>
         </div>
