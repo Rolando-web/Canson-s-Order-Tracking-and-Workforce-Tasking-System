@@ -11,6 +11,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ActivityLogsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +96,9 @@ Route::middleware(['auth', 'admin_or_above'])->group(function () {
     Route::post('/employees', [EmployeesController::class, 'store'])->name('employees.store');
     Route::put('/employees/{employee}', [EmployeesController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [EmployeesController::class, 'destroy'])->name('employees.destroy');
+    
+    // Activity Logs - Admin and Super Admin only
+    Route::get('/activity-logs', [ActivityLogsController::class, 'index'])->name('activity-logs');
     
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');

@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\InventoryItem;
 
 class OrdersController extends Controller
 {
     public function index()
     {
-        return view('pages.orders');
+        $inventoryItems = InventoryItem::select('id', 'name', 'item_id', 'stock', 'unit')
+            ->orderBy('name')
+            ->get();
+
+        return view('pages.orders', compact('inventoryItems'));
     }
 }

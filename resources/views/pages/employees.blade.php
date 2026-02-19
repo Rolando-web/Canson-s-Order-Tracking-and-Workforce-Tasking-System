@@ -101,7 +101,7 @@
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Employee</th>
-                        <th class="px-6 py-3.5 font-semibold text-gray-600">Email</th>
+                        <th class="px-6 py-3.5 font-semibold text-gray-600">Role</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Contact Number</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Status</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600 text-right">Actions</th>
@@ -110,11 +110,11 @@
                 <tbody class="divide-y divide-gray-100">
                     @php
                         $employees = [
-                            ['first' => 'Juan', 'last' => 'Dela Cruz', 'email' => 'juan@canson.com', 'contact' => '0917-123-4567', 'status' => 'Active', 'color' => 'bg-emerald-500'],
-                            ['first' => 'Maria', 'last' => 'Santos', 'email' => 'maria@canson.com', 'contact' => '0918-234-5678', 'status' => 'Active', 'color' => 'bg-amber-500'],
-                            ['first' => 'Pedro', 'last' => 'Garcia', 'email' => 'pedro@canson.com', 'contact' => '0919-345-6789', 'status' => 'Active', 'color' => 'bg-violet-500'],
-                            ['first' => 'Ana', 'last' => 'Reyes', 'email' => 'ana@canson.com', 'contact' => '0920-456-7890', 'status' => 'Active', 'color' => 'bg-rose-500'],
-                            ['first' => 'Carlos', 'last' => 'Lopez', 'email' => 'carlos@canson.com', 'contact' => '0921-567-8901', 'status' => 'Inactive', 'color' => 'bg-gray-400'],
+                            ['first' => 'Juan', 'last' => 'Dela Cruz', 'role' => 'employee', 'contact' => '0917-123-4567', 'status' => 'Active', 'color' => 'bg-emerald-500'],
+                            ['first' => 'Maria', 'last' => 'Santos', 'role' => 'admin', 'contact' => '0918-234-5678', 'status' => 'Active', 'color' => 'bg-amber-500'],
+                            ['first' => 'Pedro', 'last' => 'Garcia', 'role' => 'employee', 'contact' => '0919-345-6789', 'status' => 'Active', 'color' => 'bg-violet-500'],
+                            ['first' => 'Ana', 'last' => 'Reyes', 'role' => 'employee', 'contact' => '0920-456-7890', 'status' => 'Active', 'color' => 'bg-rose-500'],
+                            ['first' => 'Carlos', 'last' => 'Lopez', 'role' => 'super_admin', 'contact' => '0921-567-8901', 'status' => 'Inactive', 'color' => 'bg-gray-400'],
                         ];
                     @endphp
 
@@ -130,7 +130,17 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-gray-600">{{ $emp['email'] }}</td>
+                            <td class="px-6 py-4">
+                                @php
+                                    $roleConfig = match($emp['role']) {
+                                        'employee' => ['label' => 'Employee', 'color' => 'bg-blue-50 text-blue-700 border-blue-200'],
+                                        'admin' => ['label' => 'Admin', 'color' => 'bg-purple-50 text-purple-700 border-purple-200'],
+                                        'super_admin' => ['label' => 'Super Admin', 'color' => 'bg-red-50 text-red-700 border-red-200'],
+                                        default => ['label' => 'Unknown', 'color' => 'bg-gray-50 text-gray-600 border-gray-200'],
+                                    };
+                                @endphp
+                                <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $roleConfig['color'] }}">{{ $roleConfig['label'] }}</span>
+                            </td>
                             <td class="px-6 py-4 text-gray-600">{{ $emp['contact'] }}</td>
                             <td class="px-6 py-4">
                                 @if($emp['status'] === 'Active')
@@ -140,7 +150,7 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <button onclick="openModal('edit', '{{ $emp['first'] }}', '{{ $emp['last'] }}', '{{ $emp['email'] }}', '{{ $emp['contact'] }}')"
+                                <button onclick="openModal('edit', '{{ $emp['first'] }}', '{{ $emp['last'] }}', '{{ $emp['role'] }}', '{{ $emp['contact'] }}')"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/>
@@ -189,9 +199,12 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
-                    <input id="empEmail" type="email" placeholder="juan@canson.com"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Role</label>
+                    <select id="empRole" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                        <option value="employee">Employee</option>
+                        <option value="admin">Admin</option>
+                        <option value="super_admin">Super Admin</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Contact Number</label>
@@ -215,14 +228,14 @@
 
 @push('scripts')
 <script>
-    function openModal(mode, firstName = '', lastName = '', email = '', contact = '') {
+    function openModal(mode, firstName = '', lastName = '', role = 'employee', contact = '') {
         const modal = document.getElementById('employeeModal');
         const title = document.getElementById('modalTitle');
         const submitBtn = document.getElementById('modalSubmitBtn');
 
         document.getElementById('empFirstName').value = firstName;
         document.getElementById('empLastName').value = lastName;
-        document.getElementById('empEmail').value = email;
+        document.getElementById('empRole').value = role;
         document.getElementById('empContact').value = contact;
 
         if (mode === 'edit') {

@@ -36,7 +36,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
                 </button>
             </div>
-            <button class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+            <button onclick="openAddOrderModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 New Order
             </button>
@@ -69,9 +69,9 @@
                 <tr class="border-b border-gray-200">
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order ID</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Items</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivery Date</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Amount</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned To</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -79,18 +79,29 @@
             <tbody class="divide-y divide-gray-100">
                 @php
                     $orders = [
-                        ['id' => 'ORD-001', 'customer' => 'St. Mary School', 'items' => '500 Data Filer Boxes', 'status' => 'Completed', 'assigned' => 'Juan Dela Cruz', 'initial' => 'J', 'priority' => 'Normal', 'priorityColor' => 'bg-emerald-50 text-emerald-600 border-emerald-200'],
-                        ['id' => 'ORD-002', 'customer' => 'City High', 'items' => '200 Whiteboards', 'status' => 'In-Progress', 'assigned' => 'Maria Santos', 'initial' => 'M', 'priority' => 'High', 'priorityColor' => 'bg-red-50 text-red-600 border-red-200'],
-                        ['id' => 'ORD-003', 'customer' => 'Office Depot', 'items' => '1000 Storage Boxes', 'status' => 'Pending', 'assigned' => null, 'initial' => '', 'priority' => 'Normal', 'priorityColor' => 'bg-emerald-50 text-emerald-600 border-emerald-200'],
-                        ['id' => 'ORD-004', 'customer' => 'Learning Tree', 'items' => '50 Whiteboards', 'status' => 'Pending', 'assigned' => null, 'initial' => '', 'priority' => 'Urgent', 'priorityColor' => 'bg-red-50 text-red-600 border-red-200'],
-                        ['id' => 'ORD-005', 'customer' => 'Gov. Office', 'items' => '300 Filer Boxes', 'status' => 'In-Progress', 'assigned' => 'Ana Lim', 'initial' => 'A', 'priority' => 'High', 'priorityColor' => 'bg-red-50 text-red-600 border-red-200'],
+                        ['id' => 'ORD-001', 'customer' => 'St. Mary School', 'contact' => '0917-123-4567', 'address' => '123 School Lane, Quezon City', 'items' => '500 Data Filer Boxes', 'delivery_date' => '2026-02-20', 'total' => 25000, 'status' => 'Completed', 'assigned' => 'Juan Dela Cruz', 'initial' => 'J', 'priority' => 'Normal', 'priorityColor' => 'bg-emerald-50 text-emerald-600 border-emerald-200', 'notes' => 'Customer prefers morning delivery', 'order_items' => [['name' => 'Data Filer Box (Blue)', 'qty' => 500, 'price' => 50, 'subtotal' => 25000]]],
+                        ['id' => 'ORD-002', 'customer' => 'City High', 'contact' => '0918-234-5678', 'address' => '456 Education Ave, Manila', 'items' => '200 Whiteboards', 'delivery_date' => '2026-02-22', 'total' => 60000, 'status' => 'In-Progress', 'assigned' => 'Maria Santos', 'initial' => 'M', 'priority' => 'High', 'priorityColor' => 'bg-red-50 text-red-600 border-red-200', 'notes' => 'Rush order, fragile items', 'order_items' => [['name' => 'Whiteboard (Large)', 'qty' => 200, 'price' => 300, 'subtotal' => 60000]]],
+                        ['id' => 'ORD-003', 'customer' => 'Office Depot', 'contact' => '0919-345-6789', 'address' => '789 Business District, Makati', 'items' => '1000 Storage Boxes', 'delivery_date' => '2026-02-25', 'total' => 80000, 'status' => 'Pending', 'assigned' => null, 'initial' => '', 'priority' => 'Normal', 'priorityColor' => 'bg-emerald-50 text-emerald-600 border-emerald-200', 'notes' => '', 'order_items' => [['name' => 'Storage Box (Medium)', 'qty' => 500, 'price' => 80, 'subtotal' => 40000], ['name' => 'Storage Box (Large)', 'qty' => 500, 'price' => 80, 'subtotal' => 40000]]],
+                        ['id' => 'ORD-004', 'customer' => 'Learning Tree', 'contact' => '0920-456-7890', 'address' => '321 Learning St, Pasig', 'items' => '50 Whiteboards', 'delivery_date' => '2026-02-18', 'total' => 15000, 'status' => 'Pending', 'assigned' => null, 'initial' => '', 'priority' => 'Urgent', 'priorityColor' => 'bg-red-50 text-red-600 border-red-200', 'notes' => 'Urgent! Needed for school event', 'order_items' => [['name' => 'Whiteboard (Small)', 'qty' => 50, 'price' => 300, 'subtotal' => 15000]]],
+                        ['id' => 'ORD-005', 'customer' => 'Gov. Office', 'contact' => '0921-567-8901', 'address' => '555 Government Complex, Taguig', 'items' => '300 Filer Boxes', 'delivery_date' => '2026-03-01', 'total' => 15000, 'status' => 'In-Progress', 'assigned' => 'Ana Lim', 'initial' => 'A', 'priority' => 'High', 'priorityColor' => 'bg-red-50 text-red-600 border-red-200', 'notes' => 'Deliver to security office first', 'order_items' => [['name' => 'Data Filer Box (Red)', 'qty' => 300, 'price' => 50, 'subtotal' => 15000]]],
                     ];
                 @endphp
                 @foreach($orders as $order)
                 <tr class="hover:bg-gray-50 transition-colors">
                     <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $order['id'] }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">{{ $order['customer'] }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">{{ $order['items'] }}</td>
+                    <td class="px-6 py-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ $order['customer'] }}</p>
+                            <p class="text-xs text-gray-500">{{ $order['contact'] }}</p>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">
+                        <div class="flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/></svg>
+                            {{ date('M d, Y', strtotime($order['delivery_date'])) }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm font-semibold text-gray-900">₱{{ number_format($order['total'], 2) }}</td>
                     <td class="px-6 py-4">
                         @php
                             $statusColor = match($order['status']) {
@@ -102,22 +113,13 @@
                         @endphp
                         <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $statusColor }}">{{ $order['status'] }}</span>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">
-                        @if($order['assigned'])
-                        <div class="flex items-center gap-2">
-                            <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">{{ $order['initial'] }}</div>
-                            {{ $order['assigned'] }}
-                        </div>
-                        @else
-                        <span class="text-gray-400 italic">Unassigned</span>
-                        @endif
-                    </td>
                     <td class="px-6 py-4">
                         <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $order['priorityColor'] }}">{{ $order['priority'] }}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <button class="text-gray-400 hover:text-gray-600 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18.75 3.75H5.25"/></svg>
+                        <button onclick="showOrderDetails('{{ $order['id'] }}', {{ json_encode($order) }})" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            View Details
                         </button>
                     </td>
                 </tr>
@@ -125,5 +127,260 @@
             </tbody>
         </table>
     </div>
+
+    {{-- Order Details Modal --}}
+    <div id="orderDetailsModal" class="fixed inset-0 z-50 hidden">
+        {{-- Backdrop --}}
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeOrderDetails()"></div>
+        
+        {{-- Modal Content --}}
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative" onclick="event.stopPropagation()">
+                {{-- Header --}}
+                <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900" id="modalOrderId">Order Details</h3>
+                        <p class="text-sm text-gray-500 mt-0.5" id="modalCustomerName"></p>
+                    </div>
+                    <button onclick="closeOrderDetails()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Content --}}
+                <div class="px-6 py-5 space-y-6">
+                    {{-- Customer Info --}}
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Customer Contact</label>
+                            <p class="text-sm text-gray-900" id="modalCustomerContact"></p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Delivery Date</label>
+                            <p class="text-sm text-gray-900" id="modalDeliveryDate"></p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Delivery Address</label>
+                        <p class="text-sm text-gray-900" id="modalDeliveryAddress"></p>
+                    </div>
+
+                    {{-- Order Status Info --}}
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</label>
+                            <span id="modalStatus"></span>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Priority</label>
+                            <span id="modalPriority"></span>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Assigned To</label>
+                            <p class="text-sm text-gray-900" id="modalAssigned"></p>
+                        </div>
+                    </div>
+
+                    {{-- Order Items --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Order Items</label>
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Item Name</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600">Quantity</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600">Unit Price</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100" id="modalOrderItems">
+                                    {{-- Dynamically populated --}}
+                                </tbody>
+                                <tfoot class="bg-gray-50 border-t-2 border-gray-200">
+                                    <tr>
+                                        <td colspan="3" class="px-4 py-3 text-right text-sm font-bold text-gray-900">Total Amount:</td>
+                                        <td class="px-4 py-3 text-right text-base font-bold text-emerald-600" id="modalTotalAmount"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Notes --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Notes</label>
+                        <p class="text-sm text-gray-900 bg-gray-50 rounded-lg p-3" id="modalNotes"></p>
+                    </div>
+                </div>
+
+                {{-- Footer --}}
+                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+                    <button onclick="closeOrderDetails()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        Close
+                    </button>
+                    <button class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">
+                        Edit Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Add Order Modal --}}
+    <div id="addOrderModal" class="fixed inset-0 z-50 hidden">
+        {{-- Backdrop --}}
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAddOrderModal()"></div>
+
+        {{-- Modal Content --}}
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative" onclick="event.stopPropagation()">
+                {{-- Header --}}
+                <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">New Order</h3>
+                        <p class="text-sm text-gray-500 mt-0.5">Fill in the details to create a new order</p>
+                    </div>
+                    <button onclick="closeAddOrderModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Form --}}
+                <form id="addOrderForm" onsubmit="submitAddOrder(event)">
+                    <div class="px-6 py-5 space-y-6">
+                        {{-- Customer Information --}}
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                                Customer Information
+                            </h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1.5">Customer Name <span class="text-red-500">*</span></label>
+                                    <input type="text" name="customer_name" required placeholder="e.g. St. Mary School" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1.5">Contact Number <span class="text-red-500">*</span></label>
+                                    <input type="text" name="contact_number" required placeholder="e.g. 0917-123-4567" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <label class="block text-xs font-medium text-gray-600 mb-1.5">Delivery Address <span class="text-red-500">*</span></label>
+                                <input type="text" name="delivery_address" required placeholder="e.g. 123 School Lane, Quezon City" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                            </div>
+                        </div>
+
+                        {{-- Order Details --}}
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+                                Order Details
+                            </h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1.5">Delivery Date <span class="text-red-500">*</span></label>
+                                    <input type="date" name="delivery_date" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1.5">Priority <span class="text-red-500">*</span></label>
+                                    <select name="priority" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                        <option value="Normal">Normal</option>
+                                        <option value="High">High</option>
+                                        <option value="Urgent">Urgent</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Order Items --}}
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+                                    Order Items
+                                </h4>
+                                <button type="button" onclick="addOrderItem()" class="text-emerald-600 hover:text-emerald-700 text-xs font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-emerald-50 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                    Add Item
+                                </button>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Item Name</th>
+                                            <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 w-24">Qty</th>
+                                            <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 w-32">Unit Price (₱)</th>
+                                            <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 w-32">Subtotal</th>
+                                            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 w-12"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="addOrderItemsBody" class="divide-y divide-gray-100">
+                                        {{-- Default first row --}}
+                                        <tr class="order-item-row">
+                                            <td class="px-4 py-2">
+                                                <select name="items[0][name]" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                                    <option value="">-- Select item --</option>
+                                                    @foreach($inventoryItems as $item)
+                                                    <option value="{{ $item->name }}">{{ $item->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <input type="number" name="items[0][qty]" required min="1" value="1" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 item-qty" oninput="recalcOrderTotal()">
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <input type="number" name="items[0][price]" required min="0" step="0.01" value="0" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 item-price" oninput="recalcOrderTotal()">
+                                            </td>
+                                            <td class="px-4 py-2 text-right text-sm font-semibold text-gray-900 item-subtotal">₱0.00</td>
+                                            <td class="px-4 py-2 text-center">
+                                                <button type="button" onclick="removeOrderItem(this)" class="text-gray-300 hover:text-red-500 transition-colors" title="Remove item">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot class="bg-gray-50 border-t-2 border-gray-200">
+                                        <tr>
+                                            <td colspan="3" class="px-4 py-3 text-right text-sm font-bold text-gray-900">Total Amount:</td>
+                                            <td class="px-4 py-3 text-right text-base font-bold text-emerald-600" id="addOrderTotal">₱0.00</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        {{-- Notes --}}
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1.5">Notes</label>
+                            <textarea name="notes" rows="3" placeholder="Any special instructions or notes..." class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+                        <button type="button" onclick="closeAddOrderModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                            Create Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+window.inventoryItems = @json($inventoryItems ?? []);
+</script>
 @endsection

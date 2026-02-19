@@ -5,3 +5,18 @@
 .orders-page table tbody tr:hover {
     background-color: rgba(59, 130, 246, 0.03);
 }
+
+/* Toast slide-up animation */
+@keyframes slide-up {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+}

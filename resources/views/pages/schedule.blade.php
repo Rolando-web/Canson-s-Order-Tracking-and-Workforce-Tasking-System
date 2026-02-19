@@ -69,5 +69,141 @@
             {{-- Dynamically populated by JavaScript --}}
         </div>
     </div>
+
+    {{-- Add Schedule Note Modal --}}
+    <div id="scheduleNoteModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeScheduleModal()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative" onclick="event.stopPropagation()">
+                {{-- Header --}}
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-900">Add Schedule Note</h3>
+                    <button onclick="closeScheduleModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Form --}}
+                <div class="px-6 py-5 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Title</label>
+                        <input id="noteTitle" type="text" placeholder="Production deadline, Meeting, etc." 
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                        <textarea id="noteDescription" rows="3" placeholder="Add details about this note..."
+                                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Schedule Date</label>
+                            <input id="noteDate" type="date" 
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Priority</label>
+                            <select id="notePriority" 
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input id="noteAllDay" type="checkbox" checked 
+                                   onchange="toggleTimeFields()"
+                                   class="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500">
+                            <span class="text-sm font-medium text-gray-700">All Day Event</span>
+                        </label>
+                    </div>
+
+                    <div id="timeFields" class="grid grid-cols-2 gap-4 hidden">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Start Time</label>
+                            <input id="noteStartTime" type="time" 
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">End Time</label>
+                            <input id="noteEndTime" type="time" 
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Footer --}}
+                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
+                    <button onclick="closeScheduleModal()" 
+                            class="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="saveScheduleNote()" 
+                            class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors">
+                        Save Note
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+function closeScheduleModal() {
+    document.getElementById('scheduleNoteModal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+function openScheduleModal(date = null) {
+    if (date) {
+        document.getElementById('noteDate').value = date;
+    }
+    document.getElementById('scheduleNoteModal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function toggleTimeFields() {
+    const allDay = document.getElementById('noteAllDay').checked;
+    const timeFields = document.getElementById('timeFields');
+    if (allDay) {
+        timeFields.classList.add('hidden');
+    } else {
+        timeFields.classList.remove('hidden');
+    }
+}
+
+function saveScheduleNote() {
+    const data = {
+        title: document.getElementById('noteTitle').value,
+        description: document.getElementById('noteDescription').value,
+        schedule_date: document.getElementById('noteDate').value,
+        priority: document.getElementById('notePriority').value,
+        is_all_day: document.getElementById('noteAllDay').checked,
+        start_time: document.getElementById('noteStartTime').value,
+        end_time: document.getElementById('noteEndTime').value,
+        created_by: 'Admin User' // Would come from auth
+    };
+    
+    console.log('Saving schedule note:', data);
+    // Here you would send to backend
+    closeScheduleModal();
+}
+
+// Add button to open modal when clicking on calendar dates
+document.addEventListener('DOMContentLoaded', () => {
+    // You can add click handlers to calendar dates here
+    const addNoteBtn = document.createElement('button');
+    addNoteBtn.className = 'fixed bottom-8 right-8 w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors';
+    addNoteBtn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>';
+    addNoteBtn.onclick = () => openScheduleModal();
+    document.querySelector('.schedule-page').appendChild(addNoteBtn);
+});
+</script>
 @endsection

@@ -15,10 +15,16 @@
     {{-- Logo / Brand --}}
     <div class="flex items-center justify-between px-5 py-5 border-b border-white/10">
         <div class="flex items-center gap-3 overflow-hidden">
-            <div class="sidebar-icon flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-xl">
+            {{-- Icon --}}
+            <div class="sidebar-icon flex-shrink-0 w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center font-bold text-xl shadow-md">
                 C
             </div>
-            <span class="sidebar-label text-lg font-semibold whitespace-nowrap">Canson</span>
+            {{-- Brand Text --}}
+            <div class="sidebar-label flex flex-col leading-tight whitespace-nowrap overflow-hidden">
+                <span class="text-base font-extrabold text-white tracking-wide">Canson</span>
+                <span class="text-[0.5rem] text-emerald-300 uppercase tracking-widest leading-tight">School &amp; Office</span>
+                <span class="text-[0.8rem] text-emerald-400 uppercase tracking-[0.2em] leading-tight">Supplies</span>
+            </div>
         </div>
 
         {{-- Toggle Button --}}
@@ -62,6 +68,7 @@
             <x-side-bar-link icon="inventory" label="Inventory" :active="$active === 'inventory'" href="/inventory" />
             <x-side-bar-link icon="analytics" label="Analytics" :active="$active === 'analytics'" href="/analytics" />
             <x-side-bar-link icon="employees" label="Employees" :active="$active === 'employees'" href="/employees" />
+            <x-side-bar-link icon="logs" label="Activity Logs" :active="$active === 'activity-logs'" href="/activity-logs" />
         @endif
     </nav>
 
@@ -86,19 +93,5 @@
                 <span class="sidebar-label whitespace-nowrap overflow-hidden">Logout</span>
             </button>
         </form>
-    </div>
-
-    {{-- Storage Usage --}}
-    <div class="sidebar-label px-5 pb-5">
-        <div class="rounded-lg bg-white/5 p-3">
-            <p class="text-xs text-gray-400 mb-2">Storage Usage</p>
-            <div class="storage-bar-bg w-full h-1.5 rounded-full overflow-hidden">
-                <div class="storage-bar-fill h-full rounded-full" style="width: 70%"></div>
-            </div>
-            <div class="flex justify-between mt-2 text-xs text-gray-400">
-                <span>70% Used</span>
-                <span>7k / 10k</span>
-            </div>
-        </div>
     </div>
 </aside>

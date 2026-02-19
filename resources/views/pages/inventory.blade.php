@@ -26,9 +26,15 @@
             <h2 class="text-2xl font-bold text-gray-900">Inventory Management</h2>
             <p class="text-gray-500 mt-1">Track stock levels and movement history</p>
         </div>
-        <div class="flex flex-col rounded-lg border border-gray-300 overflow-hidden sm:flex-row">
-            <button class="inventory-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white" data-tab="current-stock">Current Stock</button>
-            <button class="inventory-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 md:text-sm bg-white text-gray-600 hover:bg-gray-50" data-tab="movement-history">Movement History</button>
+        <div class="flex items-center gap-3">
+            <button onclick="openAddProductModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                Add Product
+            </button>
+            <div class="flex flex-col rounded-lg border border-gray-300 overflow-hidden sm:flex-row">
+                <button class="inventory-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white" data-tab="current-stock">Current Stock</button>
+                <button class="inventory-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 md:text-sm bg-white text-gray-600 hover:bg-gray-50" data-tab="movement-history">Movement History</button>
+            </div>
         </div>
     </div>
 
@@ -77,11 +83,26 @@
             </div>
         </div>
 
-        {{-- Search --}}
+        {{-- Search & Filters --}}
         <div class="bg-white rounded-xl border border-gray-200 p-4 mb-0">
-            <div class="relative">
-                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                <input type="text" placeholder="Search inventory..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div class="relative flex-1">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                    <input id="inventorySearch" type="text" placeholder="Search inventory..." oninput="filterInventory()" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                </div>
+                <select id="inventoryCategoryFilter" onchange="filterInventory()" class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    <option value="">All Categories</option>
+                    <option value="Finished Goods">Finished Goods</option>
+                    <option value="Raw Materials">Raw Materials</option>
+                    <option value="Packaging Materials">Packaging Materials</option>
+                </select>
+                <select id="inventoryStockFilter" onchange="filterInventory()" class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    <option value="">All Stock Levels</option>
+                    <option value="high">High Stock (&gt;100)</option>
+                    <option value="normal">Normal (21–100)</option>
+                    <option value="low">Low Stock (≤20)</option>
+                    <option value="out">Out of Stock</option>
+                </select>
             </div>
         </div>
 
@@ -93,6 +114,7 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Image</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item Name</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Unit Price</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock Level</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -100,7 +122,10 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach($items as $item)
-                    <tr class="hover:bg-gray-50 transition-colors">
+                    @php
+                        $stockLevel = $item->stock === 0 ? 'out' : ($item->stock <= 20 ? 'low' : ($item->stock <= 100 ? 'normal' : 'high'));
+                    @endphp
+                    <tr class="inventory-row hover:bg-gray-50 transition-colors" data-category="{{ $item->category }}" data-stock-level="{{ $stockLevel }}" data-name="{{ strtolower($item->name) }}">
                         <td class="px-6 py-4">
                             @if($item->image_path)
                                 <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}" class="w-12 h-12 rounded-lg object-cover border border-gray-200">
@@ -114,7 +139,7 @@
                             <div class="flex items-center gap-2">
                                 <div>
                                     <p class="text-sm font-semibold text-gray-900">{{ $item->name }}</p>
-                                    <p class="text-xs text-gray-400">ID: {{ $item->item_id }}</p>
+                                    <p class="text-xs text-gray-400">{{ $item->item_id }}</p>
                                 </div>
                                 @if($item->is_best_seller)
                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300">
@@ -125,17 +150,22 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $item->category }}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-gray-900">₱—</td>
                         <td class="px-6 py-4 text-sm"><span class="font-bold text-gray-900">{{ number_format($item->stock) }}</span> <span class="text-gray-400">{{ $item->unit }}</span></td>
                         <td class="px-6 py-4">
                             <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-200">{{ $item->status }}</span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
-                                <button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition-colors">
+                                <button
+                                    onclick="openStockInModal({{ json_encode(['name' => $item->name, 'code' => $item->item_id, 'stock' => $item->stock, 'unit' => $item->unit, 'image' => $item->image_path ? asset('storage/'.$item->image_path) : null]) }})"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                                     Stock In
                                 </button>
-                                <button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors">
+                                <button
+                                    onclick="openStockOutModal({{ json_encode(['name' => $item->name, 'code' => $item->item_id, 'stock' => $item->stock, 'unit' => $item->unit, 'image' => $item->image_path ? asset('storage/'.$item->image_path) : null]) }})"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     Stock Out
                                 </button>
@@ -164,9 +194,10 @@
                 <thead>
                     <tr class="border-b border-gray-200">
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date & Time</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Reference No.</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock Change</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Note / Reason</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Performed By</th>
                     </tr>
@@ -179,6 +210,9 @@
                                 2/9/2026 <span class="text-gray-400">10:21 PM</span>
                             </div>
                         </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            <span class="inline-flex px-2 py-0.5 rounded text-xs font-mono bg-gray-50 border border-gray-200">REF-2026-001</span>
+                        </td>
                         <td class="px-6 py-4 text-sm font-semibold text-gray-900">Corrugated Board Sheets</td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-200">
@@ -186,7 +220,14 @@
                                 STOCK IN
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm font-semibold text-green-600">+500</td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm">
+                                <span class="text-gray-500">1,000</span>
+                                <svg class="w-3 h-3 inline mx-1 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+                                <span class="font-bold text-green-600">1,500</span>
+                                <span class="text-xs text-gray-400 ml-1">(+500)</span>
+                            </div>
+                        </td>
                         <td class="px-6 py-4 text-sm text-gray-600">Weekly supplier delivery</td>
                         <td class="px-6 py-4 text-sm text-gray-600">System Admin</td>
                     </tr>
@@ -197,6 +238,9 @@
                                 2/8/2026 <span class="text-gray-400">10:21 PM</span>
                             </div>
                         </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            <span class="inline-flex px-2 py-0.5 rounded text-xs font-mono bg-gray-50 border border-gray-200">ORD-8821</span>
+                        </td>
                         <td class="px-6 py-4 text-sm font-semibold text-gray-900">Data Filer Box (Blue)</td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200">
@@ -204,8 +248,15 @@
                                 STOCK OUT
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm font-semibold text-red-600">-50</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">Order #ORD-8821 Fulfillment</td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm">
+                                <span class="text-gray-500">150</span>
+                                <svg class="w-3 h-3 inline mx-1 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+                                <span class="font-bold text-red-600">100</span>
+                                <span class="text-xs text-gray-400 ml-1">(-50)</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">Order fulfillment</td>
                         <td class="px-6 py-4 text-sm text-gray-600">System Admin</td>
                     </tr>
                 </tbody>
@@ -213,6 +264,12 @@
         </div>
     </div>
 </div>
+
+{{-- Modals --}}
+@include('pages.Modals.stockInModal')
+@include('pages.Modals.stockOutModal')
+@include('pages.Modals.addProductModal')
+
 @endsection
 
 @push('scripts')
