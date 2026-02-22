@@ -39,7 +39,7 @@
            </div>
         <div class="grow flex flex-col justify-center">
             <p class="text-sm font-medium text-emerald-600 text-end">Ready to Ship</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1 text-end">1</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1 text-end">{{ $readyToShip ?? 0 }}</p>
         </div>
         </div>
 
@@ -54,7 +54,7 @@
             </div>
            <div class="grow flex flex-col justify-center">
              <p class="text-sm font-medium text-gray-500 text-end">In Transit</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1 text-end">0</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1 text-end">{{ $inTransit ?? 0 }}</p>
            </div>
         </div>
 
@@ -69,7 +69,7 @@
         </div> 
             <div class="grow flex flex-col justify-center">
             <p class="text-sm font-medium text-gray-500 text-end">Delivered</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1 text-end">0</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1 text-end">{{ $delivered ?? 0 }}</p>
             </div>
         </div>
     </div>
@@ -99,13 +99,6 @@
 
     {{-- Shipment Cards --}}
     <div class="space-y-4">
-        @php
-            $dispatches = [
-                ['order_id' => 'ORD-001', 'customer' => 'St. Mary School', 'items' => '500 Data Filer Boxes', 'address' => '123 School Lane, Quezon City', 'driver' => 'Juan Dela Cruz', 'driver_initial' => 'J', 'vehicle' => 'Toyota Truck - ABC 1234', 'dispatch_time' => '2026-02-17 08:00', 'delivery_time' => null, 'status' => 'pending', 'assigned_by' => 'Admin User', 'date' => '2026-02-20'],
-                ['order_id' => 'ORD-002', 'customer' => 'City High', 'items' => '200 Whiteboards', 'address' => '456 Education Ave, Manila', 'driver' => 'Pedro Garcia', 'driver_initial' => 'P', 'vehicle' => 'Suzuki Van - XYZ 5678', 'dispatch_time' => '2026-02-17 09:30', 'delivery_time' => null, 'status' => 'in_transit', 'assigned_by' => 'Admin User', 'date' => '2026-02-22'],
-            ];
-        @endphp
-
         @foreach($dispatches as $dispatch)
         <div class="dispatch-card bg-white rounded-xl border border-gray-200 p-6" data-status="{{ $dispatch['status'] }}" data-date="{{ $dispatch['date'] }}" data-search="{{ strtolower($dispatch['customer'] . ' ' . $dispatch['order_id'] . ' ' . $dispatch['driver']) }}">
             <div class="flex flex-col gap-4">

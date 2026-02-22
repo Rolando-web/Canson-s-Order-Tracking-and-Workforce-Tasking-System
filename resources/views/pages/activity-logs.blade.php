@@ -69,21 +69,6 @@
     {{-- Activity Timeline --}}
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="divide-y divide-gray-100">
-            @php
-                $activities = [
-                    ['id' => 1, 'user' => 'System Admin', 'initial' => 'SA', 'color' => 'bg-red-500', 'action' => 'Stock In', 'description' => 'Added 500 units to Corrugated Board Sheets inventory', 'timestamp' => '2026-02-17 10:21:00', 'icon' => 'inbox'],
-                    ['id' => 2, 'user' => 'Admin User', 'initial' => 'AU', 'color' => 'bg-purple-500', 'action' => 'Create Order', 'description' => 'Created new order ORD-005 for Gov. Office', 'timestamp' => '2026-02-17 09:45:00', 'icon' => 'plus'],
-                    ['id' => 3, 'user' => 'Maria Santos', 'initial' => 'MS', 'color' => 'bg-amber-500', 'action' => 'Update Assignment', 'description' => 'Marked task "Quality Check - Batch A" as in progress', 'timestamp' => '2026-02-17 09:30:00', 'icon' => 'edit'],
-                    ['id' => 4, 'user' => 'Juan Dela Cruz', 'initial' => 'JD', 'color' => 'bg-emerald-500', 'action' => 'Complete Dispatch', 'description' => 'Delivered order ORD-001 to St. Mary School', 'timestamp' => '2026-02-17 08:15:00', 'icon' => 'check'],
-                    ['id' => 5, 'user' => 'System Admin', 'initial' => 'SA', 'color' => 'bg-red-500', 'action' => 'Stock Out', 'description' => 'Removed 50 units from Data Filer Box (Blue) for order fulfillment', 'timestamp' => '2026-02-16 16:30:00', 'icon' => 'minus'],
-                    ['id' => 6, 'user' => 'Admin User', 'initial' => 'AU', 'color' => 'bg-purple-500', 'action' => 'Assign Task', 'description' => 'Assigned "Prepare Order ORD-002 Materials" to Maria Santos', 'timestamp' => '2026-02-16 14:20:00', 'icon' => 'user-plus'],
-                    ['id' => 7, 'user' => 'Pedro Garcia', 'initial' => 'PG', 'color' => 'bg-violet-500', 'action' => 'Login', 'description' => 'User logged into the system', 'timestamp' => '2026-02-16 08:00:00', 'icon' => 'login'],
-                    ['id' => 8, 'user' => 'System Admin', 'initial' => 'SA', 'color' => 'bg-red-500', 'action' => 'Update Employee', 'description' => 'Updated contact information for Ana Reyes', 'timestamp' => '2026-02-15 17:45:00', 'icon' => 'edit'],
-                    ['id' => 9, 'user' => 'Admin User', 'initial' => 'AU', 'color' => 'bg-purple-500', 'action' => 'Create Schedule', 'description' => 'Added schedule note "Production deadline" for February 20', 'timestamp' => '2026-02-15 15:30:00', 'icon' => 'calendar'],
-                    ['id' => 10, 'user' => 'Maria Santos', 'initial' => 'MS', 'color' => 'bg-amber-500', 'action' => 'Logout', 'description' => 'User logged out of the system', 'timestamp' => '2026-02-15 18:00:00', 'icon' => 'logout'],
-                ];
-            @endphp
-
             @foreach($activities as $activity)
             <div class="p-6 hover:bg-gray-50 transition-colors">
                 <div class="flex gap-4">
@@ -132,19 +117,35 @@
 
         {{-- Pagination --}}
         <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            <p class="text-sm text-gray-500">Showing 1 to 10 of 247 activities</p>
+            <p class="text-sm text-gray-500">Showing {{ $activities->firstItem() ?? 0 }} to {{ $activities->lastItem() ?? 0 }} of {{ $totalCount ?? 0 }} activities</p>
             <div class="flex items-center gap-2">
+                @if($activities->onFirstPage())
                 <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50" disabled>
                     Previous
                 </button>
-                <button class="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded-lg">1</button>
-                <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">2</button>
-                <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">3</button>
-                <span class="px-2 text-gray-400">...</span>
-                <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">25</button>
-                <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                @else
+                <a href="{{ $activities->previousPageUrl() }}" class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    Previous
+                </a>
+                @endif
+
+                @foreach($activities->getUrlRange(1, $activities->lastPage()) as $page => $url)
+                    @if($page == $activities->currentPage())
+                    <button class="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded-lg">{{ $page }}</button>
+                    @else
+                    <a href="{{ $url }}" class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">{{ $page }}</a>
+                    @endif
+                @endforeach
+
+                @if($activities->hasMorePages())
+                <a href="{{ $activities->nextPageUrl() }}" class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    Next
+                </a>
+                @else
+                <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50" disabled>
                     Next
                 </button>
+                @endif
             </div>
         </div>
     </div>

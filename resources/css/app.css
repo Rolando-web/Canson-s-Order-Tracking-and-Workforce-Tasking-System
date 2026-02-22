@@ -144,3 +144,29 @@
         transform: translateX(0);
     }
 }
+
+/* ==========================================================================
+   Chart Tooltip Hover Styles
+   ========================================================================== */
+.chart-dot-group .chart-tooltip,
+.chart-dot-group .chart-guide-line {
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+}
+
+.chart-dot-group .chart-dot {
+    transition: r 0.15s ease, stroke-width 0.15s ease;
+}
+
+.chart-dot-group:hover .chart-tooltip {
+    opacity: 1 !important;
+}
+
+.chart-dot-group:hover .chart-guide-line {
+    opacity: 0.3 !important;
+}
+
+.chart-dot-group:hover .chart-dot {
+    r: 5;
+    stroke-width: 2;
+}

@@ -111,4 +111,38 @@ class User extends Authenticatable
     {
         return in_array($this->role, $roles);
     }
+
+    // Relationships
+
+    public function assignments()
+    {
+        return $this->hasMany(Assignment::class, 'employee_id');
+    }
+
+    public function activeAssignments()
+    {
+        return $this->assignments()->whereIn('status', ['pending', 'in_progress']);
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
+    public function createdOrders()
+    {
+        return $this->hasMany(Order::class, 'created_by');
+    }
+
+    /**
+     * Get display initial(s) for avatars.
+     */
+    public function getInitialAttribute(): string
+    {
+        $parts = explode(' ', $this->name);
+        if (count($parts) >= 2) {
+            return strtoupper(substr($parts[0], 0, 1) . substr($parts[1], 0, 1));
+        }
+        return strtoupper(substr($this->name, 0, 1));
+    }
 }

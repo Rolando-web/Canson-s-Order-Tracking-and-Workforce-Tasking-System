@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('category');
             $table->integer('stock')->default(0);
             $table->string('unit'); // pcs, sheets, liters, reams, etc.
+            $table->decimal('unit_price', 10, 2)->default(0.00);
             $table->string('status')->default('In Stock');
             $table->boolean('is_best_seller')->default(false);
             $table->string('image_path')->nullable();

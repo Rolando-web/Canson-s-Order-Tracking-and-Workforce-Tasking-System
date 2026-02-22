@@ -1,0 +1,36 @@
+/* Sales Page Styles */
+.sales-page table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.sales-page table tbody tr:hover td:first-child {
+    position: relative;
+}
+
+.sales-page table tbody tr:hover td:first-child::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #10b981;
+    border-radius: 0 2px 2px 0;
+}
+
+/* Smooth chart animation */
+.sales-page svg polyline,
+.sales-page svg polygon {
+    transition: opacity 0.3s ease;
+}
+
+/* Card hover effects */
+.sales-page .grid > div {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sales-page .grid > div:hover {
+    transform: translateY(-1px);
+}
+
+/* Card hover effects */

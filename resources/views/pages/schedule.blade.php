@@ -4,7 +4,22 @@
     @vite('resources/css/pages/schedule.css')
 @endpush
 
+@php
+    $scheduleData = ($notes ?? collect())->map(function ($n) {
+        return [
+            'id' => $n->id,
+            'title' => $n->title,
+            'description' => $n->description,
+            'schedule_date' => $n->schedule_date->format('Y-m-d'),
+            'priority' => $n->priority,
+        ];
+    })->values();
+@endphp
+
 @push('scripts')
+    <script>
+        window.scheduleNotes = @json($scheduleData);
+    </script>
     @vite('resources/js/pages/schedule.js')
 @endpush
 
@@ -185,15 +200,24 @@ function saveScheduleNote() {
         description: document.getElementById('noteDescription').value,
         schedule_date: document.getElementById('noteDate').value,
         priority: document.getElementById('notePriority').value,
-        is_all_day: document.getElementById('noteAllDay').checked,
+        is_all_day: document.getElementById('noteAllDay').checked ? 1 : 0,
         start_time: document.getElementById('noteStartTime').value,
         end_time: document.getElementById('noteEndTime').value,
-        created_by: 'Admin User' // Would come from auth
+        _token: document.querySelector('meta[name="csrf-token"]')?.content
     };
-    
-    console.log('Saving schedule note:', data);
-    // Here you would send to backend
-    closeScheduleModal();
+
+    fetch('{{ route("schedule.notes.store") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': data._token,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(() => { closeScheduleModal(); location.reload(); })
+    .catch(err => { console.error(err); alert('Failed to save note'); });
 }
 
 // Add button to open modal when clicking on calendar dates

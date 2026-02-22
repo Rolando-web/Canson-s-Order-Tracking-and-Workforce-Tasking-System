@@ -50,6 +50,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Escape') closeMobile();
     });
 
+    /* ── Sidebar Dropdowns ── */
+    document.querySelectorAll('.sidebar-dropdown-toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const dropdown = toggle.closest('.sidebar-dropdown');
+            const isOpen = dropdown.getAttribute('data-dropdown-open') === 'true';
+            dropdown.setAttribute('data-dropdown-open', !isOpen);
+
+            const menu = dropdown.querySelector('.sidebar-dropdown-menu');
+            if (!isOpen) {
+                menu.style.maxHeight = menu.scrollHeight + 'px';
+            } else {
+                menu.style.maxHeight = '0';
+            }
+        });
+    });
+
+    /* Ensure open dropdowns have correct max-height on load */
+    document.querySelectorAll('.sidebar-dropdown[data-dropdown-open="true"]').forEach(dropdown => {
+        const menu = dropdown.querySelector('.sidebar-dropdown-menu');
+        if (menu) {
+            menu.style.maxHeight = menu.scrollHeight + 'px';
+        }
+    });
+
     /* Clean up mobile state when resizing past the breakpoint */
     window.addEventListener('resize', () => {
         if (window.innerWidth >= LG_BREAKPOINT) {

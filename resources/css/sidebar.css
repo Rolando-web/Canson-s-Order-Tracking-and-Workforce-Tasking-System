@@ -99,3 +99,34 @@
         margin-left: 0 !important;
     }
 }
+
+/* ── Sidebar Dropdown ── */
+.sidebar-dropdown-menu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease-in-out;
+}
+
+.sidebar-dropdown[data-dropdown-open="true"] .sidebar-dropdown-menu {
+    max-height: 200px;
+}
+
+.sidebar-dropdown[data-dropdown-open="true"] .sidebar-dropdown-chevron {
+    transform: rotate(180deg);
+}
+
+.sidebar-dropdown-menu .sidebar-link {
+    font-size: 0.8125rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+}
+
+/* Collapsed sidebar: hide dropdown items, show only icon */
+.sidebar.collapsed .sidebar-dropdown-menu {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-dropdown-chevron {
+    display: none;
+}
+}

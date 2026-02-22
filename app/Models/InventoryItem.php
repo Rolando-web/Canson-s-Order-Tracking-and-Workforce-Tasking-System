@@ -15,6 +15,7 @@ class InventoryItem extends Model
         'category',
         'stock',
         'unit',
+        'unit_price',
         'status',
         'is_best_seller',
         'image_path',
@@ -23,5 +24,16 @@ class InventoryItem extends Model
     protected $casts = [
         'is_best_seller' => 'boolean',
         'stock' => 'integer',
+        'unit_price' => 'decimal:2',
     ];
+
+    public function stockTransactions()
+    {
+        return $this->hasMany(StockTransaction::class, 'item_id');
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }

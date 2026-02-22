@@ -68,8 +68,10 @@
             <thead>
                 <tr class="border-b border-gray-200">
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order ID</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item Name</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivery Date</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Quantity</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Amount</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
@@ -77,18 +79,10 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-                @php
-                    $orders = [
-                        ['id' => 'ORD-001', 'customer' => 'St. Mary School', 'contact' => '0917-123-4567', 'address' => '123 School Lane, Quezon City', 'items' => '500 Data Filer Boxes', 'delivery_date' => '2026-02-20', 'total' => 25000, 'status' => 'Completed', 'assigned' => 'Juan Dela Cruz', 'initial' => 'J', 'priority' => 'Normal', 'priorityColor' => 'bg-emerald-50 text-emerald-600 border-emerald-200', 'notes' => 'Customer prefers morning delivery', 'order_items' => [['name' => 'Data Filer Box (Blue)', 'qty' => 500, 'price' => 50, 'subtotal' => 25000]]],
-                        ['id' => 'ORD-002', 'customer' => 'City High', 'contact' => '0918-234-5678', 'address' => '456 Education Ave, Manila', 'items' => '200 Whiteboards', 'delivery_date' => '2026-02-22', 'total' => 60000, 'status' => 'In-Progress', 'assigned' => 'Maria Santos', 'initial' => 'M', 'priority' => 'High', 'priorityColor' => 'bg-red-50 text-red-600 border-red-200', 'notes' => 'Rush order, fragile items', 'order_items' => [['name' => 'Whiteboard (Large)', 'qty' => 200, 'price' => 300, 'subtotal' => 60000]]],
-                        ['id' => 'ORD-003', 'customer' => 'Office Depot', 'contact' => '0919-345-6789', 'address' => '789 Business District, Makati', 'items' => '1000 Storage Boxes', 'delivery_date' => '2026-02-25', 'total' => 80000, 'status' => 'Pending', 'assigned' => null, 'initial' => '', 'priority' => 'Normal', 'priorityColor' => 'bg-emerald-50 text-emerald-600 border-emerald-200', 'notes' => '', 'order_items' => [['name' => 'Storage Box (Medium)', 'qty' => 500, 'price' => 80, 'subtotal' => 40000], ['name' => 'Storage Box (Large)', 'qty' => 500, 'price' => 80, 'subtotal' => 40000]]],
-                        ['id' => 'ORD-004', 'customer' => 'Learning Tree', 'contact' => '0920-456-7890', 'address' => '321 Learning St, Pasig', 'items' => '50 Whiteboards', 'delivery_date' => '2026-02-18', 'total' => 15000, 'status' => 'Pending', 'assigned' => null, 'initial' => '', 'priority' => 'Urgent', 'priorityColor' => 'bg-red-50 text-red-600 border-red-200', 'notes' => 'Urgent! Needed for school event', 'order_items' => [['name' => 'Whiteboard (Small)', 'qty' => 50, 'price' => 300, 'subtotal' => 15000]]],
-                        ['id' => 'ORD-005', 'customer' => 'Gov. Office', 'contact' => '0921-567-8901', 'address' => '555 Government Complex, Taguig', 'items' => '300 Filer Boxes', 'delivery_date' => '2026-03-01', 'total' => 15000, 'status' => 'In-Progress', 'assigned' => 'Ana Lim', 'initial' => 'A', 'priority' => 'High', 'priorityColor' => 'bg-red-50 text-red-600 border-red-200', 'notes' => 'Deliver to security office first', 'order_items' => [['name' => 'Data Filer Box (Red)', 'qty' => 300, 'price' => 50, 'subtotal' => 15000]]],
-                    ];
-                @endphp
                 @foreach($orders as $order)
                 <tr class="hover:bg-gray-50 transition-colors">
                     <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $order['id'] }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700 max-w-[200px] truncate" title="{{ $order['items'] }}">{{ Str::limit($order['items'], 30) }}</td>
                     <td class="px-6 py-4">
                         <div>
                             <p class="text-sm font-medium text-gray-900">{{ $order['customer'] }}</p>
@@ -101,6 +95,7 @@
                             {{ date('M d, Y', strtotime($order['delivery_date'])) }}
                         </div>
                     </td>
+                    <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ number_format($order['total_qty']) }}</td>
                     <td class="px-6 py-4 text-sm font-semibold text-gray-900">₱{{ number_format($order['total'], 2) }}</td>
                     <td class="px-6 py-4">
                         @php

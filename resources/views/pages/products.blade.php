@@ -1,0 +1,298 @@
+@extends('partials.app', ['title' => 'Products - Canson', 'activePage' => 'products'])
+
+@push('styles')
+<style>
+    .product-card {
+        transition: all 0.2s ease;
+    }
+    .product-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+</style>
+@endpush
+
+@section('nav')
+    <div class="flex items-center justify-between w-full">
+        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
+        <div class="flex items-center gap-3">
+            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
+            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">AD</div>
+        </div>
+    </div>
+@endsection
+
+@section('content')
+<div class="products-page">
+    {{-- Header --}}
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">Products</h2>
+            <p class="text-gray-500 mt-1">Manage and add products to your inventory</p>
+        </div>
+        <button onclick="openAddProductModal()"
+            class="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+            </svg>
+            Add New Product
+        </button>
+    </div>
+
+    {{-- Search & Filter Bar --}}
+    <div class="flex flex-col sm:flex-row gap-3 mb-6">
+        <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+            </svg>
+            <input type="text" id="productSearch" placeholder="Search products..."
+                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+        </div>
+        <select id="categoryFilter"
+            class="px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            <option value="">All Categories</option>
+            @foreach($categories as $category)
+                <option value="{{ $category }}">{{ $category }}</option>
+            @endforeach
+        </select>
+        <select id="statusFilter"
+            class="px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            <option value="">All Status</option>
+            <option value="In Stock">In Stock</option>
+            <option value="Low Stock">Low Stock</option>
+            <option value="Out of Stock">Out of Stock</option>
+        </select>
+    </div>
+
+    {{-- Products Grid --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" id="productsGrid">
+        @forelse($items as $item)
+        <div class="product-card bg-white rounded-xl border border-gray-200 overflow-hidden"
+             data-name="{{ strtolower($item->name) }}"
+             data-category="{{ $item->category }}"
+             data-status="{{ $item->status }}">
+            {{-- Product Image --}}
+            <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
+                @if($item->image_path)
+                    <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}"
+                        class="w-full h-full object-cover">
+                @else
+                    <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+                    </svg>
+                @endif
+            </div>
+
+            {{-- Product Info --}}
+            <div class="p-4">
+                <div class="flex items-start justify-between mb-2">
+                    <h3 class="text-sm font-semibold text-gray-900 leading-tight">{{ $item->name }}</h3>
+                    <div class="flex items-center gap-1.5">
+                        @if($item->is_best_seller)
+                            <span class="flex-shrink-0 px-2 py-0.5 text-[0.65rem] font-bold bg-amber-100 text-amber-700 rounded-full">BEST</span>
+                        @endif
+                        <button onclick="openEditProductModal({{ $item->id }}, '{{ addslashes($item->name) }}', {{ $item->unit_price ?? 0 }})" 
+                            class="flex-shrink-0 w-7 h-7 rounded-lg bg-gray-100 hover:bg-emerald-100 flex items-center justify-center transition-colors group"
+                            title="Edit product">
+                            <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <p class="text-xs text-gray-400 mb-1">{{ $item->item_id }} &middot; {{ $item->category }}</p>
+                <p class="text-sm font-bold text-emerald-600 mb-3">₱{{ number_format($item->unit_price ?? 0, 2) }}</p>
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500">Stock</p>
+                        <p class="text-sm font-bold text-gray-900">{{ $item->stock }} <span class="text-gray-400 font-normal">{{ $item->unit }}</span></p>
+                    </div>
+                    <span class="px-2.5 py-1 text-xs font-medium rounded-full
+                        @if($item->status === 'In Stock') bg-emerald-100 text-emerald-700
+                        @elseif($item->status === 'Low Stock') bg-amber-100 text-amber-700
+                        @else bg-red-100 text-red-700
+                        @endif">
+                        {{ $item->status }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        @empty
+        <div class="col-span-full text-center py-16">
+            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-400 mb-1">No products yet</h3>
+            <p class="text-sm text-gray-400 mb-4">Add your first product to get started</p>
+            <button onclick="openAddProductModal()"
+                class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                </svg>
+                Add New Product
+            </button>
+        </div>
+        @endforelse
+    </div>
+</div>
+
+{{-- Add Product Modal --}}
+@include('pages.Modals.addProductModal')
+
+{{-- Edit Product Modal --}}
+@include('pages.Modals.editProductModal')
+@endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('productSearch');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const cards = document.querySelectorAll('.product-card');
+
+    function filterProducts() {
+        const search = searchInput.value.toLowerCase();
+        const category = categoryFilter.value;
+        const status = statusFilter.value;
+
+        cards.forEach(card => {
+            const matchName = card.dataset.name.includes(search);
+            const matchCategory = !category || card.dataset.category === category;
+            const matchStatus = !status || card.dataset.status === status;
+
+            card.style.display = (matchName && matchCategory && matchStatus) ? '' : 'none';
+        });
+    }
+
+    searchInput?.addEventListener('input', filterProducts);
+    categoryFilter?.addEventListener('change', filterProducts);
+    statusFilter?.addEventListener('change', filterProducts);
+
+    // Add Product Modal
+    window.openAddProductModal = function() {
+        document.getElementById('addProductModal')?.classList.remove('hidden');
+    };
+
+    window.closeAddProductModal = function() {
+        document.getElementById('addProductModal')?.classList.add('hidden');
+    };
+
+    // Edit Product Modal
+    window.openEditProductModal = function(id, name, price) {
+        document.getElementById('editProductId').value = id;
+        document.getElementById('editProductName').value = name;
+        document.getElementById('editProductPrice').value = price;
+        document.getElementById('editProductModal')?.classList.remove('hidden');
+    };
+
+    window.closeEditProductModal = function() {
+        document.getElementById('editProductModal')?.classList.add('hidden');
+    };
+
+    window.submitEditProduct = function() {
+        const id = document.getElementById('editProductId')?.value;
+        const name = document.getElementById('editProductName')?.value;
+        const price = document.getElementById('editProductPrice')?.value;
+
+        if (!name || price === '' || price === null) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+
+        fetch(`/products/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ name, unit_price: price })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeEditProductModal();
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to update product.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the product.');
+        });
+    };
+
+    // Preview Image
+    window.previewAddProductImage = function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('addProductImagePreview');
+                const previewImg = document.getElementById('addProductImagePreviewImg');
+                const placeholder = document.getElementById('addProductImagePlaceholder');
+                previewImg.src = e.target.result;
+                preview?.classList.remove('hidden');
+                placeholder?.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Submit Add Product
+    window.submitAddProduct = function() {
+        const form = document.getElementById('addProductForm');
+        const formData = new FormData();
+
+        const name = document.getElementById('addProductName')?.value;
+        const category = document.getElementById('addProductCategory')?.value;
+        const unit = document.getElementById('addProductUnit')?.value;
+        const price = document.getElementById('addProductPrice')?.value;
+        const stock = document.getElementById('addProductStock')?.value;
+        const status = document.getElementById('addProductStatus')?.value;
+        const image = document.getElementById('addProductImage')?.files[0];
+
+        if (!name || !category || !unit || !price || !stock) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+
+        formData.append('name', name);
+        formData.append('category', category);
+        formData.append('unit', unit);
+        formData.append('unit_price', price);
+        formData.append('stock', stock);
+        formData.append('status', status);
+        if (image) formData.append('image', image);
+
+        fetch('/products', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ||
+                                 document.querySelector('input[name="_token"]')?.value
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeAddProductModal();
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to add product.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while adding the product.');
+        });
+    };
+});
+</script>
+@endpush

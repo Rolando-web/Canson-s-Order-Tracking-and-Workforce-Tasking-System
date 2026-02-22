@@ -27,10 +27,6 @@
             <p class="text-gray-500 mt-1">Track stock levels and movement history</p>
         </div>
         <div class="flex items-center gap-3">
-            <button onclick="openAddProductModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                Add Product
-            </button>
             <div class="flex flex-col rounded-lg border border-gray-300 overflow-hidden sm:flex-row">
                 <button class="inventory-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white" data-tab="current-stock">Current Stock</button>
                 <button class="inventory-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 md:text-sm bg-white text-gray-600 hover:bg-gray-50" data-tab="movement-history">Movement History</button>

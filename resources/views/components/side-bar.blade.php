@@ -21,9 +21,8 @@
             </div>
             {{-- Brand Text --}}
             <div class="sidebar-label flex flex-col leading-tight whitespace-nowrap overflow-hidden">
-                <span class="text-base font-extrabold text-white tracking-wide">Canson</span>
-                <span class="text-[0.5rem] text-emerald-300 uppercase tracking-widest leading-tight">School &amp; Office</span>
-                <span class="text-[0.8rem] text-emerald-400 uppercase tracking-[0.2em] leading-tight">Supplies</span>
+                <span class="text-base font-extrabold text-white tracking-wide">Canson's</span>
+                <span class="text-[0.6rem] text-emerald-300 tracking-widest leading-tight">School &amp; Office Supplies</span>
             </div>
         </div>
 
@@ -65,8 +64,12 @@
         
         {{-- For Admin Manager and Super Admin --}}
         @if(auth()->user()->isAdminOrAbove())
-            <x-side-bar-link icon="inventory" label="Inventory" :active="$active === 'inventory'" href="/inventory" />
+            <x-side-bar-dropdown icon="inventory" label="Inventory" :active="in_array($active, ['inventory', 'products'])" :open="in_array($active, ['inventory', 'products'])">
+                <x-side-bar-link icon="inventory" label="Inventory List" :active="$active === 'inventory'" href="/inventory" />
+                <x-side-bar-link icon="products" label="Products" :active="$active === 'products'" href="/products" />
+            </x-side-bar-dropdown>
             <x-side-bar-link icon="analytics" label="Analytics" :active="$active === 'analytics'" href="/analytics" />
+            <x-side-bar-link icon="sales" label="Sales" :active="$active === 'sales'" href="/sales" />
             <x-side-bar-link icon="employees" label="Employees" :active="$active === 'employees'" href="/employees" />
             <x-side-bar-link icon="logs" label="Activity Logs" :active="$active === 'activity-logs'" href="/activity-logs" />
         @endif

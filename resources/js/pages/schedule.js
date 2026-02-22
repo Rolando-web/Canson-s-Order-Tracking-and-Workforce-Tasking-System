@@ -7,12 +7,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentDate = new Date();
     let currentWeekStart = null;
 
-    // Sample events data (you can replace this with API calls)
-    const events = {
-        '2026-02-10': [{ title: 'Maintenance', desc: 'Machine A Maintenance', color: 'bg-yellow-100 text-yellow-800' }],
-        '2026-02-14': [{ title: 'Valentine', desc: 'Special Production', color: 'bg-pink-100 text-pink-800' }],
-        '2026-03-15': [{ title: 'Meeting', desc: 'Team Review', color: 'bg-blue-100 text-blue-800' }],
+    // Build events from backend schedule notes
+    const events = {};
+    const priorityColors = {
+        'high': 'bg-red-100 text-red-800',
+        'medium': 'bg-yellow-100 text-yellow-800',
+        'low': 'bg-blue-100 text-blue-800',
     };
+    if (window.scheduleNotes) {
+        window.scheduleNotes.forEach(note => {
+            if (!events[note.schedule_date]) events[note.schedule_date] = [];
+            events[note.schedule_date].push({
+                title: note.title,
+                desc: note.description || '',
+                color: priorityColors[note.priority] || 'bg-blue-100 text-blue-800',
+            });
+        });
+    }
 
     // Get elements
     const calendarGrid = document.getElementById('calendarGrid');

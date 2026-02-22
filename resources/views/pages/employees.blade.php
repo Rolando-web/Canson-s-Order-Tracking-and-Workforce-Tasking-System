@@ -44,7 +44,7 @@
                     </svg>
                 </div>
                 <div class="grow">
-                    <p class="text-2xl font-bold text-gray-900 text-end">5</p>
+                    <p class="text-2xl font-bold text-gray-900 text-end">{{ $totalEmployees ?? 0 }}</p>
                     <p class="text-sm text-gray-500 text-end">Total Employees</p>
                 </div>
             </div>
@@ -57,7 +57,7 @@
                     </svg>
                 </div>
                 <div class="grow">
-                    <p class="text-2xl font-bold text-gray-900 text-end">4</p>
+                    <p class="text-2xl font-bold text-gray-900 text-end">{{ $activeCount ?? 0 }}</p>
                     <p class="text-sm text-gray-500 text-end">Active</p>
                 </div>
             </div>
@@ -70,7 +70,7 @@
                     </svg>
                 </div>
                 <div class="grow">
-                    <p class="text-2xl font-bold text-gray-900 text-end">1</p>
+                    <p class="text-2xl font-bold text-gray-900 text-end">{{ $inactiveCount ?? 0 }}</p>
                     <p class="text-sm text-gray-500 text-end">Inactive</p>
                 </div>
             </div>
@@ -108,16 +108,6 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @php
-                        $employees = [
-                            ['first' => 'Juan', 'last' => 'Dela Cruz', 'role' => 'employee', 'contact' => '0917-123-4567', 'status' => 'Active', 'color' => 'bg-emerald-500'],
-                            ['first' => 'Maria', 'last' => 'Santos', 'role' => 'admin', 'contact' => '0918-234-5678', 'status' => 'Active', 'color' => 'bg-amber-500'],
-                            ['first' => 'Pedro', 'last' => 'Garcia', 'role' => 'employee', 'contact' => '0919-345-6789', 'status' => 'Active', 'color' => 'bg-violet-500'],
-                            ['first' => 'Ana', 'last' => 'Reyes', 'role' => 'employee', 'contact' => '0920-456-7890', 'status' => 'Active', 'color' => 'bg-rose-500'],
-                            ['first' => 'Carlos', 'last' => 'Lopez', 'role' => 'super_admin', 'contact' => '0921-567-8901', 'status' => 'Inactive', 'color' => 'bg-gray-400'],
-                        ];
-                    @endphp
-
                     @foreach($employees as $emp)
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4">

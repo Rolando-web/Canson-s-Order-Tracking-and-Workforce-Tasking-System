@@ -155,16 +155,42 @@ window.submitAddOrder = function(event) {
         }
     });
 
-    console.log('New Order Data:', orderData);
+    if (orderData.items.length === 0) {
+        alert('Please add at least one item to the order.');
+        return;
+    }
 
-    closeAddOrderModal();
-    showOrderToast('Order created successfully!');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    fetch('/orders', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeAddOrderModal();
+            showOrderToast('Order created successfully!');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            alert(data.message || 'Failed to create order.');
+        }
+    })
+    .catch(err => {
+        console.error('Order creation error:', err);
+        alert('Something went wrong. Please try again.');
+    });
 };
 
 // ========== Toast ==========
 function showOrderToast(message) {
     const toast = document.createElement('div');
-    toast.className = 'fixed bottom-6 right-6 z-[60] bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium animate-slide-up';
+    toast.className = 'fixed top-6 right-6 z-[60] bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium animate-slide-up';
     toast.innerHTML = `
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         ${message}

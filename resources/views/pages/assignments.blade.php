@@ -27,16 +27,6 @@
             <p class="text-sm text-gray-500 mb-4">Select a worker to manage assignments</p>
 
             <div class="space-y-1" id="workerList">
-                @php
-                    $workers = [
-                        ['name' => 'Juan Dela Cruz', 'initial' => 'J', 'color' => 'bg-emerald-500', 'status' => 'AVAILABLE', 'statusColor' => 'bg-green-100 text-green-700', 'dept' => 'General', 'active' => 0],
-                        ['name' => 'Maria Santos', 'initial' => 'M', 'color' => 'bg-amber-500', 'status' => 'BUSY', 'statusColor' => 'bg-amber-100 text-amber-700', 'dept' => 'Assembly', 'active' => 2],
-                        ['name' => 'Pedro Reyes', 'initial' => 'P', 'color' => 'bg-green-500', 'status' => 'AVAILABLE', 'statusColor' => 'bg-green-100 text-green-700', 'dept' => 'Packaging', 'active' => 0],
-                        ['name' => 'Ana Lim', 'initial' => 'A', 'color' => 'bg-amber-500', 'status' => 'BUSY', 'statusColor' => 'bg-amber-100 text-amber-700', 'dept' => 'QC', 'active' => 1],
-                        ['name' => 'Luis Torres', 'initial' => 'L', 'color' => 'bg-gray-400', 'status' => 'OFFLINE', 'statusColor' => 'bg-gray-100 text-gray-500', 'dept' => 'Logistics', 'active' => 0],
-                    ];
-                @endphp
-
                 @foreach($workers as $worker)
                 <div class="worker-item flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-200 transition-all" onclick="showWorkerAssignments('{{ $worker['name'] }}', '{{ $worker['initial'] }}', '{{ $worker['color'] }}', '{{ $worker['status'] }}', {{ $worker['active'] }})">
                     <div class="flex items-center gap-3">
@@ -63,9 +53,9 @@
         </div>
 
         {{-- Worker Details --}}
-        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 min-h-[400px]">
             {{-- Empty State --}}
-            <div id="emptyState" class="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
+            <div id="emptyState" class="flex flex-col items-center justify-center h-full text-center">
                 <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
                 </svg>
@@ -97,6 +87,86 @@
             </div>
         </div>
     </div>
+
+    {{-- Available Orders Section --}}
+    <div class="mt-6 bg-white rounded-xl border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
+                    </svg>
+                    Available Orders
+                </h3>
+                <p class="text-sm text-gray-500">Unassigned orders ready to be assigned to employees</p>
+            </div>
+            <span id="availableOrderCount" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-700">{{ count($availableOrders) }} orders</span>
+        </div>
+
+        @if(count($availableOrders) === 0)
+        <div class="text-center py-10">
+            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-gray-500 font-medium">All orders have been assigned!</p>
+            <p class="text-gray-400 text-sm mt-1">New unassigned orders will appear here</p>
+        </div>
+        @else
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="availableOrdersGrid">
+            @foreach($availableOrders as $order)
+            <div class="available-order-card border-2 border-gray-200 rounded-xl p-4 hover:border-emerald-400 hover:shadow-md transition-all group" data-order-id="{{ $order['order_id'] }}">
+                {{-- Order Header --}}
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-900">{{ $order['order_id'] }}</h4>
+                            <p class="text-xs text-gray-500">{{ $order['customer'] }}</p>
+                        </div>
+                    </div>
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-200">UNASSIGNED</span>
+                </div>
+
+                {{-- Order Details --}}
+                <div class="space-y-2 mb-3">
+                    <div class="flex items-center gap-2 text-xs text-gray-600">
+                        <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+                        </svg>
+                        <span class="truncate" title="{{ $order['items'] }}">{{ Str::limit($order['items'], 40) }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-gray-600">
+                        <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/>
+                        </svg>
+                        Deliver by {{ \Carbon\Carbon::parse($order['delivery_date'])->format('M d, Y') }}
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-gray-600">
+                        <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/>
+                        </svg>
+                        <span class="truncate" title="{{ $order['delivery_address'] }}">{{ Str::limit($order['delivery_address'], 35) }}</span>
+                    </div>
+                </div>
+
+                {{-- Footer --}}
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <p class="text-sm font-bold text-emerald-600">₱{{ number_format((float)$order['total_amount'], 2) }}</p>
+                    <button onclick="quickAssignOrder('{{ $order['order_id'] }}')" class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors opacity-0 group-hover:opacity-100">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                        Assign
+                    </button>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @endif
+    </div>
 </div>
 
 {{-- New Assignment Modal --}}
@@ -118,9 +188,6 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Select Order</label>
                     <select id="orderSelect" onchange="updateOrderPreview()" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         <option value="">-- Select an order --</option>
-                        <option value="ORD-001">ORD-001 - St. Mary School (500 Data Filer Boxes)</option>
-                        <option value="ORD-003">ORD-003 - Office Depot (1000 Storage Boxes)</option>
-                        <option value="ORD-004">ORD-004 - Learning Tree (50 Whiteboards)</option>
                     </select>
                 </div>
 
@@ -186,80 +253,40 @@
     </div>
 </div>
 
+{{-- Quick Assign Modal (Worker Picker) --}}
+<div id="quickAssignModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeQuickAssignModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Quick Assign</h3>
+                    <p class="text-sm text-gray-500">Assign <span id="quickAssignOrderLabel" class="font-semibold text-emerald-600"></span> to an employee</p>
+                </div>
+                <button onclick="closeQuickAssignModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
+                <div class="space-y-1" id="quickAssignWorkerList">
+                    {{-- Populated dynamically --}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 let currentEmployeeName = '';
+let quickAssignOrderId = '';
 
-const assignmentsData = {
-    'Juan Dela Cruz': [],
-    'Maria Santos': [
-        {
-            order_id: 'ORD-002',
-            customer: 'City High',
-            customer_contact: '0918-234-5678',
-            items: '200 Whiteboards',
-            delivery_address: '456 Education Ave, Manila',
-            delivery_date: '2026-02-22',
-            total_amount: 60000,
-            priority: 'high',
-            status: 'in_progress',
-            notes: 'Rush order, fragile items',
-            assigned_date: '2026-02-17',
-            assigned_by: 'Admin User'
-        }
-    ],
-    'Pedro Reyes': [],
-    'Ana Lim': [
-        {
-            order_id: 'ORD-005',
-            customer: 'Gov. Office',
-            customer_contact: '0921-567-8901',
-            items: '300 Filer Boxes',
-            delivery_address: '555 Government Complex, Taguig',
-            delivery_date: '2026-03-01',
-            total_amount: 15000,
-            priority: 'high',
-            status: 'in_progress',
-            notes: 'Deliver to security office first',
-            assigned_date: '2026-02-16',
-            assigned_by: 'Admin User'
-        }
-    ],
-    'Luis Torres': []
-};
+const assignmentsData = @json($assignmentsData ?? []);
 
 // Available orders for assignment
-const availableOrders = [
-    {
-        order_id: 'ORD-006',
-        customer: 'Tech Solutions Inc.',
-        customer_contact: '0922-678-9012',
-        items: '150 Notebooks',
-        delivery_address: '777 Innovation Hub, BGC',
-        delivery_date: '2026-02-25',
-        total_amount: 45000,
-        notes: 'Deliver to HR department'
-    },
-    {
-        order_id: 'ORD-007',
-        customer: 'Mega Store',
-        customer_contact: '0923-789-0123',
-        items: '500 Ballpens, 300 Folders',
-        delivery_address: '888 Retail Complex, Alabang',
-        delivery_date: '2026-02-24',
-        total_amount: 22500,
-        notes: 'Bulk order - standard delivery'
-    },
-    {
-        order_id: 'ORD-008',
-        customer: 'University of Manila',
-        customer_contact: '0924-890-1234',
-        items: '100 Whiteboards, 50 Markers',
-        delivery_address: '999 Education Drive, Manila',
-        delivery_date: '2026-02-28',
-        total_amount: 85000,
-        notes: 'Rush order for new semester'
-    }
-];
+const availableOrders = @json($availableOrders ?? []);
+
+// Workers data for employee lookup
+const workersData = @json($workers ?? []);
 
 function showWorkerAssignments(name, initial, color, status, activeCount) {
     document.getElementById('emptyState').classList.add('hidden');
@@ -457,54 +484,153 @@ function updateOrderPreview() {
 function assignOrderToEmployee() {
     const selectedOrderId = document.getElementById('orderSelect').value;
     const priority = document.getElementById('assignmentPriority').value;
+    const notes = document.getElementById('assignmentNotes').value;
     
     if (!selectedOrderId || !currentEmployeeName) return;
     
-    const order = availableOrders.find(o => o.order_id === selectedOrderId);
-    if (!order) return;
+    // Find employee_id from workers data
+    const worker = workersData.find(w => w.name === currentEmployeeName);
+    if (!worker) return;
     
-    // Create assignment object
-    const assignment = {
-        ...order,
-        priority: priority,
-        status: 'pending',
-        assigned_date: new Date().toISOString().split('T')[0],
-        assigned_by: 'Admin User' // In real app, this would be the logged-in user
-    };
+    const assignBtn = document.getElementById('assignBtn');
+    assignBtn.disabled = true;
+    assignBtn.textContent = 'Assigning...';
     
-    // Add to assignments
-    if (!assignmentsData[currentEmployeeName]) {
-        assignmentsData[currentEmployeeName] = [];
-    }
-    assignmentsData[currentEmployeeName].push(assignment);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     
-    // Remove from available orders
-    const index = availableOrders.findIndex(o => o.order_id === selectedOrderId);
-    if (index > -1) {
-        availableOrders.splice(index, 1);
-    }
-    
-    // Refresh the display if this worker is currently selected
-    const workerAssignments = document.getElementById('workerAssignments');
-    if (!workerAssignments.classList.contains('hidden')) {
-        // Find the worker's status and details to refresh
-        const workerName = document.getElementById('workerName').textContent;
-        if (workerName === currentEmployeeName) {
-            // Get worker details from the button
-            const workerButtons = document.querySelectorAll('[onclick^="showWorkerAssignments"]');
-            workerButtons.forEach(button => {
-                if (button.textContent.includes(currentEmployeeName)) {
-                    button.click();
-                }
-            });
+    fetch('/assignments', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({
+            order_id: selectedOrderId,
+            employee_id: worker.id,
+            priority: priority,
+            notes: notes || null,
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeAssignmentModal();
+            showToast(`Order ${selectedOrderId} successfully assigned to ${currentEmployeeName}!`, 'success');
+            // Reload page to refresh all data
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            showToast('Failed to assign order. Please try again.', 'error');
+            assignBtn.disabled = false;
+            assignBtn.textContent = 'Assign Order';
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred. Please try again.', 'error');
+        assignBtn.disabled = false;
+        assignBtn.textContent = 'Assign Order';
+    });
+}
+
+function quickAssignOrder(orderId) {
+    // Open a worker picker for quick assignment
+    const workerNames = workersData.map(w => w.name);
+    if (workerNames.length === 0) {
+        showToast('No employees available for assignment.', 'error');
+        return;
     }
     
-    // Close modal
-    closeAssignmentModal();
+    // Set the order, then open the quick assign modal
+    quickAssignOrderId = orderId;
     
-    // Show success message
-    alert(`Order ${selectedOrderId} successfully assigned to ${currentEmployeeName}!`);
+    const pickerHtml = workerNames.map(name => {
+        const worker = workersData.find(w => w.name === name);
+        const activeCount = worker ? worker.active : 0;
+        return `
+            <button onclick="confirmQuickAssign('${name}')" class="flex items-center justify-between w-full p-3 rounded-lg hover:bg-emerald-50 border border-transparent hover:border-emerald-200 transition-all text-left">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full ${worker.color} flex items-center justify-center text-white font-bold text-xs">${worker.initial}</div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">${name}</p>
+                        <p class="text-xs text-gray-500">${activeCount} active assignment${activeCount !== 1 ? 's' : ''}</p>
+                    </div>
+                </div>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+            </button>
+        `;
+    }).join('');
+    
+    document.getElementById('quickAssignOrderLabel').textContent = orderId;
+    document.getElementById('quickAssignWorkerList').innerHTML = pickerHtml;
+    document.getElementById('quickAssignModal').classList.remove('hidden');
+}
+
+function closeQuickAssignModal() {
+    document.getElementById('quickAssignModal').classList.add('hidden');
+    quickAssignOrderId = '';
+}
+
+function confirmQuickAssign(employeeName) {
+    if (!quickAssignOrderId) return;
+    
+    const worker = workersData.find(w => w.name === employeeName);
+    if (!worker) return;
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    // Disable all buttons in the modal
+    document.querySelectorAll('#quickAssignWorkerList button').forEach(btn => btn.disabled = true);
+    
+    fetch('/assignments', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({
+            order_id: quickAssignOrderId,
+            employee_id: worker.id,
+            priority: 'normal',
+            notes: null,
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeQuickAssignModal();
+            showToast(`Order ${quickAssignOrderId} assigned to ${employeeName}!`, 'success');
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            showToast('Failed to assign order. Please try again.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred. Please try again.', 'error');
+    });
+}
+
+function showToast(message, type) {
+    const existing = document.getElementById('assignmentToast');
+    if (existing) existing.remove();
+    
+    const bgColor = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+    const toast = document.createElement('div');
+    toast.id = 'assignmentToast';
+    toast.className = `fixed top-6 right-6 z-[100] ${bgColor} text-white px-5 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 animate-fade-in`;
+    toast.innerHTML = `
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            ${type === 'success' 
+                ? '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                : '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>'
+            }
+        </svg>
+        ${message}
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
 }
 
 </script>
