@@ -49,28 +49,21 @@ class ScheduleController extends Controller
     public function storeNote(Request $request)
     {
         $validated = $request->validate([
-            'noteTitle'       => 'required|string|max:100',
-            'noteDescription' => 'nullable|string',
-            'noteDate'        => 'required|date',
-            'notePriority'    => 'required|in:low,medium,high',
-            'noteAllDay'      => 'sometimes|boolean',
-            'noteStartTime'   => 'nullable|date_format:H:i',
-            'noteEndTime'     => 'nullable|date_format:H:i',
+            'title'       => 'required|string|max:100',
+            'description' => 'nullable|string',
         ]);
 
         $note = ScheduleNote::create([
-            'title'         => $validated['noteTitle'],
-            'description'   => $validated['noteDescription'] ?? null,
-            'schedule_date' => $validated['noteDate'],
-            'start_time'    => $validated['noteStartTime'] ?? null,
-            'end_time'      => $validated['noteEndTime'] ?? null,
-            'is_all_day'    => $request->boolean('noteAllDay'),
-            'priority'      => $validated['notePriority'],
+            'title'         => $validated['title'],
+            'description'   => $validated['description'] ?? null,
+            'schedule_date' => now()->toDateString(),
+            'is_all_day'    => true,
+            'priority'      => 'medium',
             'created_by'    => auth()->id(),
             'created_at'    => now(),
         ]);
 
-        ActivityLog::log('Create Schedule', "Created schedule note: {$note->title} on {$validated['noteDate']}");
+        ActivityLog::log('Create Schedule', "Created schedule note: {$note->title}");
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'note' => $note]);
@@ -82,23 +75,13 @@ class ScheduleController extends Controller
     public function updateNote(Request $request, ScheduleNote $note)
     {
         $validated = $request->validate([
-            'noteTitle'       => 'required|string|max:100',
-            'noteDescription' => 'nullable|string',
-            'noteDate'        => 'required|date',
-            'notePriority'    => 'required|in:low,medium,high',
-            'noteAllDay'      => 'sometimes|boolean',
-            'noteStartTime'   => 'nullable|date_format:H:i',
-            'noteEndTime'     => 'nullable|date_format:H:i',
+            'title'       => 'required|string|max:100',
+            'description' => 'nullable|string',
         ]);
 
         $note->update([
-            'title'         => $validated['noteTitle'],
-            'description'   => $validated['noteDescription'] ?? null,
-            'schedule_date' => $validated['noteDate'],
-            'start_time'    => $validated['noteStartTime'] ?? null,
-            'end_time'      => $validated['noteEndTime'] ?? null,
-            'is_all_day'    => $request->boolean('noteAllDay'),
-            'priority'      => $validated['notePriority'],
+            'title'         => $validated['title'],
+            'description'   => $validated['description'] ?? null,
         ]);
 
         ActivityLog::log('Update Schedule', "Updated schedule note: {$note->title}");

@@ -16,7 +16,7 @@ class OrdersController extends Controller
 {
     public function index()
     {
-        $inventoryItems = InventoryItem::select('id', 'name', 'item_id', 'stock', 'unit')
+        $inventoryItems = InventoryItem::select('id', 'name', 'item_id', 'stock', 'unit', 'unit_price')
             ->orderBy('name')
             ->get();
 
@@ -87,7 +87,7 @@ class OrdersController extends Controller
                 'delivery_address' => $validated['delivery_address'],
                 'delivery_date'    => $validated['delivery_date'],
                 'total_amount'     => $totalAmount,
-                'status'           => 'Completed',
+                'status'           => 'Pending',
                 'priority'         => $validated['priority'],
                 'notes'            => $validated['notes'] ?? null,
                 'created_by'       => auth()->id(),
@@ -116,7 +116,7 @@ class OrdersController extends Controller
                 }
             }
 
-            ActivityLog::log('Create Order', "Created paid order {$order->order_id} for {$order->customer_name} worth ₱" . number_format($totalAmount, 2));
+            ActivityLog::log('Create Order', "Created order {$order->order_id} for {$order->customer_name} worth ₱" . number_format($totalAmount, 2));
 
             // Auto-create dispatch record for delivery
             $itemNames = collect($validated['items'])->map(function ($i) {
@@ -172,22 +172,7 @@ class OrdersController extends Controller
         $oldStatus = $order->status;
         $order->update($validated);
 
-        // If order is completed, deduct stock from inventory
-        if (isset($validated['status']) && $validated['status'] === 'Completed' && $oldStatus !== 'Completed') {
-            foreach ($order->items as $orderItem) {
-                if ($orderItem->inventory_item_id) {
-                    $inv = InventoryItem::find($orderItem->inventory_item_id);
-                    if ($inv) {
-                        $previousStock = $inv->stock;
-                        $inv->stock = max(0, $inv->stock - $orderItem->quantity);
-                        $inv->status = $inv->stock > 0 ? ($inv->stock < 50 ? 'Low Stock' : 'In Stock') : 'Out of Stock';
-                        $inv->save();
-                    }
-                }
-            }
-
-            ActivityLog::log('Complete Order', "Order {$order->order_id} marked as Completed — ₱" . number_format((float)$order->total_amount, 2));
-        } elseif (isset($validated['status'])) {
+        if (isset($validated['status'])) {
             ActivityLog::log('Update Order', "Order {$order->order_id} status changed from {$oldStatus} to {$validated['status']}");
         }
 

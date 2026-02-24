@@ -320,10 +320,10 @@
                                         {{-- Default first row --}}
                                         <tr class="order-item-row">
                                             <td class="px-4 py-2">
-                                                <select name="items[0][name]" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                                <select name="items[0][name]" required onchange="onItemSelected(this)" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                                                     <option value="">-- Select item --</option>
                                                     @foreach($inventoryItems as $item)
-                                                    <option value="{{ $item->name }}">{{ $item->name }}</option>
+                                                    <option value="{{ $item->name }}" data-price="{{ $item->unit_price }}">{{ $item->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </td>

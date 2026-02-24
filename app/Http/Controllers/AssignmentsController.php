@@ -187,35 +187,7 @@ class AssignmentsController extends Controller
                 ];
             })->toArray();
 
-        // Get completed assignments' order IDs — these are ready for delivery
-        $completedOrderIds = Assignment::where('status', 'completed')
-            ->pluck('order_id')
-            ->unique()
-            ->toArray();
-
-        // Get dispatches for orders where assignment work is completed but no delivery person assigned yet
-        $readyForDelivery = Dispatch::with('order')
-            ->where('status', 'pending')
-            ->whereNull('driver')
-            ->whereHas('order', function ($q) use ($completedOrderIds) {
-                $q->whereIn('order_id', $completedOrderIds);
-            })
-            ->orderBy('date', 'asc')
-            ->get()
-            ->map(function ($d) {
-                $order = $d->order;
-                return [
-                    'dispatch_id'      => $d->id,
-                    'order_id'         => $order ? $order->order_id : 'N/A',
-                    'customer'         => $d->customer,
-                    'items'            => $d->items,
-                    'delivery_address' => $d->address,
-                    'delivery_date'    => $d->date->format('Y-m-d'),
-                    'total_amount'     => $order ? $order->total_amount : 0,
-                ];
-            })->toArray();
-
-        return view('pages.assignments', compact('workers', 'drivers', 'assignmentsData', 'availableOrders', 'readyForDelivery'));
+        return view('pages.assignments', compact('workers', 'drivers', 'assignmentsData', 'availableOrders'));
     }
 
     public function store(Request $request)

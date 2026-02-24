@@ -266,7 +266,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Schedule note events
                 for (var ei = 0; ei < dayEvents.length; ei++) {
-                    html += '<div class="event-item ' + dayEvents[ei].color + '"><p class="event-title">' + dayEvents[ei].title + '</p></div>';
+                    var safeTitle = dayEvents[ei].title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    var safeDesc = (dayEvents[ei].desc || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    html += '<div class="event-item ' + dayEvents[ei].color + '" style="cursor:pointer;" onclick="openViewNoteModal(\'' + safeTitle + '\', \'' + safeDesc + '\')"><p class="event-title">' + dayEvents[ei].title + '</p></div>';
                 }
 
                 html += '</div>';
@@ -359,7 +361,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Schedule note events
             for (var ei = 0; ei < dayEvents.length; ei++) {
-                html += '<div class="event-item ' + dayEvents[ei].color + '"><p class="event-title">' + dayEvents[ei].title + '</p><p class="event-desc">' + dayEvents[ei].desc + '</p></div>';
+                var safeTitle = dayEvents[ei].title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                var safeDesc = (dayEvents[ei].desc || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                html += '<div class="event-item ' + dayEvents[ei].color + '" style="cursor:pointer;" onclick="openViewNoteModal(\'' + safeTitle + '\', \'' + safeDesc + '\')"><p class="event-title">' + dayEvents[ei].title + '</p><p class="event-desc">' + dayEvents[ei].desc + '</p></div>';
             }
 
             html += '</div></div>';

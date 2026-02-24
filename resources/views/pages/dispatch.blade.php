@@ -100,7 +100,7 @@
     {{-- Shipment Cards --}}
     <div class="space-y-4">
         @foreach($dispatches as $dispatch)
-        <div class="dispatch-card bg-white rounded-xl border border-gray-200 p-6" data-status="{{ $dispatch['status'] }}" data-date="{{ $dispatch['date'] }}" data-search="{{ strtolower($dispatch['customer'] . ' ' . $dispatch['order_id'] . ' ' . $dispatch['driver']) }}">
+        <div class="dispatch-card bg-white rounded-xl {{ $dispatch['status'] === 'delivered' ? 'border-2 border-green-400' : 'border border-gray-200' }} p-6" data-status="{{ $dispatch['status'] }}" data-date="{{ $dispatch['date'] }}" data-search="{{ strtolower($dispatch['customer'] . ' ' . $dispatch['order_id'] . ' ' . $dispatch['driver']) }}">
             <div class="flex flex-col gap-4">
                 {{-- Header with Status and Actions --}}
                 <div class="flex items-start justify-between">
@@ -118,10 +118,17 @@
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium border {{ $statusConfig['color'] }}">{{ $statusConfig['label'] }}</span>
                     </div>
                     <div class="flex gap-2">
+                        @if($dispatch['status'] === 'delivered')
+                        <button disabled class="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-400 bg-gray-50 cursor-not-allowed">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Delivered
+                        </button>
+                        @else
                         <button onclick="openAssignDeliveryModal({{ json_encode($dispatch) }})" class="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 016.75 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
                             {{ $dispatch['driver'] === 'Unassigned' ? 'Assign Delivery' : 'Reassign' }}
                         </button>
+                        @endif
                         @if($dispatch['status'] === 'pending' && $dispatch['driver'] !== 'Unassigned')
                         <button onclick="updateDispatchStatus({{ $dispatch['id'] }}, 'ship')" class="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-medium transition-colors">
                             Mark Shipped

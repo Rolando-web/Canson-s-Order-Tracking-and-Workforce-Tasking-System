@@ -388,7 +388,7 @@
         <div class="bg-white rounded-xl border border-gray-200 p-6">
             <div class="flex items-center justify-between mb-1">
                 <h3 class="text-lg font-bold text-gray-900">Weekly Production</h3>
-                <span class="text-xs text-gray-400">Units produced</span>
+                <span class="text-xs text-gray-400">Items sold</span>
             </div>
             @php
                 $prodMax = max(array_values($prodDays ?? [])) ?: 1;
@@ -433,7 +433,7 @@
                             <g class="chart-tooltip" opacity="0" transform="translate({{ $ptX }}, {{ $ptY }})">
                                 <rect x="{{ -$ptW/2 }}" y="-2" width="{{ $ptW }}" height="{{ $ptH }}" rx="5" fill="#1f2937" opacity="0.95"/>
                                 <polygon points="{{ $ptArrowX - 3 }},{{ $ptH - 2 }} {{ $ptArrowX + 3 }},{{ $ptH - 2 }} {{ $ptArrowX }},{{ $ptH + 2 }}" fill="#1f2937" opacity="0.95"/>
-                                <text x="0" y="11" text-anchor="middle" fill="white" font-size="7.5" font-weight="600">{{ $p['val'] }} units</text>
+                                <text x="0" y="11" text-anchor="middle" fill="white" font-size="7.5" font-weight="600">{{ $p['val'] }} items</text>
                             </g>
                         </g>
                     @endforeach

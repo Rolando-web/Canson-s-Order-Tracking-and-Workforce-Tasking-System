@@ -14,20 +14,18 @@ class AnalyticsController extends Controller
     public function index()
     {
         // === Sales KPIs ===
-        $totalRevenue       = Order::where('status', 'Completed')->sum('total_amount');
-        $totalOrders        = Order::where('status', 'Completed')->count();
+        $totalRevenue       = Order::sum('total_amount');
+        $totalOrders        = Order::count();
         $avgOrderValue      = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
-        $completedThisMonth = Order::where('status', 'Completed')
-            ->whereMonth('updated_at', now()->month)->count();
+        $completedThisMonth = Order::whereMonth('created_at', now()->month)->count();
 
         // Revenue trend (last 12 months)
         $revenueTrend = [];
         for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
             $monthLabel = $date->format('M');
-            $monthRevenue = Order::where('status', 'Completed')
-                ->whereYear('updated_at', $date->year)
-                ->whereMonth('updated_at', $date->month)
+            $monthRevenue = Order::whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month)
                 ->sum('total_amount');
 
             $revenueTrend[$monthLabel] = (float)$monthRevenue;
@@ -39,7 +37,6 @@ class AnalyticsController extends Controller
                 DB::raw('SUM(order_items.subtotal) as total')
             )
             ->join('inventory_items', 'order_items.inventory_item_id', '=', 'inventory_items.id')
-            ->whereHas('order', fn($q) => $q->where('status', 'Completed'))
             ->groupBy('inventory_items.category')
             ->orderByDesc('total')
             ->get()
@@ -54,7 +51,6 @@ class AnalyticsController extends Controller
                 DB::raw('SUM(order_items.quantity) as total_sold'),
                 DB::raw('SUM(order_items.subtotal) as total_revenue')
             )
-            ->whereHas('order', fn($q) => $q->where('status', 'Completed'))
             ->groupBy('order_items.name')
             ->orderByDesc('total_revenue')
             ->limit(10)
@@ -71,7 +67,6 @@ class AnalyticsController extends Controller
                 DB::raw('COUNT(*) as order_count'),
                 DB::raw('SUM(total_amount) as total_spent')
             )
-            ->where('status', 'Completed')
             ->groupBy('customer_name')
             ->orderByDesc('total_spent')
             ->limit(5)
@@ -89,8 +84,7 @@ class AnalyticsController extends Controller
         $startOfWeek = now()->startOfWeek();
         foreach ($dayNames as $i => $dayName) {
             $date = $startOfWeek->copy()->addDays($i);
-            $prodDays[$dayName] = Order::where('status', 'Completed')
-                ->whereDate('updated_at', $date)
+            $prodDays[$dayName] = Order::whereDate('created_at', $date)
                 ->withSum('items', 'quantity')
                 ->get()
                 ->sum('items_sum_quantity') ?? 0;
@@ -117,8 +111,7 @@ class AnalyticsController extends Controller
         })->toArray();
 
         // Unique customer count this month
-        $activeCustomers = Order::where('status', 'Completed')
-            ->whereMonth('updated_at', now()->month)
+        $activeCustomers = Order::whereMonth('created_at', now()->month)
             ->distinct('customer_name')
             ->count('customer_name');
 

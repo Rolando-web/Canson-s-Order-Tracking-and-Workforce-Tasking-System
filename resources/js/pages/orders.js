@@ -79,13 +79,13 @@ function createOrderItemRow(index) {
     const items = window.inventoryItems || [];
     let optionsHtml = '<option value="">-- Select item --</option>';
     items.forEach(item => {
-        optionsHtml += `<option value="${item.name}">${item.name}</option>`;
+        optionsHtml += `<option value="${item.name}" data-price="${item.unit_price}">${item.name}</option>`;
     });
 
     return `
         <tr class="order-item-row">
             <td class="px-4 py-2">
-                <select name="items[${index}][name]" required
+                <select name="items[${index}][name]" required onchange="onItemSelected(this)"
                     class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                     ${optionsHtml}
                 </select>
@@ -194,6 +194,18 @@ window.submitAddOrder = function(event) {
         console.error('Order creation error:', err);
         alert('Something went wrong. Please try again.');
     });
+};
+
+// ========== Auto-fill Unit Price ==========
+window.onItemSelected = function(selectEl) {
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    const price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+    const row = selectEl.closest('.order-item-row');
+    const priceInput = row.querySelector('.item-price');
+    if (priceInput) {
+        priceInput.value = price.toFixed(2);
+    }
+    recalcOrderTotal();
 };
 
 // ========== Toast ==========

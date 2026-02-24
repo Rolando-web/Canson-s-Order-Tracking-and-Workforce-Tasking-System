@@ -15,11 +15,10 @@ class DashboardController extends Controller
     {
         // === Stat Cards ===
         $totalOrders  = Order::count();
-        $totalSales   = Order::where('status', 'Completed')->sum('total_amount');
+        $totalSales   = Order::sum('total_amount');
         $pendingCount = Order::where('status', 'Pending')->count();
 
-        $todaySales = Order::where('status', 'Completed')
-            ->whereDate('updated_at', today())
+        $todaySales = Order::whereDate('created_at', today())
             ->sum('total_amount');
 
         // % change calculations (vs last month)
@@ -27,12 +26,11 @@ class DashboardController extends Controller
         $lastMonth     = Order::whereMonth('created_at', now()->subMonth()->month)->count();
         $ordersPctChange = $lastMonth > 0 ? round((($thisMonth - $lastMonth) / $lastMonth) * 100, 1) : 0;
 
-        $thisMonthSales = Order::where('status', 'Completed')->whereMonth('updated_at', now()->month)->sum('total_amount');
-        $lastMonthSales = Order::where('status', 'Completed')->whereMonth('updated_at', now()->subMonth()->month)->sum('total_amount');
+        $thisMonthSales = Order::whereMonth('created_at', now()->month)->sum('total_amount');
+        $lastMonthSales = Order::whereMonth('created_at', now()->subMonth()->month)->sum('total_amount');
         $salesPctChange = $lastMonthSales > 0 ? round((($thisMonthSales - $lastMonthSales) / $lastMonthSales) * 100, 1) : 0;
 
-        $yesterdaySales = Order::where('status', 'Completed')
-            ->whereDate('updated_at', today()->subDay())
+        $yesterdaySales = Order::whereDate('created_at', today()->subDay())
             ->sum('total_amount');
         $todayPctChange = $yesterdaySales > 0 ? round((($todaySales - $yesterdaySales) / $yesterdaySales) * 100, 1) : 0;
 
@@ -43,11 +41,9 @@ class DashboardController extends Controller
 
         foreach ($dayNames as $i => $dayName) {
             $date = $startOfWeek->copy()->addDays($i);
-            $daySales = Order::where('status', 'Completed')
-                ->whereDate('updated_at', $date)
+            $daySales = Order::whereDate('created_at', $date)
                 ->sum('total_amount');
-            $dayOrders = Order::where('status', 'Completed')
-                ->whereDate('updated_at', $date)
+            $dayOrders = Order::whereDate('created_at', $date)
                 ->count();
 
             $salesDays[$dayName] = [
@@ -56,41 +52,43 @@ class DashboardController extends Controller
             ];
         }
 
-        // === Weekly Production Chart (items produced / orders completed per day) ===
+        // === Weekly Production Chart (total items sold per day) ===
         $prodDays = [];
         foreach ($dayNames as $i => $dayName) {
             $date = $startOfWeek->copy()->addDays($i);
-            $prodDays[$dayName] = Order::where('status', 'Completed')
-                ->whereDate('updated_at', $date)
-                ->count() * 10; // approximate units per order
+            $prodDays[$dayName] = (int) Order::whereDate('created_at', $date)
+                ->withSum('items', 'quantity')
+                ->get()
+                ->sum('items_sum_quantity');
         }
 
-        // === Recent Sales (completed orders) ===
-        $recentSales = Order::where('status', 'Completed')
-            ->orderBy('updated_at', 'desc')
+        // === Recent Sales ===
+        $recentSales = Order::orderBy('created_at', 'desc')
             ->limit(5)
             ->get()
             ->map(function ($order) {
                 return [
                     'id'          => $order->order_id,
                     'customer'    => $order->customer_name,
-                    'date'        => $order->updated_at->diffForHumans(),
+                    'date'        => $order->created_at->diffForHumans(),
                     'amount'      => $order->total_amount,
-                    'status'      => 'Completed',
-                    'statusColor' => 'bg-green-50 text-green-600',
+                    'status'      => $order->status,
+                    'statusColor' => match($order->status) {
+                        'Completed' => 'bg-green-50 text-green-600',
+                        'In-Progress' => 'bg-emerald-50 text-emerald-600',
+                        default => 'bg-gray-50 text-gray-500',
+                    },
                 ];
             })->toArray();
 
         // === Top Products ===
         $topProducts = OrderItem::select('name', DB::raw('SUM(quantity) as total_sold'), DB::raw('SUM(subtotal) as total_revenue'))
-            ->whereHas('order', fn($q) => $q->where('status', 'Completed'))
             ->groupBy('name')
             ->orderByDesc('total_revenue')
             ->limit(5)
             ->get()
             ->map(function ($item, $index) {
                 $maxSold = OrderItem::select(DB::raw('SUM(quantity) as total'))
-                    ->whereHas('order', fn($q) => $q->where('status', 'Completed'))
                     ->groupBy('name')
                     ->orderByDesc('total')
                     ->limit(1)

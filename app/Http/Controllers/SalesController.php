@@ -13,24 +13,21 @@ class SalesController extends Controller
     public function index(Request $request)
     {
         // === Summary Cards ===
-        $totalRevenue    = Order::where('status', 'Completed')->sum('total_amount');
-        $totalTransactions = Order::where('status', 'Completed')->count();
+        $totalRevenue    = Order::sum('total_amount');
+        $totalTransactions = Order::count();
         $avgOrderValue   = $totalTransactions > 0 ? $totalRevenue / $totalTransactions : 0;
 
         // This month's revenue (filter by year AND month using created_at)
-        $thisMonthRevenue = Order::where('status', 'Completed')
-            ->whereYear('created_at', now()->year)
+        $thisMonthRevenue = Order::whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->sum('total_amount');
-        $thisMonthTransactions = Order::where('status', 'Completed')
-            ->whereYear('created_at', now()->year)
+        $thisMonthTransactions = Order::whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->count();
 
         // Last month's revenue for trend comparison
         $lastMonth = now()->subMonth();
-        $lastMonthRevenue = Order::where('status', 'Completed')
-            ->whereYear('created_at', $lastMonth->year)
+        $lastMonthRevenue = Order::whereYear('created_at', $lastMonth->year)
             ->whereMonth('created_at', $lastMonth->month)
             ->sum('total_amount');
         $revenuePctChange = $lastMonthRevenue > 0
@@ -41,11 +38,9 @@ class SalesController extends Controller
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
             $dayLabel = $date->format('M d');
-            $daySales = Order::where('status', 'Completed')
-                ->whereDate('created_at', $date)
+            $daySales = Order::whereDate('created_at', $date)
                 ->sum('total_amount');
-            $dayCount = Order::where('status', 'Completed')
-                ->whereDate('created_at', $date)
+            $dayCount = Order::whereDate('created_at', $date)
                 ->count();
 
             $salesTrend[$dayLabel] = [
@@ -54,9 +49,8 @@ class SalesController extends Controller
             ];
         }
 
-        // === Sales Transactions (completed orders) ===
-        $query = Order::where('status', 'Completed')
-            ->with('items')
+        // === Sales Transactions (all orders - already paid) ===
+        $query = Order::with('items')
             ->orderBy('created_at', 'desc');
 
         // Search filter
@@ -81,8 +75,12 @@ class SalesController extends Controller
                 'items'       => $itemsSummary ?: 'N/A',
                 'qty'         => $totalQty,
                 'amount'      => $order->total_amount,
-                'status'      => 'Completed',
-                'statusColor' => 'bg-green-500',
+                'status'      => $order->status,
+                'statusColor' => match($order->status) {
+                    'Completed' => 'bg-green-500',
+                    'In-Progress' => 'bg-emerald-500',
+                    default => 'bg-gray-400',
+                },
                 'date'        => $order->created_at->format('M d, Y'),
             ];
         });
@@ -91,7 +89,6 @@ class SalesController extends Controller
 
         // === Quick Insights ===
         $topCategory = OrderItem::select('inventory_item_id', DB::raw('SUM(subtotal) as total'))
-            ->whereHas('order', fn($q) => $q->where('status', 'Completed'))
             ->groupBy('inventory_item_id')
             ->orderByDesc('total')
             ->first();
@@ -99,8 +96,7 @@ class SalesController extends Controller
         $topCategoryName = $topCategory && $topCategory->inventoryItem
             ? $topCategory->inventoryItem->category : 'N/A';
 
-        $todaySalesAmount = Order::where('status', 'Completed')
-            ->whereDate('created_at', today())
+        $todaySalesAmount = Order::whereDate('created_at', today())
             ->sum('total_amount');
 
         return view('pages.sales', compact(

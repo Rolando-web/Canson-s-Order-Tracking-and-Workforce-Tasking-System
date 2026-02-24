@@ -14,6 +14,7 @@ class DispatchController extends Controller
     public function index()
     {
         $dispatches = Dispatch::with('order')
+            ->orderByRaw("FIELD(status, 'in_transit', 'pending', 'delivered')")
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc')
             ->get()

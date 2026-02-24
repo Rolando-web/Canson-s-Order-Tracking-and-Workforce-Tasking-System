@@ -146,7 +146,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $item->category }}</td>
-                        <td class="px-6 py-4 text-sm font-semibold text-gray-900">₱—</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-gray-900">₱{{ number_format($item->unit_price, 2) }}</td>
                         <td class="px-6 py-4 text-sm"><span class="font-bold text-gray-900">{{ number_format($item->stock) }}</span> <span class="text-gray-400">{{ $item->unit }}</span></td>
                         <td class="px-6 py-4">
                             <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-200">{{ $item->status }}</span>

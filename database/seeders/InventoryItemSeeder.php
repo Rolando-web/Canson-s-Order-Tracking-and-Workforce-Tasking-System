@@ -157,7 +157,10 @@ class InventoryItemSeeder extends Seeder
         ];
 
         foreach ($items as $item) {
-            InventoryItem::create($item);
+            InventoryItem::firstOrCreate(
+                ['item_id' => $item['item_id']],
+                collect($item)->except('item_id')->toArray()
+            );
         }
     }
 }

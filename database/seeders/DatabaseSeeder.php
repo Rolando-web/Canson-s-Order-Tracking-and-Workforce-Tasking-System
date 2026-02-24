@@ -16,25 +16,28 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create Super Admin (Boss)
-        User::factory()->create([
-            'name' => 'boss',
-            'password' => bcrypt('password'),
-            'role' => User::ROLE_SUPER_ADMIN,
-        ]);
+        User::firstOrCreate(
+            ['name' => 'boss'],
+            ['password' => bcrypt('password'), 'role' => User::ROLE_SUPER_ADMIN]
+        );
 
         // Create Admin Manager
-        User::factory()->create([
-            'name' => 'admin',
-            'password' => bcrypt('password'),
-            'role' => User::ROLE_ADMIN,
-        ]);
+        User::firstOrCreate(
+            ['name' => 'admin'],
+            ['password' => bcrypt('password'), 'role' => User::ROLE_ADMIN]
+        );
 
-        // Create Employee
-        User::factory()->create([
-            'name' => 'employee',
-            'password' => bcrypt('password'),
-            'role' => User::ROLE_EMPLOYEE,
-        ]);
+        // Create Employee (Worker)
+        User::firstOrCreate(
+            ['name' => 'employee'],
+            ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE, 'department' => 'Worker']
+        );
+
+        // Create Driver
+        User::firstOrCreate(
+            ['name' => 'driver'],
+            ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE, 'department' => 'Driver']
+        );
 
         $this->call([
             InventoryItemSeeder::class,
