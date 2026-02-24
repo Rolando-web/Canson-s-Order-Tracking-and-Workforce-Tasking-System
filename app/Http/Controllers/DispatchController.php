@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Dispatch;
 use App\Models\Order;
+use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\Notification;
 
 class DispatchController extends Controller
 {
@@ -38,39 +40,70 @@ class DispatchController extends Controller
         $inTransit   = Dispatch::where('status', 'in_transit')->count();
         $delivered   = Dispatch::where('status', 'delivered')->count();
 
-        return view('pages.dispatch', compact('dispatches', 'readyToShip', 'inTransit', 'delivered'));
+        // Get only Drivers for delivery assignment dropdown
+        $deliveryUsers = User::where('role', 'employee')
+            ->where('department', 'Driver')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($u) {
+                return [
+                    'id'      => $u->id,
+                    'name'    => $u->name,
+                    'initial' => $u->initial,
+                ];
+            });
+
+        return view('pages.dispatch', compact('dispatches', 'readyToShip', 'inTransit', 'delivered', 'deliveryUsers'));
     }
 
     public function assignDriver(Request $request)
     {
         $validated = $request->validate([
-            'dispatch_id' => 'required|exists:dispatches,id',
-            'driver'      => 'required|string|max:100',
-            'vehicle'     => 'required|string|max:100',
-            'action'      => 'sometimes|in:ship,deliver',
+            'dispatch_id'      => 'required|exists:dispatches,id',
+            'delivery_user_id' => 'sometimes|nullable|exists:users,id',
+            'vehicle'          => 'nullable|string|max:100',
+            'action'           => 'sometimes|in:ship,deliver',
         ]);
 
         $dispatch = Dispatch::findOrFail($validated['dispatch_id']);
-        $dispatch->driver = $validated['driver'];
-        $dispatch->vehicle = $validated['vehicle'];
-
         $action = $validated['action'] ?? null;
+
+        // If assigning a new delivery user
+        $deliveryUser = null;
+        if (!empty($validated['delivery_user_id'])) {
+            $deliveryUser = User::findOrFail($validated['delivery_user_id']);
+            $dispatch->driver = $deliveryUser->name;
+            $dispatch->assigned_by = auth()->id();
+        }
+
+        if (!empty($validated['vehicle'])) {
+            $dispatch->vehicle = $validated['vehicle'];
+        }
 
         if ($action === 'ship') {
             $dispatch->status = 'in_transit';
             $dispatch->dispatch_time = now();
-            $dispatch->assigned_by = auth()->id();
-            ActivityLog::log('Dispatch Shipped', "Order {$dispatch->order?->order_id} dispatched with driver {$dispatch->driver}");
+            ActivityLog::log('Dispatch Shipped', "Order {$dispatch->order?->order_id} dispatched with delivery person {$dispatch->driver}");
         } elseif ($action === 'deliver') {
             $dispatch->status = 'delivered';
             $dispatch->delivery_time = now();
             ActivityLog::log('Dispatch Delivered', "Order {$dispatch->order?->order_id} delivered by {$dispatch->driver}");
         } else {
-            $dispatch->assigned_by = auth()->id();
-            ActivityLog::log('Assign Driver', "Assigned driver {$dispatch->driver} to order {$dispatch->order?->order_id}");
+            ActivityLog::log('Assign Delivery', "Assigned delivery person {$dispatch->driver} to order {$dispatch->order?->order_id}");
         }
 
         $dispatch->save();
+
+        // Notify the driver about the delivery assignment
+        if ($deliveryUser && !$action) {
+            Notification::send(
+                $deliveryUser->id,
+                'delivery_assigned',
+                'New Delivery Assigned',
+                "You have been assigned to deliver order {$dispatch->order?->order_id} to {$dispatch->customer}.",
+                ['dispatch_id' => $dispatch->id, 'order_id' => $dispatch->order?->order_id]
+            );
+        }
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'dispatch' => $dispatch]);

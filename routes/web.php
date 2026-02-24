@@ -13,6 +13,7 @@ use App\Http\Controllers\SalesController;
 use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ActivityLogsController;
+use App\Http\Controllers\NotificationsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +44,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/schedule', [ScheduleController::class, 'index'])->name('schedule');
     
     Route::get('/assignments', [AssignmentsController::class, 'index'])->name('assignments');
+
+    // Employee can update their own assignment status
+    Route::put('/assignments/{assignment}/status', [AssignmentsController::class, 'updateStatus'])->name('assignments.updateStatus');
+
+    // Driver can update their own delivery status
+    Route::put('/assignments/delivery-status', [AssignmentsController::class, 'updateDeliveryStatus'])->name('assignments.deliveryStatus');
+
+    // Notifications
+    Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications');
+    Route::put('/notifications/read-all', [NotificationsController::class, 'markAllAsRead'])->name('notifications.readAll');
+    Route::get('/notifications/unread-count', [NotificationsController::class, 'unreadCount'])->name('notifications.unreadCount');
+    Route::put('/notifications/{notification}/read', [NotificationsController::class, 'markAsRead'])->name('notifications.read');
 });
 
 
@@ -51,13 +64,13 @@ Route::middleware(['auth', 'super_admin'])->group(function () {
     Route::post('/orders', [OrdersController::class, 'store'])->name('orders.store');
     Route::put('/orders/{order}', [OrdersController::class, 'update'])->name('orders.update');
     Route::delete('/orders/{order}', [OrdersController::class, 'destroy'])->name('orders.destroy');
-    
-    Route::get('/dispatch', [DispatchController::class, 'index'])->name('dispatch');
-    Route::post('/dispatch/assign-driver', [DispatchController::class, 'assignDriver'])->name('dispatch.assign');
 });
 
 
 Route::middleware(['auth', 'admin_or_above'])->group(function () {
+    Route::get('/dispatch', [DispatchController::class, 'index'])->name('dispatch');
+    Route::post('/dispatch/assign-driver', [DispatchController::class, 'assignDriver'])->name('dispatch.assign');
+
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
     Route::post('/inventory', [InventoryController::class, 'store'])->name('inventory.store');
     Route::put('/inventory/{item}', [InventoryController::class, 'update'])->name('inventory.update');

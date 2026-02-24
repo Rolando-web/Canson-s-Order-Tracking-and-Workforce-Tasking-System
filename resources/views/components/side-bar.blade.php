@@ -55,10 +55,15 @@
         <x-side-bar-link icon="dashboard" label="Dashboard" :active="$active === 'dashboard'" href="/dashboard" />
         <x-side-bar-link icon="schedule"  label="Schedule"  :active="$active === 'schedule'" href="/schedule" />
         <x-side-bar-link icon="assignments" label="Assignments" :active="$active === 'assignments'" href="/assignments" />
+        <x-side-bar-link icon="notifications" label="Notifications" :active="$active === 'notifications'" href="/notifications" />
         
         {{-- Only for Super Admin (Boss) --}}
         @if(auth()->user()->isSuperAdmin())
             <x-side-bar-link icon="orders"    label="Orders"    :active="$active === 'orders'" href="/orders" />
+        @endif
+        
+        {{-- Dispatch - for Admin Manager and Super Admin --}}
+        @if(auth()->user()->isAdminOrAbove())
             <x-side-bar-link icon="dispatch"  label="Dispatch"  :active="$active === 'dispatch'" href="/dispatch" />
         @endif
         

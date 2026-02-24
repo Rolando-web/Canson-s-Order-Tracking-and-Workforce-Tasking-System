@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ScheduleNote;
+use App\Models\Order;
 use App\Models\ActivityLog;
 
 class ScheduleController extends Controller
@@ -27,7 +28,22 @@ class ScheduleController extends Controller
                 ];
             });
 
-        return view('pages.schedule', compact('notes'));
+        // Load orders for calendar display (show as bars from created_at to delivery_date)
+        $orders = Order::orderBy('delivery_date')
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id'            => $order->id,
+                    'order_id'      => $order->order_id,
+                    'customer_name' => $order->customer_name,
+                    'start_date'    => $order->created_at->format('Y-m-d'),
+                    'end_date'      => $order->delivery_date->format('Y-m-d'),
+                    'priority'      => $order->priority,
+                    'status'        => $order->status,
+                ];
+            });
+
+        return view('pages.schedule', compact('notes', 'orders'));
     }
 
     public function storeNote(Request $request)

@@ -7,18 +7,21 @@
 @php
     $scheduleData = ($notes ?? collect())->map(function ($n) {
         return [
-            'id' => $n->id,
-            'title' => $n->title,
-            'description' => $n->description,
-            'schedule_date' => $n->schedule_date->format('Y-m-d'),
-            'priority' => $n->priority,
+            'id' => $n['id'] ?? $n->id ?? null,
+            'title' => $n['title'] ?? $n->title ?? '',
+            'description' => $n['description'] ?? $n->description ?? '',
+            'schedule_date' => is_string($n['schedule_date'] ?? null) ? $n['schedule_date'] : (isset($n->schedule_date) ? $n->schedule_date->format('Y-m-d') : ''),
+            'priority' => $n['priority'] ?? $n->priority ?? 'low',
         ];
     })->values();
+
+    $orderData = ($orders ?? collect())->values();
 @endphp
 
 @push('scripts')
     <script>
         window.scheduleNotes = @json($scheduleData);
+        window.scheduleOrders = @json($orderData);
     </script>
     @vite('resources/js/pages/schedule.js')
 @endpush

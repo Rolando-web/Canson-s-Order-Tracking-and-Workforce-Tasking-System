@@ -102,6 +102,7 @@
                     <tr>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Employee</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Role</th>
+                        <th class="px-6 py-3.5 font-semibold text-gray-600">Department</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Contact Number</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Status</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600 text-right">Actions</th>
@@ -131,6 +132,20 @@
                                 @endphp
                                 <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $roleConfig['color'] }}">{{ $roleConfig['label'] }}</span>
                             </td>
+                            <td class="px-6 py-4">
+                                @if($emp['role'] === 'employee')
+                                    @php
+                                        $deptConfig = match($emp['department'] ?? 'Worker') {
+                                            'Worker' => ['label' => 'Worker', 'color' => 'bg-emerald-50 text-emerald-700 border-emerald-200'],
+                                            'Driver' => ['label' => 'Driver', 'color' => 'bg-orange-50 text-orange-700 border-orange-200'],
+                                            default => ['label' => 'Worker', 'color' => 'bg-emerald-50 text-emerald-700 border-emerald-200'],
+                                        };
+                                    @endphp
+                                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $deptConfig['color'] }}">{{ $deptConfig['label'] }}</span>
+                                @else
+                                    <span class="text-xs text-gray-400">—</span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4 text-gray-600">{{ $emp['contact'] }}</td>
                             <td class="px-6 py-4">
                                 @if($emp['status'] === 'Active')
@@ -140,13 +155,22 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <button onclick="openModal('edit', '{{ $emp['first'] }}', '{{ $emp['last'] }}', '{{ $emp['role'] }}', '{{ $emp['contact'] }}')"
-                                        class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/>
-                                    </svg>
-                                    Edit
-                                </button>
+                                <div class="flex items-center justify-end gap-1">
+                                    <button onclick="openModal('edit', {{ $emp['id'] }}, '{{ addslashes($emp['first']) }}', '{{ addslashes($emp['last']) }}', '{{ $emp['role'] }}', '{{ $emp['contact'] }}', '{{ $emp['department'] ?? 'Worker' }}')"
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button onclick="deleteEmployee({{ $emp['id'] }}, '{{ addslashes($emp['first'] . ' ' . $emp['last']) }}')"
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                                        </svg>
+                                        Delete
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -196,10 +220,24 @@
                         <option value="super_admin">Super Admin</option>
                     </select>
                 </div>
+                <div id="departmentFieldWrapper">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Department</label>
+                    <select id="empDepartment" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                        <option value="Worker">Worker</option>
+                        <option value="Driver">Driver</option>
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Workers handle orders. Drivers handle delivery (can also help with orders).</p>
+                </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Contact Number</label>
                     <input id="empContact" type="text" placeholder="0917-123-4567"
                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                </div>
+                <div id="passwordField">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                    <input id="empPassword" type="password" placeholder="Enter password"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    <p id="passwordHint" class="text-xs text-gray-400 mt-1"></p>
                 </div>
             </div>
 
@@ -208,7 +246,7 @@
                 <button onclick="closeModal()" class="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                     Cancel
                 </button>
-                <button id="modalSubmitBtn" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors">
+                <button id="modalSubmitBtn" onclick="saveEmployee()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors">
                     Save Employee
                 </button>
             </div>
@@ -218,7 +256,13 @@
 
 @push('scripts')
 <script>
-    function openModal(mode, firstName = '', lastName = '', role = 'employee', contact = '') {
+    let currentMode = 'create';
+    let currentEmployeeId = null;
+
+    function openModal(mode, id = null, firstName = '', lastName = '', role = 'employee', contact = '', department = 'Worker') {
+        currentMode = mode;
+        currentEmployeeId = id;
+
         const modal = document.getElementById('employeeModal');
         const title = document.getElementById('modalTitle');
         const submitBtn = document.getElementById('modalSubmitBtn');
@@ -226,14 +270,23 @@
         document.getElementById('empFirstName').value = firstName;
         document.getElementById('empLastName').value = lastName;
         document.getElementById('empRole').value = role;
+        document.getElementById('empDepartment').value = department;
         document.getElementById('empContact').value = contact;
+        document.getElementById('empPassword').value = '';
+
+        // Show department field only for employee role
+        toggleDepartmentField(role);
 
         if (mode === 'edit') {
             title.textContent = 'Edit Employee';
             submitBtn.textContent = 'Update Employee';
+            document.getElementById('empPassword').placeholder = 'Leave blank to keep current';
+            document.getElementById('passwordHint').textContent = 'Leave blank to keep the current password';
         } else {
             title.textContent = 'Add Employee';
             submitBtn.textContent = 'Save Employee';
+            document.getElementById('empPassword').placeholder = 'Enter password';
+            document.getElementById('passwordHint').textContent = 'Minimum 6 characters';
         }
 
         modal.classList.remove('hidden');
@@ -244,6 +297,143 @@
         const modal = document.getElementById('employeeModal');
         modal.classList.add('hidden');
         document.body.classList.remove('overflow-hidden');
+    }
+
+    // Show/hide department field based on role
+    function toggleDepartmentField(role) {
+        const wrapper = document.getElementById('departmentFieldWrapper');
+        wrapper.style.display = role === 'employee' ? 'block' : 'none';
+    }
+
+    document.getElementById('empRole').addEventListener('change', function() {
+        toggleDepartmentField(this.value);
+    });
+
+    function saveEmployee() {
+        const firstName = document.getElementById('empFirstName').value.trim();
+        const lastName = document.getElementById('empLastName').value.trim();
+        const role = document.getElementById('empRole').value;
+        const department = document.getElementById('empDepartment').value;
+        const contact = document.getElementById('empContact').value.trim();
+        const password = document.getElementById('empPassword').value;
+
+        if (!firstName || !lastName) {
+            alert('Please enter both first name and last name.');
+            return;
+        }
+
+        if (currentMode === 'create' && password.length < 6) {
+            alert('Password must be at least 6 characters.');
+            return;
+        }
+
+        if (currentMode === 'edit' && password && password.length < 6) {
+            alert('Password must be at least 6 characters.');
+            return;
+        }
+
+        const submitBtn = document.getElementById('modalSubmitBtn');
+        submitBtn.disabled = true;
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Saving...';
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        let url = '/employees';
+        let method = 'POST';
+        const body = {
+            empFirstName: firstName,
+            empLastName: lastName,
+            empRole: role,
+            empDepartment: role === 'employee' ? department : null,
+            empContact: contact,
+        };
+
+        if (password) {
+            body.password = password;
+        }
+
+        if (currentMode === 'edit' && currentEmployeeId) {
+            url = '/employees/' + currentEmployeeId;
+            method = 'PUT';
+        }
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify(body),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeModal();
+                showToast(currentMode === 'edit' ? 'Employee updated successfully!' : 'Employee added successfully!', 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                const msg = data.message || 'Failed to save employee. Please try again.';
+                showToast(msg, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred. Please try again.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
+    }
+
+    function deleteEmployee(id, name) {
+        if (!confirm('Are you sure you want to remove ' + name + '?')) return;
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        fetch('/employees/' + id, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Employee removed successfully!', 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast('Failed to remove employee.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred.', 'error');
+        });
+    }
+
+    function showToast(message, type) {
+        const existing = document.getElementById('employeeToast');
+        if (existing) existing.remove();
+
+        const bgColor = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+        const toast = document.createElement('div');
+        toast.id = 'employeeToast';
+        toast.className = `fixed top-6 right-6 z-[100] ${bgColor} text-white px-5 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2`;
+        toast.innerHTML = `
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                ${type === 'success'
+                    ? '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                    : '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>'
+                }
+            </svg>
+            ${message}
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
     }
 
     document.addEventListener('keydown', (e) => {

@@ -36,13 +36,6 @@ class DatabaseSeeder extends Seeder
             'role' => User::ROLE_EMPLOYEE,
         ]);
 
-        // Create additional test employee
-        User::factory()->create([
-            'name' => 'test',
-            'password' => bcrypt('password'),
-            'role' => User::ROLE_EMPLOYEE,
-        ]);
-
         $this->call([
             InventoryItemSeeder::class,
         ]);

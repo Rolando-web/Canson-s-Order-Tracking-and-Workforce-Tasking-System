@@ -6,7 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\InventoryItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Dispatch;
 use App\Models\ActivityLog;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class OrdersController extends Controller
@@ -84,7 +87,7 @@ class OrdersController extends Controller
                 'delivery_address' => $validated['delivery_address'],
                 'delivery_date'    => $validated['delivery_date'],
                 'total_amount'     => $totalAmount,
-                'status'           => 'Pending',
+                'status'           => 'Completed',
                 'priority'         => $validated['priority'],
                 'notes'            => $validated['notes'] ?? null,
                 'created_by'       => auth()->id(),
@@ -102,11 +105,44 @@ class OrdersController extends Controller
                     'unit_price'        => $item['price'],
                     'subtotal'          => $item['qty'] * $item['price'],
                 ]);
+
+                // Deduct stock immediately since order is already paid
+                if ($inventoryItem) {
+                    $inventoryItem->stock = max(0, $inventoryItem->stock - $item['qty']);
+                    $inventoryItem->status = $inventoryItem->stock > 0
+                        ? ($inventoryItem->stock < 50 ? 'Low Stock' : 'In Stock')
+                        : 'Out of Stock';
+                    $inventoryItem->save();
+                }
             }
 
-            ActivityLog::log('Create Order', "Created order {$order->order_id} for {$order->customer_name} worth ₱" . number_format($totalAmount, 2));
+            ActivityLog::log('Create Order', "Created paid order {$order->order_id} for {$order->customer_name} worth ₱" . number_format($totalAmount, 2));
+
+            // Auto-create dispatch record for delivery
+            $itemNames = collect($validated['items'])->map(function ($i) {
+                return $i['qty'] . ' ' . $i['name'];
+            })->implode(', ');
+
+            Dispatch::create([
+                'order_id'  => $order->id,
+                'customer'  => $order->customer_name,
+                'items'     => $itemNames,
+                'address'   => $order->delivery_address,
+                'status'    => 'pending',
+                'date'      => $order->delivery_date,
+            ]);
 
             DB::commit();
+
+            // Notify all admin managers about the new order
+            $managerIds = User::where('role', 'admin')->pluck('id')->toArray();
+            Notification::sendToMany(
+                $managerIds,
+                'new_order',
+                'New Order Created',
+                "Order {$order->order_id} for {$order->customer_name} worth ₱" . number_format($totalAmount, 2) . " needs to be assigned to a worker.",
+                ['order_id' => $order->order_id]
+            );
 
             if ($request->expectsJson()) {
                 return response()->json(['success' => true, 'order' => $order->load('items')]);

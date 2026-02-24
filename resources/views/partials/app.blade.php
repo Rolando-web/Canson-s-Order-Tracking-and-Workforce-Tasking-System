@@ -27,6 +27,25 @@
                 </svg>
             </button>
             <div class="flex-1">@yield('nav')</div>
+
+            {{-- Notification Bell for All Users --}}
+            @auth
+                @php
+                    $unreadNotifCount = \App\Models\Notification::where('user_id', auth()->id())
+                        ->where('is_read', false)
+                        ->count();
+                @endphp
+                <a href="{{ route('notifications') }}" class="relative w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors" title="Notifications">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+                    </svg>
+                    @if($unreadNotifCount > 0)
+                        <span id="navBellBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">{{ $unreadNotifCount > 9 ? '9+' : $unreadNotifCount }}</span>
+                    @else
+                        <span id="navBellBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden"></span>
+                    @endif
+                </a>
+            @endauth
         </nav>
 
         <main class=" sm:px-[120px] p-6">

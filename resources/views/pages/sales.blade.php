@@ -115,8 +115,8 @@
                 @endif
             </div>
             <p class="text-gray-500 text-xs">This Month</p>
-            <p class="text-2xl font-bold text-gray-900 mt-0.5">₱{{ number_format($totalRevenue ?? 0) }}</p>
-            <p class="text-gray-400 text-[10px] mt-1">{{ $totalTransactions ?? 0 }} transactions</p>
+            <p class="text-2xl font-bold text-gray-900 mt-0.5">₱{{ number_format($thisMonthRevenue ?? 0) }}</p>
+            <p class="text-gray-400 text-[10px] mt-1">{{ $thisMonthTransactions ?? 0 }} transactions</p>
         </div>
 
         {{-- Avg Order Value --}}

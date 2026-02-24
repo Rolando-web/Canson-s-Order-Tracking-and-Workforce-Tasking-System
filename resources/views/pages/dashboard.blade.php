@@ -10,10 +10,25 @@
 
 @section('nav')
     <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
+        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">
+            @if(auth()->user()->isEmployee())
+                {{ auth()->user()->department ?? 'Worker' }} Dashboard
+            @else
+                Manager
+            @endif
+        </span></h1>
         <div class="flex items-center gap-3">
             <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">AD</div>
+            @if(auth()->user()->isEmployee())
+                @php
+                    $dept = auth()->user()->department ?? 'Worker';
+                    $deptBadge = $dept === 'Driver'
+                        ? ['label' => 'Driver', 'color' => 'bg-orange-100 text-orange-700']
+                        : ['label' => 'Worker', 'color' => 'bg-emerald-100 text-emerald-700'];
+                @endphp
+                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ $deptBadge['color'] }}">{{ $deptBadge['label'] }}</span>
+            @endif
+            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ auth()->user()->initial }}</div>
         </div>
     </div>
 @endsection
@@ -32,6 +47,7 @@
     </div>
 
     {{-- Stats Cards --}}
+    @if(auth()->user()->isAdminOrAbove())
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {{-- Total Orders --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
@@ -97,8 +113,142 @@
             </div>
         </div>
     </div>
+    @else
+    {{-- Employee Stats Cards (no money) --}}
+    @php
+        $empUser = auth()->user();
+        $myPending = \App\Models\Assignment::where('employee_id', $empUser->id)->where('status', 'pending')->count();
+        $myInProgress = \App\Models\Assignment::where('employee_id', $empUser->id)->where('status', 'in_progress')->count();
+        $myCompleted = \App\Models\Assignment::where('employee_id', $empUser->id)->where('status', 'completed')->count();
+        $myTotal = \App\Models\Assignment::where('employee_id', $empUser->id)->count();
+        $empDept = $empUser->department ?? 'Worker';
+        $myDeliveries = 0;
+        $myDelivered = 0;
+        if ($empDept === 'Driver') {
+            $myDeliveries = \App\Models\Dispatch::where('driver', $empUser->name)->whereIn('status', ['pending', 'in_transit'])->count();
+            $myDelivered = \App\Models\Dispatch::where('driver', $empUser->name)->where('status', 'delivered')->count();
+        }
+    @endphp
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center justify-between">
+                <div class="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">Pending Tasks</p>
+                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">{{ $myPending }}</p>
+                    <p class="text-[0.6rem] xl:text-xs text-amber-500 mt-1">Needs your attention</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center justify-between">
+                <div class="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17l-5.384-3.07A.75.75 0 015.25 11.46V8.21a.75.75 0 01.786-.72l5.384.307A.75.75 0 0112 8.507v5.953a.75.75 0 01-.58.71z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.507l5.384-.307a.75.75 0 01.786.72v3.25a.75.75 0 01-.786.64L12 15.17"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">In Progress</p>
+                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">{{ $myInProgress }}</p>
+                    <p class="text-[0.6rem] xl:text-xs text-blue-500 mt-1">Currently working</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center justify-between">
+                <div class="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">Completed</p>
+                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">{{ $myCompleted }}</p>
+                    <p class="text-[0.6rem] xl:text-xs text-emerald-500 mt-1">Tasks finished</p>
+                </div>
+            </div>
+        </div>
+        @if($empDept === 'Driver')
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center justify-between">
+                <div class="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">Deliveries</p>
+                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">{{ $myDeliveries }}</p>
+                    <p class="text-[0.6rem] xl:text-xs text-orange-500 mt-1">{{ $myDelivered }} delivered total</p>
+                </div>
+            </div>
+        </div>
+        @else
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center justify-between">
+                <div class="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">Total Tasks</p>
+                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">{{ $myTotal }}</p>
+                    <p class="text-[0.6rem] xl:text-xs text-purple-500 mt-1">All time</p>
+                </div>
+            </div>
+        </div>
+        @endif
+    </div>
 
-    {{-- Sales Trend Row --}}
+    {{-- Quick Actions for Employees --}}
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <a href="{{ route('assignments') }}" class="flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50 transition-all group">
+                <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 011.65 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">My Assignments</p>
+                    <p class="text-xs text-gray-500">View and manage your tasks</p>
+                </div>
+            </a>
+            <a href="{{ route('notifications') }}" class="flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all group">
+                <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Notifications</p>
+                    <p class="text-xs text-gray-500">Check your latest updates</p>
+                </div>
+            </a>
+            <a href="{{ route('schedule') }}" class="flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 transition-all group">
+                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Schedule</p>
+                    <p class="text-xs text-gray-500">View the work schedule</p>
+                </div>
+            </a>
+        </div>
+    </div>
+    @endif
+
+    @if(auth()->user()->isAdminOrAbove())
+    {{-- Sales Trend Row (Admin/Super Admin only) --}}
     <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-2">
             <div>
@@ -232,7 +382,7 @@
         </div>
     </div>
 
-    {{-- Charts Row --}}
+    {{-- Charts Row (Admin/Super Admin only) --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Weekly Production Output --}}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
@@ -340,7 +490,7 @@
         </div>
     </div>
 
-    {{-- Recent Sales & Top Products --}}
+    {{-- Recent Sales & Top Products (Admin/Super Admin only) --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         {{-- Recent Sales Table --}}
         <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -403,5 +553,6 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
 @endsection

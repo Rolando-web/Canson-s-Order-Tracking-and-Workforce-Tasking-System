@@ -59,6 +59,15 @@ window.openAddOrderModal = function() {
     orderItemIndex = 1;
     document.getElementById('addOrderItemsBody').innerHTML = createOrderItemRow(0);
     recalcOrderTotal();
+    // Set min date to today so past dates are disabled
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const dateInput = document.getElementById('deliveryDateInput');
+    if (dateInput) {
+        dateInput.min = `${yyyy}-${mm}-${dd}`;
+    }
     document.getElementById('addOrderModal').classList.remove('hidden');
 };
 

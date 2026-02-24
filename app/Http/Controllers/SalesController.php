@@ -17,12 +17,21 @@ class SalesController extends Controller
         $totalTransactions = Order::where('status', 'Completed')->count();
         $avgOrderValue   = $totalTransactions > 0 ? $totalRevenue / $totalTransactions : 0;
 
-        // Monthly revenue for trend
+        // This month's revenue (filter by year AND month using created_at)
         $thisMonthRevenue = Order::where('status', 'Completed')
-            ->whereMonth('updated_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
             ->sum('total_amount');
+        $thisMonthTransactions = Order::where('status', 'Completed')
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->count();
+
+        // Last month's revenue for trend comparison
+        $lastMonth = now()->subMonth();
         $lastMonthRevenue = Order::where('status', 'Completed')
-            ->whereMonth('updated_at', now()->subMonth()->month)
+            ->whereYear('created_at', $lastMonth->year)
+            ->whereMonth('created_at', $lastMonth->month)
             ->sum('total_amount');
         $revenuePctChange = $lastMonthRevenue > 0
             ? round((($thisMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1) : 0;
@@ -33,10 +42,10 @@ class SalesController extends Controller
             $date = now()->subDays($i);
             $dayLabel = $date->format('M d');
             $daySales = Order::where('status', 'Completed')
-                ->whereDate('updated_at', $date)
+                ->whereDate('created_at', $date)
                 ->sum('total_amount');
             $dayCount = Order::where('status', 'Completed')
-                ->whereDate('updated_at', $date)
+                ->whereDate('created_at', $date)
                 ->count();
 
             $salesTrend[$dayLabel] = [
@@ -48,7 +57,7 @@ class SalesController extends Controller
         // === Sales Transactions (completed orders) ===
         $query = Order::where('status', 'Completed')
             ->with('items')
-            ->orderBy('updated_at', 'desc');
+            ->orderBy('created_at', 'desc');
 
         // Search filter
         if ($request->filled('search')) {
@@ -74,7 +83,7 @@ class SalesController extends Controller
                 'amount'      => $order->total_amount,
                 'status'      => 'Completed',
                 'statusColor' => 'bg-green-500',
-                'date'        => $order->updated_at->format('M d, Y'),
+                'date'        => $order->created_at->format('M d, Y'),
             ];
         });
 
@@ -91,11 +100,12 @@ class SalesController extends Controller
             ? $topCategory->inventoryItem->category : 'N/A';
 
         $todaySalesAmount = Order::where('status', 'Completed')
-            ->whereDate('updated_at', today())
+            ->whereDate('created_at', today())
             ->sum('total_amount');
 
         return view('pages.sales', compact(
             'totalRevenue', 'totalTransactions', 'avgOrderValue',
+            'thisMonthRevenue', 'thisMonthTransactions',
             'revenuePctChange', 'salesTrend', 'salesPaginated',
             'topCategoryName', 'todaySalesAmount'
         ));
