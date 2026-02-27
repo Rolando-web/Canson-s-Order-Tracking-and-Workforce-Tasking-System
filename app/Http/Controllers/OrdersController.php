@@ -6,8 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\InventoryItem;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Dispatch;
-use App\Models\ActivityLog;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -80,6 +78,17 @@ class OrdersController extends Controller
                 $totalAmount += $item['qty'] * $item['price'];
             }
 
+            // Validate stock availability
+            foreach ($validated['items'] as $item) {
+                $inventoryItem = InventoryItem::where('name', $item['name'])->first();
+                if ($inventoryItem && $item['qty'] > $inventoryItem->stock) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "\"{$item['name']}\" only has {$inventoryItem->stock} in stock. Please reduce the quantity.",
+                    ], 422);
+                }
+            }
+
             $order = Order::create([
                 'order_id'         => Order::generateOrderId(),
                 'customer_name'    => $validated['customer_name'],
@@ -105,32 +114,8 @@ class OrdersController extends Controller
                     'unit_price'        => $item['price'],
                     'subtotal'          => $item['qty'] * $item['price'],
                 ]);
-
-                // Deduct stock immediately since order is already paid
-                if ($inventoryItem) {
-                    $inventoryItem->stock = max(0, $inventoryItem->stock - $item['qty']);
-                    $inventoryItem->status = $inventoryItem->stock > 0
-                        ? ($inventoryItem->stock < 50 ? 'Low Stock' : 'In Stock')
-                        : 'Out of Stock';
-                    $inventoryItem->save();
-                }
             }
 
-            ActivityLog::log('Create Order', "Created order {$order->order_id} for {$order->customer_name} worth ₱" . number_format($totalAmount, 2));
-
-            // Auto-create dispatch record for delivery
-            $itemNames = collect($validated['items'])->map(function ($i) {
-                return $i['qty'] . ' ' . $i['name'];
-            })->implode(', ');
-
-            Dispatch::create([
-                'order_id'  => $order->id,
-                'customer'  => $order->customer_name,
-                'items'     => $itemNames,
-                'address'   => $order->delivery_address,
-                'status'    => 'pending',
-                'date'      => $order->delivery_date,
-            ]);
 
             DB::commit();
 
@@ -163,7 +148,7 @@ class OrdersController extends Controller
     public function update(Request $request, Order $order)
     {
         $validated = $request->validate([
-            'status'   => 'sometimes|in:Pending,In-Progress,Completed',
+            'status'   => 'sometimes|in:Pending,In-Progress,Completed,Ready for Delivery,Delivered',
             'assigned' => 'sometimes|nullable|string|max:100',
             'priority' => 'sometimes|in:Normal,High,Urgent',
             'notes'    => 'sometimes|nullable|string',
@@ -171,10 +156,6 @@ class OrdersController extends Controller
 
         $oldStatus = $order->status;
         $order->update($validated);
-
-        if (isset($validated['status'])) {
-            ActivityLog::log('Update Order', "Order {$order->order_id} status changed from {$oldStatus} to {$validated['status']}");
-        }
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'order' => $order]);
@@ -187,8 +168,6 @@ class OrdersController extends Controller
     {
         $orderId = $order->order_id;
         $order->delete();
-
-        ActivityLog::log('Delete Order', "Deleted order {$orderId}");
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true]);

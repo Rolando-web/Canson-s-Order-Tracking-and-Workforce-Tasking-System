@@ -125,11 +125,6 @@ class User extends Authenticatable
         return $this->assignments()->whereIn('status', ['pending', 'in_progress']);
     }
 
-    public function activityLogs()
-    {
-        return $this->hasMany(ActivityLog::class);
-    }
-
     public function createdOrders()
     {
         return $this->hasMany(Order::class, 'created_by');

@@ -310,7 +310,7 @@
                                     <thead class="bg-gray-50">
                                         <tr>
                                             <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Item Name</th>
-                                            <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 w-24">Qty</th>
+                                            <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 w-28">Qty</th>
                                             <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 w-32">Unit Price (₱)</th>
                                             <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 w-32">Subtotal</th>
                                             <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 w-12"></th>
@@ -323,9 +323,10 @@
                                                 <select name="items[0][name]" required onchange="onItemSelected(this)" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                                                     <option value="">-- Select item --</option>
                                                     @foreach($inventoryItems as $item)
-                                                    <option value="{{ $item->name }}" data-price="{{ $item->unit_price }}">{{ $item->name }}</option>
+                                                    <option value="{{ $item->name }}" data-price="{{ $item->unit_price }}" data-stock="{{ $item->stock }}">{{ $item->name }} ({{ $item->stock }} in stock)</option>
                                                     @endforeach
                                                 </select>
+                                                <div class="stock-indicator mt-1 text-xs"></div>
                                             </td>
                                             <td class="px-4 py-2">
                                                 <input type="number" name="items[0][qty]" required min="1" value="1" class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 item-qty" oninput="recalcOrderTotal()">

@@ -12,7 +12,6 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\ActivityLogsController;
 use App\Http\Controllers\NotificationsController;
 
 /*
@@ -48,8 +47,8 @@ Route::middleware(['auth'])->group(function () {
     // Employee can update their own assignment status
     Route::put('/assignments/{assignment}/status', [AssignmentsController::class, 'updateStatus'])->name('assignments.updateStatus');
 
-    // Driver can update their own delivery status
-    Route::put('/assignments/delivery-status', [AssignmentsController::class, 'updateDeliveryStatus'])->name('assignments.deliveryStatus');
+    // Employee can update progress on order items
+    Route::post('/assignments/update-progress', [AssignmentsController::class, 'updateProgress'])->name('assignments.updateProgress');
 
     // Notifications
     Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications');
@@ -69,7 +68,7 @@ Route::middleware(['auth', 'super_admin'])->group(function () {
 
 Route::middleware(['auth', 'admin_or_above'])->group(function () {
     Route::get('/dispatch', [DispatchController::class, 'index'])->name('dispatch');
-    Route::post('/dispatch/assign-driver', [DispatchController::class, 'assignDriver'])->name('dispatch.assign');
+    Route::post('/dispatch/deliver', [DispatchController::class, 'deliver'])->name('dispatch.deliver');
 
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
     Route::post('/inventory', [InventoryController::class, 'store'])->name('inventory.store');
@@ -77,6 +76,8 @@ Route::middleware(['auth', 'admin_or_above'])->group(function () {
     Route::delete('/inventory/{item}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
     Route::post('/inventory/stock-in', [InventoryController::class, 'stockIn'])->name('inventory.stock-in');
     Route::post('/inventory/stock-out', [InventoryController::class, 'stockOut'])->name('inventory.stock-out');
+    Route::get('/stock-in', [InventoryController::class, 'stockInPage'])->name('stock-in');
+    Route::get('/stock-out', [InventoryController::class, 'stockOutPage'])->name('stock-out');
     
     Route::get('/products', [InventoryController::class, 'products'])->name('products');
     Route::post('/products', [InventoryController::class, 'store'])->name('products.store');
@@ -91,8 +92,6 @@ Route::middleware(['auth', 'admin_or_above'])->group(function () {
     Route::post('/employees', [EmployeesController::class, 'store'])->name('employees.store');
     Route::put('/employees/{employee}', [EmployeesController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [EmployeesController::class, 'destroy'])->name('employees.destroy');
-    
-    Route::get('/activity-logs', [ActivityLogsController::class, 'index'])->name('activity-logs');
     
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');

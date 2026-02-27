@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ScheduleNote;
 use App\Models\Order;
-use App\Models\ActivityLog;
 
 class ScheduleController extends Controller
 {
@@ -63,8 +62,6 @@ class ScheduleController extends Controller
             'created_at'    => now(),
         ]);
 
-        ActivityLog::log('Create Schedule', "Created schedule note: {$note->title}");
-
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'note' => $note]);
         }
@@ -84,8 +81,6 @@ class ScheduleController extends Controller
             'description'   => $validated['description'] ?? null,
         ]);
 
-        ActivityLog::log('Update Schedule', "Updated schedule note: {$note->title}");
-
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'note' => $note]);
         }
@@ -97,8 +92,6 @@ class ScheduleController extends Controller
     {
         $title = $note->title;
         $note->delete();
-
-        ActivityLog::log('Delete Schedule', "Deleted schedule note: {$title}");
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true]);

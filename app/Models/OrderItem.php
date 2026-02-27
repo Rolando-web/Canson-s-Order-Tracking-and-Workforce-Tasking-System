@@ -14,12 +14,14 @@ class OrderItem extends Model
         'inventory_item_id',
         'name',
         'quantity',
+        'completed_qty',
         'unit_price',
         'subtotal',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
+        'completed_qty' => 'integer',
         'unit_price' => 'decimal:2',
         'subtotal' => 'decimal:2',
     ];

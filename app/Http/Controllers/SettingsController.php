@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Hash;
 
 class SettingsController extends Controller
@@ -41,8 +40,6 @@ class SettingsController extends Controller
         }
 
         $user->save();
-
-        ActivityLog::log('Update Settings', "Updated profile settings");
 
         return redirect()->back()->with('success', 'Settings updated successfully.');
     }

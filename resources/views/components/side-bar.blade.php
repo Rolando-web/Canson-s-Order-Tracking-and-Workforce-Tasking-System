@@ -69,14 +69,15 @@
         
         {{-- For Admin Manager and Super Admin --}}
         @if(auth()->user()->isAdminOrAbove())
-            <x-side-bar-dropdown icon="inventory" label="Inventory" :active="in_array($active, ['inventory', 'products'])" :open="in_array($active, ['inventory', 'products'])">
+            <x-side-bar-dropdown icon="inventory" label="Inventory" :active="in_array($active, ['inventory', 'products', 'stock-in', 'stock-out'])" :open="in_array($active, ['inventory', 'products', 'stock-in', 'stock-out'])">
                 <x-side-bar-link icon="inventory" label="Inventory List" :active="$active === 'inventory'" href="/inventory" />
                 <x-side-bar-link icon="products" label="Products" :active="$active === 'products'" href="/products" />
+                <x-side-bar-link icon="stock-in" label="Stock In" :active="$active === 'stock-in'" href="/stock-in" />
+                <x-side-bar-link icon="stock-out" label="Stock Out" :active="$active === 'stock-out'" href="/stock-out" />
             </x-side-bar-dropdown>
             <x-side-bar-link icon="analytics" label="Analytics" :active="$active === 'analytics'" href="/analytics" />
             <x-side-bar-link icon="sales" label="Sales" :active="$active === 'sales'" href="/sales" />
             <x-side-bar-link icon="employees" label="Employees" :active="$active === 'employees'" href="/employees" />
-            <x-side-bar-link icon="logs" label="Activity Logs" :active="$active === 'activity-logs'" href="/activity-logs" />
         @endif
     </nav>
 

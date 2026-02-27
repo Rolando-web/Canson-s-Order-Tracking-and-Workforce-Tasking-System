@@ -37,7 +37,6 @@
                             <p class="text-sm font-semibold text-gray-900">{{ $worker['name'] }}</p>
                             <div class="flex items-center gap-2 mt-0.5">
                                 <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ $worker['statusColor'] }}">{{ $worker['status'] }}</span>
-                                <span class="text-xs text-gray-400">• {{ $worker['dept'] }}</span>
                             </div>
                         </div>
                     </div>
@@ -169,54 +168,9 @@
     </div>
 </div>
 
-{{-- Assign Delivery Employee Modal --}}
-<div id="assignDeliveryModal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeliveryModal()"></div>
-    <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative" onclick="event.stopPropagation()">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <div>
-                    <h3 class="text-lg font-bold text-gray-900">Assign Delivery Employee</h3>
-                    <p class="text-sm text-gray-500">Order: <span id="deliveryOrderLabel" class="font-semibold text-purple-600"></span></p>
-                </div>
-                <button onclick="closeDeliveryModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <div class="px-6 py-5 space-y-4">
-                <div class="bg-gray-50 rounded-xl p-4">
-                    <p class="text-sm font-semibold text-gray-900" id="deliveryCustomerName"></p>
-                    <p class="text-xs text-gray-500 mt-1" id="deliveryAddress"></p>
-                    <p class="text-xs text-gray-500 mt-1" id="deliveryItems"></p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Select Driver</label>
-                    <select id="deliveryEmployeeSelect" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                        <option value="">Select a driver...</option>
-                        @foreach($drivers as $driver)
-                            <option value="{{ $driver['id'] }}">{{ $driver['name'] }}</option>
-                        @endforeach
-                    </select>
-                    <p class="text-xs text-gray-400 mt-1">Only employees with the Driver department can deliver orders.</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Vehicle (Optional)</label>
-                    <input id="deliveryVehicleInput" type="text" placeholder="e.g. Motorcycle, Van, Truck"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                </div>
-            </div>
-            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
-                <button onclick="closeDeliveryModal()" class="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
-                <button id="assignDeliveryBtn" onclick="saveDeliveryAssignment()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                    Assign Delivery
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- New Assignment Modal --}}
+{{-- Include Modals from pages/Modals --}}
+@include('pages.Modals.assignment-details-modal')
+@include('pages.Modals.assignment-status-modal')
 <div id="assignmentModal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAssignmentModal()"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
@@ -333,7 +287,6 @@ let quickAssignOrderId = '';
 let currentDetailAssignment = null;
 let currentUpdateAssignment = null;
 let selectedNewStatus = '';
-let currentDeliveryOrder = null;
 
 const assignmentsData = @json($assignmentsData ?? []);
 
@@ -602,18 +555,14 @@ function quickAssignOrder(orderId) {
     const pickerHtml = workerNames.map(name => {
         const worker = workersData.find(w => w.name === name);
         const activeCount = worker ? worker.active : 0;
-        const isOnDelivery = worker.onDelivery;
-        const disabled = isOnDelivery ? 'opacity-50 cursor-not-allowed' : '';
-        const onClickAttr = isOnDelivery 
-            ? `onclick="showToast('${name} is currently on a delivery. Cannot assign work until delivery is completed.', 'error')"` 
-            : `onclick="confirmQuickAssign('${name}')"` ;
-        const statusNote = isOnDelivery ? '<span class="text-xs text-purple-600 font-semibold">ON DELIVERY</span>' : `<span class="text-xs text-gray-500">${activeCount} active assignment${activeCount !== 1 ? 's' : ''}</span>`;
+        const onClickAttr = `onclick="confirmQuickAssign('${name}')"`;
+        const statusNote = `<span class="text-xs text-gray-500">${activeCount} active assignment${activeCount !== 1 ? 's' : ''}</span>`;
         return `
-            <button ${onClickAttr} class="flex items-center justify-between w-full p-3 rounded-lg hover:bg-emerald-50 border border-transparent hover:border-emerald-200 transition-all text-left ${disabled}">
+            <button ${onClickAttr} class="flex items-center justify-between w-full p-3 rounded-lg hover:bg-emerald-50 border border-transparent hover:border-emerald-200 transition-all text-left">
                 <div class="flex items-center gap-3">
                     <div class="w-9 h-9 rounded-full ${worker.color} flex items-center justify-center text-white font-bold text-xs">${worker.initial}</div>
                     <div>
-                        <p class="text-sm font-semibold text-gray-900">${name} <span class="text-xs text-gray-400 font-normal">${worker.dept}</span></p>
+                        <p class="text-sm font-semibold text-gray-900">${name}</p>
                         ${statusNote}
                     </div>
                 </div>
@@ -670,72 +619,6 @@ function confirmQuickAssign(employeeName) {
     .catch(error => {
         console.error('Error:', error);
         showToast('An error occurred. Please try again.', 'error');
-    });
-}
-
-// ========== Assign Delivery Employee ==========
-function openAssignDeliveryModal(order) {
-    currentDeliveryOrder = order;
-    document.getElementById('deliveryOrderLabel').textContent = order.order_id;
-    document.getElementById('deliveryCustomerName').textContent = order.customer;
-    document.getElementById('deliveryAddress').textContent = order.delivery_address;
-    document.getElementById('deliveryItems').textContent = order.items || 'No items';
-    document.getElementById('deliveryEmployeeSelect').value = '';
-    document.getElementById('deliveryVehicleInput').value = '';
-    document.getElementById('assignDeliveryModal').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function closeDeliveryModal() {
-    document.getElementById('assignDeliveryModal').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    currentDeliveryOrder = null;
-}
-
-function saveDeliveryAssignment() {
-    if (!currentDeliveryOrder) return;
-    var empId = document.getElementById('deliveryEmployeeSelect').value;
-    if (!empId) {
-        alert('Please select an employee.');
-        return;
-    }
-
-    var btn = document.getElementById('assignDeliveryBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Assigning...';
-
-    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-    fetch('/dispatch/assign-driver', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
-            dispatch_id: currentDeliveryOrder.dispatch_id,
-            delivery_user_id: empId,
-            vehicle: document.getElementById('deliveryVehicleInput').value || null,
-        }),
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.success) {
-            closeDeliveryModal();
-            showToast('Delivery employee assigned successfully!', 'success');
-            setTimeout(function() { window.location.reload(); }, 800);
-        } else {
-            alert('Failed to assign delivery employee.');
-            btn.disabled = false;
-            btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Assign Delivery';
-        }
-    })
-    .catch(function(error) {
-        console.error('Error:', error);
-        alert('An error occurred.');
-        btn.disabled = false;
-        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Assign Delivery';
     });
 }
 

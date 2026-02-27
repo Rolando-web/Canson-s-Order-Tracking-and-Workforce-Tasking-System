@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\InventoryItem;
 use App\Models\StockTransaction;
-use App\Models\ActivityLog;
+use App\Models\User;
 
 class InventoryController extends Controller
 {
@@ -16,6 +16,42 @@ class InventoryController extends Controller
         $lowStockAlert = $items->where('stock', '<', 50)->count();
         
         return view('pages.inventory', compact('items', 'totalItems', 'lowStockAlert'));
+    }
+
+    /**
+     * Stock In page — list items for stock in + movement history
+     */
+    public function stockInPage()
+    {
+        $items = InventoryItem::orderBy('name')->get();
+        $transactions = StockTransaction::with(['inventoryItem', 'creator'])
+            ->where('transaction_type', 'stock_in')
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+        $todayCount = StockTransaction::where('transaction_type', 'stock_in')
+            ->whereDate('transaction_date', today())
+            ->count();
+
+        return view('pages.stock-in', compact('items', 'transactions', 'todayCount'));
+    }
+
+    /**
+     * Stock Out page — shows automatic stock outs from assignments + history
+     */
+    public function stockOutPage()
+    {
+        $items = InventoryItem::orderBy('name')->get();
+        $transactions = StockTransaction::with(['inventoryItem', 'creator'])
+            ->where('transaction_type', 'stock_out')
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+        $todayCount = StockTransaction::where('transaction_type', 'stock_out')
+            ->whereDate('transaction_date', today())
+            ->count();
+
+        return view('pages.stock-out', compact('items', 'transactions', 'todayCount'));
     }
 
     public function products()
@@ -73,8 +109,6 @@ class InventoryController extends Controller
 
         $item = InventoryItem::create($validated);
 
-        ActivityLog::log('Create Item', "Added inventory item: {$item->name} ({$item->item_id})");
-
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'item' => $item]);
         }
@@ -105,8 +139,6 @@ class InventoryController extends Controller
     {
         $name = $item->name;
         $item->delete();
-
-        ActivityLog::log('Delete Item', "Removed inventory item: {$name}");
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true]);
@@ -146,8 +178,6 @@ class InventoryController extends Controller
             'created_by'       => auth()->id(),
             'created_at'       => now(),
         ]);
-
-        ActivityLog::log('Stock In', "Added {$validated['quantity']} units to {$item->name} inventory (now {$newStock})");
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'item' => $item->fresh()]);
@@ -195,8 +225,6 @@ class InventoryController extends Controller
             'created_by'       => auth()->id(),
             'created_at'       => now(),
         ]);
-
-        ActivityLog::log('Stock Out', "Removed {$validated['quantity']} units from {$item->name} inventory (now {$newStock})");
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'item' => $item->fresh()]);

@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Assignment;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\User;
-use App\Models\Dispatch;
-use App\Models\ActivityLog;
+use App\Models\InventoryItem;
+use App\Models\StockTransaction;
 use App\Models\Notification;
 
 class AssignmentsController extends Controller
@@ -29,24 +30,34 @@ class AssignmentsController extends Controller
      */
     private function employeeView($user)
     {
-        $myAssignments = Assignment::with('order')
+        $myAssignments = Assignment::with(['order.items'])
             ->where('employee_id', $user->id)
             ->orderByRaw("FIELD(status, 'in_progress', 'pending', 'completed', 'cancelled')")
             ->orderBy('assigned_date', 'desc')
             ->get()
             ->map(function ($a) {
                 $order = $a->order;
+                $orderItems = $order ? $order->items->map(fn($i) => [
+                    'id'            => $i->id,
+                    'name'          => $i->name,
+                    'quantity'      => $i->quantity,
+                    'completed_qty' => $i->completed_qty ?? 0,
+                    'remaining'     => $i->quantity - ($i->completed_qty ?? 0),
+                ])->toArray() : [];
+
                 return [
                     'id'               => $a->id,
                     'order_id'         => $a->order_id,
                     'customer'         => $order ? $order->customer_name : 'N/A',
                     'customer_contact' => $order ? $order->contact_number : '',
                     'items'            => $order ? $order->items->map(fn($i) => $i->quantity . ' ' . $i->name)->implode(', ') : '',
+                    'order_items'      => $orderItems,
                     'delivery_address' => $order ? $order->delivery_address : '',
                     'delivery_date'    => $order ? $order->delivery_date->format('Y-m-d') : '',
                     'total_amount'     => $order ? $order->total_amount : 0,
                     'priority'         => $a->priority,
                     'status'           => $a->status,
+                    'order_status'     => $order ? $order->status : 'Pending',
                     'notes'            => $a->notes,
                     'assigned_date'    => $a->assigned_date->format('Y-m-d'),
                     'assigned_by'      => $a->assignedByUser ? $a->assignedByUser->name : 'System',
@@ -57,35 +68,7 @@ class AssignmentsController extends Controller
             ->where('status', 'pending')
             ->count();
 
-        $department = $user->department ?? 'Worker';
-
-        // For Drivers, also fetch their delivery assignments
-        $myDeliveries = [];
-        if ($department === 'Driver') {
-            $myDeliveries = Dispatch::with('order')
-                ->where('driver', $user->name)
-                ->orderByRaw("FIELD(status, 'in_transit', 'pending', 'delivered')")
-                ->orderBy('date', 'desc')
-                ->get()
-                ->map(function ($d) {
-                    $order = $d->order;
-                    return [
-                        'id'               => $d->id,
-                        'order_id'         => $order ? $order->order_id : 'N/A',
-                        'customer'         => $d->customer,
-                        'items'            => $d->items,
-                        'delivery_address' => $d->address,
-                        'delivery_date'    => $d->date->format('Y-m-d'),
-                        'total_amount'     => $order ? $order->total_amount : 0,
-                        'vehicle'          => $d->vehicle ?? 'Not assigned',
-                        'status'           => $d->status,
-                        'dispatch_time'    => $d->dispatch_time ? $d->dispatch_time->format('Y-m-d H:i') : null,
-                        'delivery_time'    => $d->delivery_time ? $d->delivery_time->format('Y-m-d H:i') : null,
-                    ];
-                })->toArray();
-        }
-
-        return view('pages.assignments-employee', compact('myAssignments', 'myDeliveries', 'newAssignmentCount', 'department'));
+        return view('pages.assignments-employee', compact('myAssignments', 'newAssignmentCount'));
     }
 
     /**
@@ -102,18 +85,7 @@ class AssignmentsController extends Controller
                 ->whereIn('status', ['pending', 'in_progress'])
                 ->count();
 
-            // Check if driver is currently on a delivery (in_transit)
-            $onDelivery = false;
-            if (($emp->department ?? 'Worker') === 'Driver') {
-                $onDelivery = Dispatch::where('driver', $emp->name)
-                    ->where('status', 'in_transit')
-                    ->exists();
-            }
-
-            if ($onDelivery) {
-                $status = 'ON DELIVERY';
-                $statusColor = 'bg-purple-100 text-purple-700';
-            } elseif ($activeCount > 0) {
+            if ($activeCount > 0) {
                 $status = 'BUSY';
                 $statusColor = 'bg-amber-100 text-amber-700';
             } else {
@@ -128,20 +100,16 @@ class AssignmentsController extends Controller
                 'color'       => $colors[$index % count($colors)],
                 'status'      => $status,
                 'statusColor' => $statusColor,
-                'dept'        => $emp->department ?? 'Worker',
                 'active'      => $activeCount,
-                'onDelivery'  => $onDelivery,
             ];
         });
-
-        // Get only Drivers for the delivery assignment dropdown
-        $drivers = $workers->filter(fn($w) => $w['dept'] === 'Driver')->values();
 
         // Get assignments grouped by employee
         $assignmentsData = [];
         foreach ($employees as $emp) {
-            $empAssignments = Assignment::with('order')
+            $empAssignments = Assignment::with(['order.items'])
                 ->where('employee_id', $emp->id)
+                ->whereNotIn('status', ['completed', 'cancelled'])
                 ->orderBy('assigned_date', 'desc')
                 ->get()
                 ->map(function ($a) {
@@ -157,6 +125,7 @@ class AssignmentsController extends Controller
                         'total_amount'     => $order ? $order->total_amount : 0,
                         'priority'         => $a->priority,
                         'status'           => $a->status,
+                        'order_status'     => $order ? $order->status : 'Pending',
                         'notes'            => $a->notes,
                         'assigned_date'    => $a->assigned_date->format('Y-m-d'),
                         'assigned_by'      => $a->assignedByUser ? $a->assignedByUser->name : 'System',
@@ -166,13 +135,13 @@ class AssignmentsController extends Controller
             $assignmentsData[$emp->name] = $empAssignments;
         }
 
-        // Get unassigned orders (orders without assignments or with status Pending)
+        // Get unassigned orders
         $assignedOrderIds = Assignment::whereIn('status', ['pending', 'in_progress'])
             ->pluck('order_id')
             ->toArray();
 
         $availableOrders = Order::whereNotIn('order_id', $assignedOrderIds)
-            ->where('status', '!=', 'Completed')
+            ->whereNotIn('status', ['Ready for Delivery', 'Delivered'])
             ->with('items')
             ->get()
             ->map(function ($order) {
@@ -187,7 +156,7 @@ class AssignmentsController extends Controller
                 ];
             })->toArray();
 
-        return view('pages.assignments', compact('workers', 'drivers', 'assignmentsData', 'availableOrders'));
+        return view('pages.assignments', compact('workers', 'assignmentsData', 'availableOrders'));
     }
 
     public function store(Request $request)
@@ -201,23 +170,6 @@ class AssignmentsController extends Controller
 
         $employee = User::findOrFail($validated['employee_id']);
 
-        // If the employee is a Driver, check they are not currently on a delivery
-        if (($employee->department ?? 'Worker') === 'Driver') {
-            $onDelivery = Dispatch::where('driver', $employee->name)
-                ->where('status', 'in_transit')
-                ->exists();
-
-            if ($onDelivery) {
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => $employee->name . ' is currently on a delivery. Cannot assign work until delivery is completed.',
-                    ], 422);
-                }
-                return redirect()->back()->with('error', $employee->name . ' is currently on a delivery.');
-            }
-        }
-
         $assignment = Assignment::create([
             'order_id'      => $validated['order_id'],
             'employee_id'   => $validated['employee_id'],
@@ -228,13 +180,43 @@ class AssignmentsController extends Controller
             'assigned_date' => now()->toDateString(),
         ]);
 
-        // Update order's assigned field
+        // Update order's assigned field and set status to In-Progress
         $order = Order::where('order_id', $validated['order_id'])->first();
         if ($order) {
-            $order->update(['assigned' => $employee->name]);
-        }
+            $order->update([
+                'assigned' => $employee->name,
+                'status'   => 'In-Progress',
+            ]);
 
-        ActivityLog::log('Assign Task', "Assigned order {$validated['order_id']} to {$employee->name}");
+            // Automatic stock out for all items in this order
+            foreach ($order->items as $orderItem) {
+                $inventoryItem = InventoryItem::find($orderItem->inventory_item_id);
+                if ($inventoryItem) {
+                    $previousStock = $inventoryItem->stock;
+                    $newStock = max(0, $previousStock - $orderItem->quantity);
+
+                    $inventoryItem->update([
+                        'stock'  => $newStock,
+                        'status' => $newStock > 0 ? ($newStock < 50 ? 'Low Stock' : 'In Stock') : 'Out of Stock',
+                    ]);
+
+                    StockTransaction::create([
+                        'item_id'          => $inventoryItem->id,
+                        'transaction_type' => 'stock_out',
+                        'quantity'         => $orderItem->quantity,
+                        'previous_stock'   => $previousStock,
+                        'new_stock'        => $newStock,
+                        'reference_number' => StockTransaction::generateReference('stock_out'),
+                        'reason'           => 'Order Assignment',
+                        'notes'            => "Auto stock out for order {$validated['order_id']} assigned to {$employee->name}",
+                        'transaction_date' => now()->toDateString(),
+                        'created_by'       => auth()->id(),
+                        'created_at'       => now(),
+                    ]);
+                }
+            }
+
+        }
 
         // Notify the employee about the new work assignment
         Notification::send(
@@ -262,32 +244,6 @@ class AssignmentsController extends Controller
 
         $assignment->update($validated);
 
-        // When assignment is marked as completed, ensure a dispatch record exists for delivery
-        if (isset($validated['status']) && $validated['status'] === 'completed') {
-            $order = Order::where('order_id', $assignment->order_id)->first();
-
-            if ($order) {
-                // Check if a dispatch record already exists for this order
-                $existingDispatch = Dispatch::where('order_id', $order->id)->first();
-
-                if (!$existingDispatch) {
-                    // Build items string from order items
-                    $itemNames = $order->items->map(fn($i) => $i->quantity . ' ' . $i->name)->implode(', ');
-
-                    Dispatch::create([
-                        'order_id' => $order->id,
-                        'customer' => $order->customer_name,
-                        'items'    => $itemNames,
-                        'address'  => $order->delivery_address,
-                        'status'   => 'pending',
-                        'date'     => $order->delivery_date,
-                    ]);
-                }
-            }
-        }
-
-        ActivityLog::log('Update Assignment', "Updated assignment #{$assignment->id} for order {$assignment->order_id}");
-
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'assignment' => $assignment]);
         }
@@ -300,8 +256,6 @@ class AssignmentsController extends Controller
         $orderId = $assignment->order_id;
         $assignment->delete();
 
-        ActivityLog::log('Remove Assignment', "Removed assignment for order {$orderId}");
-
         if ($request->expectsJson()) {
             return response()->json(['success' => true]);
         }
@@ -310,7 +264,7 @@ class AssignmentsController extends Controller
     }
 
     /**
-     * Employee updates their own assignment status (pending → in_progress → completed)
+     * Employee updates their own assignment status (pending -> in_progress -> completed)
      */
     public function updateStatus(Request $request, Assignment $assignment)
     {
@@ -327,63 +281,74 @@ class AssignmentsController extends Controller
 
         $assignment->update(['status' => $validated['status']]);
 
-        // When assignment is marked as completed, create a dispatch record
-        if ($validated['status'] === 'completed') {
-            $order = Order::where('order_id', $assignment->order_id)->first();
-            if ($order) {
-                $existingDispatch = Dispatch::where('order_id', $order->id)->first();
-                if (!$existingDispatch) {
-                    $itemNames = $order->items->map(fn($i) => $i->quantity . ' ' . $i->name)->implode(', ');
-                    Dispatch::create([
-                        'order_id' => $order->id,
-                        'customer' => $order->customer_name,
-                        'items'    => $itemNames,
-                        'address'  => $order->delivery_address,
-                        'status'   => 'pending',
-                        'date'     => $order->delivery_date,
-                    ]);
-                }
-            }
-        }
-
-        ActivityLog::log('Update Assignment Status', "Employee updated assignment #{$assignment->id} to {$validated['status']}");
-
         return response()->json(['success' => true, 'assignment' => $assignment]);
     }
 
     /**
-     * Driver updates their own delivery status (ship / deliver).
+     * Employee updates their progress on order items (e.g., completed 150 out of 250)
      */
-    public function updateDeliveryStatus(Request $request)
+    public function updateProgress(Request $request)
     {
         $user = auth()->user();
 
         $validated = $request->validate([
-            'dispatch_id' => 'required|integer|exists:dispatches,id',
-            'action'      => 'required|in:ship,deliver',
+            'assignment_id' => 'required|exists:assignments,id',
+            'items'         => 'required|array',
+            'items.*.id'    => 'required|exists:order_items,id',
+            'items.*.add_qty' => 'required|integer|min:1',
         ]);
 
-        $dispatch = Dispatch::findOrFail($validated['dispatch_id']);
+        $assignment = Assignment::findOrFail($validated['assignment_id']);
 
-        // Only allow the assigned driver to update
-        if ($dispatch->driver !== $user->name) {
+        // Only allow the assigned employee to update
+        if ($assignment->employee_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
-        if ($validated['action'] === 'ship') {
-            $dispatch->update([
-                'status'        => 'in_transit',
-                'dispatch_time' => now(),
-            ]);
-            ActivityLog::log('Start Delivery', "Driver {$user->name} started delivery for dispatch #{$dispatch->id}");
-        } elseif ($validated['action'] === 'deliver') {
-            $dispatch->update([
-                'status'        => 'delivered',
-                'delivery_time' => now(),
-            ]);
-            ActivityLog::log('Complete Delivery', "Driver {$user->name} completed delivery for dispatch #{$dispatch->id}");
+        $order = Order::where('order_id', $assignment->order_id)->first();
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found'], 404);
         }
 
-        return response()->json(['success' => true, 'dispatch' => $dispatch]);
+        // Update each order item's completed_qty by ADDING the new input
+        foreach ($validated['items'] as $itemData) {
+            $orderItem = OrderItem::where('id', $itemData['id'])
+                ->where('order_id', $order->id)
+                ->first();
+
+            if ($orderItem) {
+                $newTotal = min($orderItem->completed_qty + $itemData['add_qty'], $orderItem->quantity);
+                $orderItem->update(['completed_qty' => $newTotal]);
+            }
+        }
+
+        // Check if all items are fully completed
+        $order->refresh();
+        $allDone = $order->items->every(fn($i) => $i->completed_qty >= $i->quantity);
+
+        if ($allDone) {
+            // Mark order as Ready for Delivery
+            $order->update(['status' => 'Ready for Delivery']);
+            $assignment->update(['status' => 'completed']);
+
+            // Notify managers
+            $managerIds = User::where('role', 'admin')->pluck('id')->toArray();
+            Notification::sendToMany(
+                $managerIds,
+                'order_ready',
+                'Order Ready for Delivery',
+                "Order {$order->order_id} is ready for delivery. All items have been completed by {$user->name}.",
+                ['order_id' => $order->order_id]
+            );
+        } else {
+            // Keep as In-Progress
+            $assignment->update(['status' => 'in_progress']);
+        }
+
+        return response()->json([
+            'success'       => true,
+            'all_completed' => $allDone,
+            'order_status'  => $order->fresh()->status,
+        ]);
     }
 }

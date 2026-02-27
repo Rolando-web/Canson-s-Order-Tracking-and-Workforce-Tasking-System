@@ -79,7 +79,7 @@ function createOrderItemRow(index) {
     const items = window.inventoryItems || [];
     let optionsHtml = '<option value="">-- Select item --</option>';
     items.forEach(item => {
-        optionsHtml += `<option value="${item.name}" data-price="${item.unit_price}">${item.name}</option>`;
+        optionsHtml += `<option value="${item.name}" data-price="${item.unit_price}" data-stock="${item.stock}">${item.name} (${item.stock} in stock)</option>`;
     });
 
     return `
@@ -89,6 +89,7 @@ function createOrderItemRow(index) {
                     class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                     ${optionsHtml}
                 </select>
+                <div class="stock-indicator mt-1 text-xs"></div>
             </td>
             <td class="px-4 py-2">
                 <input type="number" name="items[${index}][qty]" required min="1" value="1"
@@ -136,6 +137,20 @@ window.recalcOrderTotal = function() {
         if (subtotalCell) {
             subtotalCell.textContent = '₱' + subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
+
+        // Highlight qty input if exceeds stock
+        const sel = row.querySelector('select');
+        const qtyInput = row.querySelector('.item-qty');
+        if (sel && sel.value && qtyInput) {
+            const stock = parseInt(sel.options[sel.selectedIndex].getAttribute('data-stock')) || 0;
+            if (qty > stock) {
+                qtyInput.classList.add('border-red-400', 'ring-1', 'ring-red-400', 'bg-red-50');
+                qtyInput.classList.remove('border-gray-200');
+            } else {
+                qtyInput.classList.remove('border-red-400', 'ring-1', 'ring-red-400', 'bg-red-50');
+                qtyInput.classList.add('border-gray-200');
+            }
+        }
     });
     document.getElementById('addOrderTotal').textContent = '₱' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
@@ -169,6 +184,22 @@ window.submitAddOrder = function(event) {
         return;
     }
 
+    // Validate stock availability
+    var stockError = false;
+    document.querySelectorAll('#addOrderItemsBody .order-item-row').forEach(row => {
+        const sel = row.querySelector('select');
+        if (sel && sel.value) {
+            const opt = sel.options[sel.selectedIndex];
+            const stock = parseInt(opt.getAttribute('data-stock')) || 0;
+            const qty = parseInt(row.querySelector('.item-qty')?.value) || 0;
+            if (qty > stock) {
+                stockError = true;
+                alert('"' + sel.value + '" only has ' + stock + ' in stock. Please reduce the quantity.');
+            }
+        }
+    });
+    if (stockError) return;
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
     fetch('/orders', {
@@ -200,11 +231,36 @@ window.submitAddOrder = function(event) {
 window.onItemSelected = function(selectEl) {
     const selectedOption = selectEl.options[selectEl.selectedIndex];
     const price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+    const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
     const row = selectEl.closest('.order-item-row');
     const priceInput = row.querySelector('.item-price');
     if (priceInput) {
         priceInput.value = price.toFixed(2);
     }
+
+    // Show stock indicator
+    const indicator = row.querySelector('.stock-indicator');
+    if (indicator) {
+        if (!selectedOption.value) {
+            indicator.innerHTML = '';
+        } else if (stock <= 0) {
+            indicator.innerHTML = '<span class="inline-flex items-center gap-1 text-red-600 font-medium"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg> Out of stock</span>';
+        } else if (stock <= 10) {
+            indicator.innerHTML = '<span class="inline-flex items-center gap-1 text-amber-600 font-medium"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4"/></svg> Low stock: ' + stock + ' available</span>';
+        } else {
+            indicator.innerHTML = '<span class="inline-flex items-center gap-1 text-emerald-600 font-medium"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4"/></svg> In stock: ' + stock + ' available</span>';
+        }
+    }
+
+    // Set max qty to available stock
+    const qtyInput = row.querySelector('.item-qty');
+    if (qtyInput && selectedOption.value) {
+        qtyInput.setAttribute('max', stock);
+        if (parseInt(qtyInput.value) > stock) {
+            qtyInput.value = stock > 0 ? stock : 1;
+        }
+    }
+
     recalcOrderTotal();
 };
 

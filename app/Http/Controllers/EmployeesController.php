@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Hash;
 
 class EmployeesController extends Controller
@@ -56,8 +55,6 @@ class EmployeesController extends Controller
             'password'   => Hash::make($validated['password'] ?? 'password123'),
         ]);
 
-        ActivityLog::log('Create Employee', "Added new employee: {$name} ({$validated['empRole']})");
-
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'employee' => $user]);
         }
@@ -89,8 +86,6 @@ class EmployeesController extends Controller
 
         $employee->update($updateData);
 
-        ActivityLog::log('Update Employee', "Updated employee: {$name}");
-
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'employee' => $employee]);
         }
@@ -102,8 +97,6 @@ class EmployeesController extends Controller
     {
         $name = $employee->name;
         $employee->delete();
-
-        ActivityLog::log('Delete Employee', "Removed employee: {$name}");
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true]);
