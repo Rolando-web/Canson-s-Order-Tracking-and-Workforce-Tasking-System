@@ -28,7 +28,7 @@
 
     {{-- Stats --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div class="bg-white rounded-xl border-2 border-red-400 p-5">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-center">
                 <div class="w-10 h-10 rounded-xl flex-none bg-red-100 flex items-center justify-center">
                     <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -60,7 +60,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/>
         </svg>
         <div>
-            <p class="text-sm font-semibold text-amber-800">Automatic Stock Out</p>
+            <p class="text-sm font-semibold text-amber-800">Automatic Stock Adjustment</p>
             <p class="text-xs text-amber-600 mt-0.5">Stock is automatically deducted when a manager assigns an order to an employee. Each order assignment triggers stock out for the items in that order.</p>
         </div>
     </div>
@@ -74,7 +74,8 @@
     </div>
 
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table class="w-full">
+        <div class="overflow-x-auto">
+        <table class="w-full min-w-[800px]">
             <thead>
                 <tr class="border-b border-gray-200">
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date & Time</th>
@@ -98,7 +99,12 @@
                     <td class="px-6 py-4 text-sm text-gray-600">
                         <span class="inline-flex px-2 py-0.5 rounded text-xs font-mono bg-gray-50 border border-gray-200">{{ $txn->reference_number }}</span>
                     </td>
-                    <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $txn->inventoryItem->name ?? 'N/A' }}</td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm font-semibold text-gray-900">{{ $txn->inventoryItem->name ?? 'N/A' }}</p>
+                        @if($txn->inventoryItem)
+                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $txn->inventoryItem->item_id }}</span>
+                        @endif
+                    </td>
                     <td class="px-6 py-4">
                         <div class="text-sm">
                             <span class="text-gray-500">{{ number_format($txn->previous_stock) }}</span>
@@ -118,6 +124,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 @endsection

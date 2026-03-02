@@ -58,7 +58,8 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Order Items</label>
                         <div class="border border-gray-200 rounded-lg overflow-hidden">
-                            <table class="w-full">
+                            <div class="overflow-x-auto">
+                            <table class="w-full min-w-[500px]">
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Item Name</th>
@@ -77,6 +78,7 @@
                                     </tr>
                                 </tfoot>
                             </table>
+                            </div>
                         </div>
                     </div>
 

@@ -17,7 +17,7 @@
         <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
         <div class="flex items-center gap-3">
             <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">AD</div>
+            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
         </div>
     </div>
 @endsection
@@ -102,7 +102,10 @@
                     </div>
                 </div>
 
-                <p class="text-xs text-gray-400 mb-1">{{ $item->item_id }} &middot; {{ $item->category }}</p>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[0.65rem] font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $item->item_id }}</span>
+                    <span class="text-xs text-gray-400">{{ $item->category }}</span>
+                </div>
                 <p class="text-sm font-bold text-emerald-600 mb-3">₱{{ number_format($item->unit_price ?? 0, 2) }}</p>
 
                 <div class="flex items-center justify-between">

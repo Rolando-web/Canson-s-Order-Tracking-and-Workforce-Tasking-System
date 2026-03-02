@@ -30,13 +30,7 @@ class DatabaseSeeder extends Seeder
         // Create Employee (Worker)
         User::firstOrCreate(
             ['name' => 'employee'],
-            ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE, 'department' => 'Worker']
-        );
-
-        // Create Driver
-        User::firstOrCreate(
-            ['name' => 'driver'],
-            ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE, 'department' => 'Driver']
+            ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE]
         );
 
         $this->call([

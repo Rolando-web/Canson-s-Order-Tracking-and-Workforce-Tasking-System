@@ -28,7 +28,9 @@ class ScheduleController extends Controller
             });
 
         // Load orders for calendar display (show as bars from created_at to delivery_date)
+        // Exclude completed/delivered orders — no need to show them on the calendar
         $orders = Order::orderBy('delivery_date')
+            ->whereNotIn('status', ['Completed', 'Delivered'])
             ->get()
             ->map(function ($order) {
                 return [

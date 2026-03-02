@@ -11,6 +11,7 @@ class Assignment extends Model
 
     protected $fillable = [
         'order_id',
+        'order_item_id',
         'employee_id',
         'priority',
         'status',
@@ -22,6 +23,11 @@ class Assignment extends Model
     protected $casts = [
         'assigned_date' => 'date',
     ];
+
+    public function orderItem()
+    {
+        return $this->belongsTo(OrderItem::class, 'order_item_id');
+    }
 
     public function employee()
     {

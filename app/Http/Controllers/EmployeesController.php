@@ -21,7 +21,6 @@ class EmployeesController extends Controller
                 'first'      => $nameParts[0] ?? $emp->name,
                 'last'       => $nameParts[1] ?? '',
                 'role'       => $emp->role,
-                'department' => $emp->department ?? 'Worker',
                 'contact'    => '',
                 'status'     => 'Active',
                 'color'      => $colors[$index % count($colors)],
@@ -41,7 +40,6 @@ class EmployeesController extends Controller
             'empFirstName'  => 'required|string|max:100',
             'empLastName'   => 'required|string|max:100',
             'empRole'       => 'required|in:employee,admin,super_admin',
-            'empDepartment' => 'nullable|in:Worker,Driver',
             'empContact'    => 'nullable|string|max:20',
             'password'      => 'nullable|string|min:6',
         ]);
@@ -51,7 +49,6 @@ class EmployeesController extends Controller
         $user = User::create([
             'name'       => $name,
             'role'       => $validated['empRole'],
-            'department' => $validated['empDepartment'] ?? 'Worker',
             'password'   => Hash::make($validated['password'] ?? 'password123'),
         ]);
 
@@ -68,7 +65,6 @@ class EmployeesController extends Controller
             'empFirstName'  => 'required|string|max:100',
             'empLastName'   => 'required|string|max:100',
             'empRole'       => 'required|in:employee,admin,super_admin',
-            'empDepartment' => 'nullable|in:Worker,Driver',
             'empContact'    => 'nullable|string|max:20',
             'password'      => 'nullable|string|min:6',
         ]);
@@ -77,7 +73,6 @@ class EmployeesController extends Controller
         $updateData = [
             'name'       => $name,
             'role'       => $validated['empRole'],
-            'department' => $validated['empDepartment'] ?? 'Worker',
         ];
 
         if (!empty($validated['password'])) {

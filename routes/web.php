@@ -13,6 +13,7 @@ use App\Http\Controllers\SalesController;
 use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\NotificationsController;
+use App\Http\Controllers\ReturnsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,6 +62,7 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'super_admin'])->group(function () {
     Route::get('/orders', [OrdersController::class, 'index'])->name('orders');
     Route::post('/orders', [OrdersController::class, 'store'])->name('orders.store');
+    Route::get('/orders/customer-suggestions', [OrdersController::class, 'customerSuggestions'])->name('orders.customerSuggestions');
     Route::put('/orders/{order}', [OrdersController::class, 'update'])->name('orders.update');
     Route::delete('/orders/{order}', [OrdersController::class, 'destroy'])->name('orders.destroy');
 });
@@ -85,8 +87,13 @@ Route::middleware(['auth', 'admin_or_above'])->group(function () {
     
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
     Route::get('/analytics/reports', [AnalyticsController::class, 'reports'])->name('analytics.reports');
+    Route::get('/analytics/export-csv', [AnalyticsController::class, 'exportCsv'])->name('analytics.exportCsv');
     
     Route::get('/sales', [SalesController::class, 'index'])->name('sales');
+    Route::get('/sales/export-csv', [SalesController::class, 'exportCsv'])->name('sales.exportCsv');
+    Route::get('/sales/print', [SalesController::class, 'printReport'])->name('sales.print');
+    
+    Route::get('/reports', [SalesController::class, 'reportsIndex'])->name('reports');
     
     Route::get('/employees', [EmployeesController::class, 'index'])->name('employees');
     Route::post('/employees', [EmployeesController::class, 'store'])->name('employees.store');
@@ -104,5 +111,9 @@ Route::middleware(['auth', 'admin_or_above'])->group(function () {
     Route::post('/assignments', [AssignmentsController::class, 'store'])->name('assignments.store');
     Route::put('/assignments/{assignment}', [AssignmentsController::class, 'update'])->name('assignments.update');
     Route::delete('/assignments/{assignment}', [AssignmentsController::class, 'destroy'])->name('assignments.destroy');
+
+    // Damage Claims
+    Route::get('/returns', [ReturnsController::class, 'index'])->name('returns');
+    Route::post('/returns/pending-for-customer', [ReturnsController::class, 'pendingForCustomer'])->name('returns.pending');
 });
 

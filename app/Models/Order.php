@@ -33,11 +33,6 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public function dispatch()
-    {
-        return $this->hasOne(Dispatch::class);
-    }
-
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

@@ -13,7 +13,7 @@
         <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
         <div class="flex items-center gap-3">
             <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">AD</div>
+            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
         </div>
     </div>
 @endsection
@@ -27,17 +27,23 @@
             <p class="text-gray-500 mt-1">Sales performance, production metrics & insights.</p>
         </div>
         <div class="flex items-center gap-2">
-            <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option>Last 7 Days</option>
-                <option>Last 30 Days</option>
-                <option selected>This Month</option>
-                <option>This Quarter</option>
-                <option>This Year</option>
-            </select>
-            <button class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center gap-2">
+            {{-- Period Filter --}}
+            <form method="GET" action="{{ route('analytics') }}" class="flex items-center gap-2">
+                <select name="period" onchange="this.form.submit()"
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                    <option value="last_7"     {{ ($period ?? 'this_month') === 'last_7'     ? 'selected' : '' }}>Last 7 Days</option>
+                    <option value="last_30"    {{ ($period ?? 'this_month') === 'last_30'    ? 'selected' : '' }}>Last 30 Days</option>
+                    <option value="this_month" {{ ($period ?? 'this_month') === 'this_month' ? 'selected' : '' }}>This Month</option>
+                    <option value="quarter"    {{ ($period ?? 'this_month') === 'quarter'    ? 'selected' : '' }}>This Quarter</option>
+                    <option value="this_year"  {{ ($period ?? 'this_month') === 'this_year'  ? 'selected' : '' }}>This Year</option>
+                </select>
+            </form>
+            {{-- Export CSV --}}
+            <a href="{{ route('analytics.exportCsv') }}?period={{ $period ?? 'this_month' }}"
+               class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-                Export
-            </button>
+                Export CSV
+            </a>
         </div>
     </div>
 
@@ -237,7 +243,8 @@
             <h3 class="text-lg font-bold text-gray-900">Top Selling Products</h3>
             <p class="text-sm text-gray-500 mt-1">Best performing products this month</p>
         </div>
-        <table class="w-full">
+        <div class="overflow-x-auto">
+        <table class="w-full min-w-[700px]">
             <thead>
                 <tr class="border-b border-gray-200">
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
@@ -278,6 +285,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 
     {{-- Weekly Production & Worker Efficiency Row --}}

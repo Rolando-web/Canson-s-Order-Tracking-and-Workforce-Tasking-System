@@ -82,18 +82,19 @@ class DashboardController extends Controller
             })->toArray();
 
         // === Top Products ===
+        // Fetch max sold once to avoid N+1 query inside map
+        $maxSold = (int) (OrderItem::select(DB::raw('SUM(quantity) as total'))
+            ->groupBy('name')
+            ->orderByDesc('total')
+            ->limit(1)
+            ->value('total') ?? 1);
+
         $topProducts = OrderItem::select('name', DB::raw('SUM(quantity) as total_sold'), DB::raw('SUM(subtotal) as total_revenue'))
             ->groupBy('name')
             ->orderByDesc('total_revenue')
             ->limit(5)
             ->get()
-            ->map(function ($item, $index) {
-                $maxSold = OrderItem::select(DB::raw('SUM(quantity) as total'))
-                    ->groupBy('name')
-                    ->orderByDesc('total')
-                    ->limit(1)
-                    ->value('total') ?? 1;
-
+            ->map(function ($item) use ($maxSold) {
                 return [
                     'name'    => $item->name,
                     'sold'    => (int)$item->total_sold,

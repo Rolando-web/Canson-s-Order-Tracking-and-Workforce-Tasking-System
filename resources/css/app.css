@@ -11,6 +11,32 @@
 }
 
 /* ==========================================================================
+   Global Performance & Rendering
+   ========================================================================== */
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Reduce paint cost on animated elements */
+.sidebar {
+    will-change: transform;
+}
+
+/* GPU-accelerate transitions */
+.transition-colors,
+.transition-transform {
+    backface-visibility: hidden;
+}
+
+/* Improve rendering of large off-screen sections */
+.content-section {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+}
+
+/* ==========================================================================
    Sidebar Styles
    ========================================================================== */
 

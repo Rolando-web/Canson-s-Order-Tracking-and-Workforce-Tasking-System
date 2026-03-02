@@ -12,7 +12,7 @@
     <div class="flex items-center justify-between w-full">
         <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">
             @if(auth()->user()->isEmployee())
-                {{ auth()->user()->department ?? 'Worker' }} Dashboard
+                Worker Dashboard
             @else
                 Manager
             @endif
@@ -20,13 +20,7 @@
         <div class="flex items-center gap-3">
             <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
             @if(auth()->user()->isEmployee())
-                @php
-                    $dept = auth()->user()->department ?? 'Worker';
-                    $deptBadge = $dept === 'Driver'
-                        ? ['label' => 'Driver', 'color' => 'bg-orange-100 text-orange-700']
-                        : ['label' => 'Worker', 'color' => 'bg-emerald-100 text-emerald-700'];
-                @endphp
-                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ $deptBadge['color'] }}">{{ $deptBadge['label'] }}</span>
+                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-700">Worker</span>
             @endif
             <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ auth()->user()->initial }}</div>
         </div>
@@ -41,9 +35,6 @@
             <h2 class="text-2xl font-bold text-gray-900">Overview</h2>
             <p class="text-gray-500 mt-1">Welcome back, here's what's happening today.</p>
         </div>
-        <button class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors">
-            Generate Report
-        </button>
     </div>
 
     {{-- Stats Cards --}}
@@ -121,13 +112,6 @@
         $myInProgress = \App\Models\Assignment::where('employee_id', $empUser->id)->where('status', 'in_progress')->count();
         $myCompleted = \App\Models\Assignment::where('employee_id', $empUser->id)->where('status', 'completed')->count();
         $myTotal = \App\Models\Assignment::where('employee_id', $empUser->id)->count();
-        $empDept = $empUser->department ?? 'Worker';
-        $myDeliveries = 0;
-        $myDelivered = 0;
-        if ($empDept === 'Driver') {
-            $myDeliveries = \App\Models\Dispatch::where('driver', $empUser->name)->whereIn('status', ['pending', 'in_transit'])->count();
-            $myDelivered = \App\Models\Dispatch::where('driver', $empUser->name)->where('status', 'delivered')->count();
-        }
     @endphp
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-xl border border-gray-200 p-5">
@@ -173,22 +157,6 @@
                 </div>
             </div>
         </div>
-        @if($empDept === 'Driver')
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center justify-between">
-                <div class="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-xs xl:text-sm text-gray-500 text-end">Deliveries</p>
-                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">{{ $myDeliveries }}</p>
-                    <p class="text-[0.6rem] xl:text-xs text-orange-500 mt-1">{{ $myDelivered }} delivered total</p>
-                </div>
-            </div>
-        </div>
-        @else
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-center justify-between">
                 <div class="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center">
@@ -203,7 +171,6 @@
                 </div>
             </div>
         </div>
-        @endif
     </div>
 
     {{-- Quick Actions for Employees --}}
@@ -498,7 +465,8 @@
                 <h3 class="text-lg font-bold text-gray-900">Recent Sales</h3>
                 <a href="/sales" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View All &rarr;</a>
             </div>
-            <table class="w-full">
+            <div class="overflow-x-auto">
+            <table class="w-full min-w-[600px]">
                 <thead>
                     <tr class="border-b border-gray-200">
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Transaction</th>
@@ -527,6 +495,7 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
 
         {{-- Top Selling Products --}}

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->text('delivery_address');
             $table->date('delivery_date');
             $table->decimal('total_amount', 10, 2)->default(0.00);
-            $table->enum('status', ['Pending', 'In-Progress', 'Completed'])->default('Pending');
+            $table->string('status', 50)->default('Pending');
             $table->enum('priority', ['Normal', 'High', 'Urgent'])->default('Normal');
             $table->string('assigned', 100)->nullable();
             $table->text('notes')->nullable();

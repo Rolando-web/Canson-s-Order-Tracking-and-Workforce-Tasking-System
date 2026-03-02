@@ -7,13 +7,7 @@
             <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
             <div class="flex items-center gap-2">
                 @if(auth()->user()->isEmployee())
-                    @php
-                        $dept = auth()->user()->department ?? 'Worker';
-                        $deptBadge = $dept === 'Driver'
-                            ? ['label' => 'Driver', 'color' => 'bg-orange-100 text-orange-700']
-                            : ['label' => 'Worker', 'color' => 'bg-emerald-100 text-emerald-700'];
-                    @endphp
-                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ $deptBadge['color'] }}">{{ $deptBadge['label'] }}</span>
+                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-700">Worker</span>
                 @elseif(auth()->user()->isAdmin())
                     <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">Manager</span>
                 @elseif(auth()->user()->isSuperAdmin())

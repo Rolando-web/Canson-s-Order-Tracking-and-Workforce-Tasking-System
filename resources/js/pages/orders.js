@@ -6,6 +6,8 @@
 window.showOrderDetails = function(orderId, order) {
     document.getElementById('modalOrderId').textContent = `Order ${order.id}`;
     document.getElementById('modalCustomerName').textContent = order.customer;
+    const nameBody = document.getElementById('modalCustomerNameBody');
+    if (nameBody) nameBody.textContent = order.customer;
     document.getElementById('modalCustomerContact').textContent = order.contact;
     document.getElementById('modalDeliveryDate').textContent = new Date(order.delivery_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     document.getElementById('modalDeliveryAddress').textContent = order.address;
@@ -57,7 +59,14 @@ let orderItemIndex = 1;
 window.openAddOrderModal = function() {
     document.getElementById('addOrderForm').reset();
     orderItemIndex = 1;
+    window.pendingCoverClaimIds = [];
     document.getElementById('addOrderItemsBody').innerHTML = createOrderItemRow(0);
+    // Hide damage claims alert
+    var dcAlert = document.getElementById('damageClaimsAlert');
+    if (dcAlert) dcAlert.classList.add('hidden');
+    // Hide customer dropdown
+    var custDd = document.getElementById('customerSuggestionsDropdown');
+    if (custDd) { custDd.classList.add('hidden'); custDd.innerHTML = ''; }
     recalcOrderTotal();
     // Set min date to today so past dates are disabled
     const today = new Date();
@@ -129,26 +138,33 @@ window.recalcOrderTotal = function() {
     const rows = document.querySelectorAll('#addOrderItemsBody .order-item-row');
     let total = 0;
     rows.forEach(row => {
+        const isCover = row.classList.contains('cover-item-row');
         const qty   = parseFloat(row.querySelector('.item-qty')?.value)   || 0;
         const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
         const subtotal = qty * price;
         total += subtotal;
         const subtotalCell = row.querySelector('.item-subtotal');
         if (subtotalCell) {
-            subtotalCell.textContent = '₱' + subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (isCover) {
+                subtotalCell.textContent = 'FREE';
+            } else {
+                subtotalCell.textContent = '₱' + subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
         }
 
-        // Highlight qty input if exceeds stock
-        const sel = row.querySelector('select');
-        const qtyInput = row.querySelector('.item-qty');
-        if (sel && sel.value && qtyInput) {
-            const stock = parseInt(sel.options[sel.selectedIndex].getAttribute('data-stock')) || 0;
-            if (qty > stock) {
-                qtyInput.classList.add('border-red-400', 'ring-1', 'ring-red-400', 'bg-red-50');
-                qtyInput.classList.remove('border-gray-200');
-            } else {
-                qtyInput.classList.remove('border-red-400', 'ring-1', 'ring-red-400', 'bg-red-50');
-                qtyInput.classList.add('border-gray-200');
+        // Highlight qty input if exceeds stock (skip cover rows)
+        if (!isCover) {
+            const sel = row.querySelector('select');
+            const qtyInput = row.querySelector('.item-qty');
+            if (sel && sel.value && qtyInput) {
+                const stock = parseInt(sel.options[sel.selectedIndex].getAttribute('data-stock')) || 0;
+                if (qty > stock) {
+                    qtyInput.classList.add('border-red-400', 'ring-1', 'ring-red-400', 'bg-red-50');
+                    qtyInput.classList.remove('border-gray-200');
+                } else {
+                    qtyInput.classList.remove('border-red-400', 'ring-1', 'ring-red-400', 'bg-red-50');
+                    qtyInput.classList.add('border-gray-200');
+                }
             }
         }
     });
@@ -167,11 +183,20 @@ window.submitAddOrder = function(event) {
         delivery_date:    formData.get('delivery_date'),
         priority:         formData.get('priority'),
         notes:            formData.get('notes'),
-        items: []
+        items: [],
+        cover_claim_ids: window.pendingCoverClaimIds || []
     };
 
     document.querySelectorAll('#addOrderItemsBody .order-item-row').forEach(row => {
-        const name  = row.querySelector('select')?.value;
+        const isCover = row.classList.contains('cover-item-row');
+        // For cover rows the select is disabled, so read from hidden input or select
+        let name;
+        if (isCover) {
+            const hiddenInput = row.querySelector('input[type="hidden"]');
+            name = hiddenInput ? hiddenInput.value : row.querySelector('select')?.value;
+        } else {
+            name = row.querySelector('select')?.value;
+        }
         const qty   = parseFloat(row.querySelector('.item-qty')?.value)   || 0;
         const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
         if (name && qty > 0) {
@@ -184,9 +209,10 @@ window.submitAddOrder = function(event) {
         return;
     }
 
-    // Validate stock availability
+    // Validate stock availability (skip cover items — they use price=0)
     var stockError = false;
     document.querySelectorAll('#addOrderItemsBody .order-item-row').forEach(row => {
+        if (row.classList.contains('cover-item-row')) return; // skip cover rows
         const sel = row.querySelector('select');
         if (sel && sel.value) {
             const opt = sel.options[sel.selectedIndex];

@@ -13,7 +13,7 @@
         <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
         <div class="flex items-center gap-3">
             <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">AD</div>
+            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
         </div>
     </div>
 @endsection
@@ -97,10 +97,12 @@
 
         {{-- Inventory Table --}}
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table class="w-full">
+            <div class="overflow-x-auto">
+            <table class="w-full min-w-[600px]">
                 <thead>
                     <tr class="border-b border-gray-200">
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Image</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item ID</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item Name</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Unit Price</th>
@@ -123,10 +125,12 @@
                             @endif
                         </td>
                         <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $item->item_id }}</span>
+                        </td>
+                        <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
                                 <div>
                                     <p class="text-sm font-semibold text-gray-900">{{ $item->name }}</p>
-                                    <p class="text-xs text-gray-400">{{ $item->item_id }}</p>
                                 </div>
                                 @if($item->is_best_seller)
                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300">
@@ -143,6 +147,7 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </div>

@@ -171,21 +171,24 @@
 {{-- Include Modals from pages/Modals --}}
 @include('pages.Modals.assignment-details-modal')
 @include('pages.Modals.assignment-status-modal')
+
+{{-- Assign Order Items Modal --}}
 <div id="assignmentModal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAssignmentModal()"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative" onclick="event.stopPropagation()">
             <div class="sticky top-0 bg-white flex items-center justify-between px-6 py-4 border-b border-gray-200 z-10">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">Assign Order to Employee</h3>
-                    <p class="text-sm text-gray-500 mt-0.5">Select an order to assign to <span id="modalEmployeeName" class="font-medium text-gray-700"></span></p>
+                    <h3 class="text-lg font-bold text-gray-900">Assign Order Items</h3>
+                    <p class="text-sm text-gray-500 mt-0.5" id="modalSubtitle">Each product can be assigned to a different employee</p>
                 </div>
                 <button onclick="closeAssignmentModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
-            <div class="px-6 py-5">
-                <div class="mb-4">
+            <div class="px-6 py-5 space-y-5">
+                {{-- Order Select --}}
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Select Order</label>
                     <select id="orderSelect" onchange="updateOrderPreview()" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         <option value="">-- Select an order --</option>
@@ -194,9 +197,9 @@
 
                 {{-- Order Preview --}}
                 <div id="orderPreview" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-3">Order Details</label>
-                    <div class="border-2 border-emerald-200 rounded-xl p-5 bg-emerald-50/30">
-                        <div class="grid grid-cols-2 gap-4 mb-4">
+                    {{-- Customer Info --}}
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-5">
+                        <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Customer</label>
                                 <p id="previewCustomer" class="text-sm font-semibold text-gray-900"></p>
@@ -207,93 +210,71 @@
                                 <p id="previewDeliveryDate" class="text-sm font-medium text-gray-900"></p>
                             </div>
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Delivery Address</label>
-                            <p id="previewAddress" class="text-sm text-gray-700"></p>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Order Items</label>
-                                <p id="previewItems" class="text-sm font-medium text-gray-900"></p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Total Amount</label>
-                                <p id="previewAmount" class="text-sm font-bold text-emerald-600"></p>
-                            </div>
-                        </div>
-                        <div id="previewNotesSection" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3">
-                            <label class="block text-xs font-semibold text-amber-800 uppercase mb-1">Important Notes</label>
-                            <p id="previewNotes" class="text-sm text-amber-900"></p>
+                        <div class="flex items-start gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+                            <p id="previewAddress" class="text-xs text-gray-600"></p>
                         </div>
                     </div>
 
-                    {{-- Additional Assignment Options --}}
-                    <div class="mt-4 space-y-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Priority Level</label>
-                            <select id="assignmentPriority" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                                <option value="normal">Normal</option>
-                                <option value="high">High</option>
-                                <option value="urgent">Urgent</option>
-                            </select>
+                    {{-- Per-Item Assignment Table --}}
+                    <div class="mb-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-semibold text-gray-700">Assign Items to Employees</label>
+                            <button type="button" onclick="fillAllWithEmployee()" id="fillAllBtn" class="text-xs text-emerald-600 hover:text-emerald-700 font-medium hidden">Fill all with pre-selected</button>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Assignment Notes (Optional)</label>
-                            <textarea id="assignmentNotes" rows="2" placeholder="Add special instructions for this employee..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                        <p class="text-xs text-gray-400 mb-3">Assign each product to a different employee — or the same one for all.</p>
+                        <div class="border border-gray-200 rounded-xl overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full min-w-[480px]">
+                                    <thead class="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Product</th>
+                                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 w-16">Qty</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Assign To Employee</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemAssignmentRows" class="divide-y divide-gray-100">
+                                        {{-- Populated via JS --}}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
+                        <p id="assignValidationMsg" class="text-xs text-red-500 mt-2 hidden">Please assign an employee to every item before continuing.</p>
+                    </div>
+
+                    {{-- Notes --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Assignment Notes (Optional)</label>
+                        <textarea id="assignmentNotes" rows="2" placeholder="Add special instructions..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"></textarea>
+                    </div>
+
+                    {{-- Order Notes --}}
+                    <div id="previewNotesSection" class="hidden mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <label class="block text-xs font-semibold text-amber-800 uppercase mb-1">Order Notes</label>
+                        <p id="previewNotes" class="text-sm text-amber-900"></p>
                     </div>
                 </div>
             </div>
             <div class="sticky bottom-0 bg-white flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
                 <button onclick="closeAssignmentModal()" class="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
-                <button id="assignBtn" disabled onclick="assignOrderToEmployee()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    Assign Order
+                <button id="assignBtn" disabled onclick="assignOrderToEmployee()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.82m5.84-2.56a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.82m2.56-5.84a14.98 14.98 0 00-12.12 6.16"/></svg>
+                    Assign Items
                 </button>
             </div>
         </div>
     </div>
 </div>
-
-{{-- Quick Assign Modal (Worker Picker) --}}
-<div id="quickAssignModal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeQuickAssignModal()"></div>
-    <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative" onclick="event.stopPropagation()">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <div>
-                    <h3 class="text-lg font-bold text-gray-900">Quick Assign</h3>
-                    <p class="text-sm text-gray-500">Assign <span id="quickAssignOrderLabel" class="font-semibold text-emerald-600"></span> to an employee</p>
-                </div>
-                <button onclick="closeQuickAssignModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
-                <div class="space-y-1" id="quickAssignWorkerList">
-                    {{-- Populated dynamically --}}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- Include Modals from pages/Modals --}}
-@include('pages.Modals.assignment-details-modal')
-@include('pages.Modals.assignment-status-modal')
 
 <script>
 let currentEmployeeName = '';
-let quickAssignOrderId = '';
+let prefillEmployeeId = null;
 let currentDetailAssignment = null;
 let currentUpdateAssignment = null;
 let selectedNewStatus = '';
 
 const assignmentsData = @json($assignmentsData ?? []);
-
-// Available orders for assignment
 const availableOrders = @json($availableOrders ?? []);
-
-// Workers data for employee lookup
 const workersData = @json($workers ?? []);
 
 function showWorkerAssignments(name, initial, color, status, activeCount) {
@@ -352,7 +333,7 @@ function showWorkerAssignments(name, initial, color, status, activeCount) {
                             </div>
                             <div>
                                 <h4 class="text-lg font-bold text-gray-900">${order.order_id}</h4>
-                                <p class="text-xs text-gray-500">Assigned ${new Date(order.assigned_date).toLocaleDateString()}</p>
+                                ${order.assigned_item ? `<span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-semibold rounded-full"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3"/></svg>${order.assigned_item}</span>` : `<p class="text-xs text-gray-500">Assigned ${new Date(order.assigned_date).toLocaleDateString()}</p>`}
                             </div>
                         </div>
                         <div class="flex flex-col items-end gap-2">
@@ -437,189 +418,196 @@ function showWorkerAssignments(name, initial, color, status, activeCount) {
 }
 
 function openAssignmentModal(employeeName) {
-    currentEmployeeName = employeeName;
-    document.getElementById('assignmentModal').classList.remove('hidden');
-    document.getElementById('modalEmployeeName').textContent = employeeName;
-    
+    currentEmployeeName = employeeName || '';
+    prefillEmployeeId = null;
+
+    if (employeeName) {
+        const worker = workersData.find(w => w.name === employeeName);
+        if (worker) prefillEmployeeId = worker.id;
+        document.getElementById('modalSubtitle').textContent =
+            `Items not assigned to ${employeeName} will be pre-filled — you can change any.`;
+        document.getElementById('fillAllBtn') && document.getElementById('fillAllBtn').classList.remove('hidden');
+    } else {
+        document.getElementById('modalSubtitle').textContent = 'Assign each product to an employee — different workers can handle different items.';
+        document.getElementById('fillAllBtn') && document.getElementById('fillAllBtn').classList.add('hidden');
+    }
+
     // Populate order dropdown
     const orderSelect = document.getElementById('orderSelect');
-    orderSelect.innerHTML = '<option value="">Select an order...</option>' + 
-        availableOrders.map(order => 
-            `<option value="${order.order_id}">${order.order_id} - ${order.customer}</option>`
+    orderSelect.innerHTML = '<option value="">-- Select an order --</option>' +
+        availableOrders.map(o =>
+            `<option value="${o.order_id}">${o.order_id} — ${o.customer}</option>`
         ).join('');
-    
-    // Reset form
+
     document.getElementById('orderPreview').classList.add('hidden');
     document.getElementById('assignBtn').disabled = true;
+    document.getElementById('assignmentModal').classList.remove('hidden');
 }
 
 function closeAssignmentModal() {
     document.getElementById('assignmentModal').classList.add('hidden');
     currentEmployeeName = '';
+    prefillEmployeeId = null;
 }
 
 function updateOrderPreview() {
     const selectedOrderId = document.getElementById('orderSelect').value;
     const orderPreview = document.getElementById('orderPreview');
-    
+
     if (!selectedOrderId) {
         orderPreview.classList.add('hidden');
         document.getElementById('assignBtn').disabled = true;
         return;
     }
-    
+
     const order = availableOrders.find(o => o.order_id === selectedOrderId);
     if (!order) return;
-    
-    // Show preview
-    orderPreview.classList.remove('hidden');
-    document.getElementById('assignBtn').disabled = false;
-    
-    // Update preview content
+
+    // Customer info
     document.getElementById('previewCustomer').textContent = order.customer;
-    document.getElementById('previewContact').textContent = order.customer_contact;
-    document.getElementById('previewItems').textContent = order.items;
-    document.getElementById('previewAddress').textContent = order.delivery_address;
-    document.getElementById('previewDeliveryDate').textContent = new Date(order.delivery_date).toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+    document.getElementById('previewContact').textContent = order.customer_contact || '';
+    document.getElementById('previewDeliveryDate').textContent = new Date(order.delivery_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('previewAddress').textContent = order.delivery_address || '';
+
+    // Order notes
+    const notesSection = document.getElementById('previewNotesSection');
+    if (order.notes) {
+        notesSection.classList.remove('hidden');
+        document.getElementById('previewNotes').textContent = order.notes;
+    } else {
+        notesSection.classList.add('hidden');
+    }
+
+    // Build per-item assignment rows
+    const employeeOptions = workersData.map(w =>
+        `<option value="${w.id}" ${prefillEmployeeId === w.id ? 'selected' : ''}>${w.name}${w.active > 0 ? ' (' + w.active + ' active)' : ''}</option>`
+    ).join('');
+
+    const rowsHtml = (order.order_items || []).map(item => `
+        <tr>
+            <td class="px-4 py-3">
+                <p class="text-sm font-semibold text-gray-900">${item.name}</p>
+                <p class="text-xs text-gray-400">₱${item.price.toLocaleString('en-US', {minimumFractionDigits: 2})} / unit</p>
+            </td>
+            <td class="px-4 py-3 text-center">
+                <span class="text-sm font-bold text-gray-900">${item.quantity}</span>
+            </td>
+            <td class="px-4 py-3">
+                <select class="item-emp-select w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        data-item-id="${item.id}"
+                        onchange="checkAllAssigned()">
+                    <option value="">— Select employee —</option>
+                    ${employeeOptions}
+                </select>
+            </td>
+        </tr>
+    `).join('');
+
+    document.getElementById('itemAssignmentRows').innerHTML = rowsHtml;
+    document.getElementById('assignValidationMsg') && document.getElementById('assignValidationMsg').classList.add('hidden');
+    orderPreview.classList.remove('hidden');
+
+    // Enable/disable submit based on whether all items have employees
+    checkAllAssigned();
+}
+
+function checkAllAssigned() {
+    const selects = document.querySelectorAll('.item-emp-select');
+    const allFilled = selects.length > 0 && Array.from(selects).every(s => s.value !== '');
+    document.getElementById('assignBtn').disabled = !allFilled;
+}
+
+function fillAllWithEmployee() {
+    if (!prefillEmployeeId) return;
+    document.querySelectorAll('.item-emp-select').forEach(sel => {
+        sel.value = String(prefillEmployeeId);
     });
-    document.getElementById('previewAmount').textContent = '₱' + order.total_amount.toLocaleString('en-US', {minimumFractionDigits: 2});
-    document.getElementById('previewNotes').textContent = order.notes || 'No special notes';
+    checkAllAssigned();
 }
 
 function assignOrderToEmployee() {
     const selectedOrderId = document.getElementById('orderSelect').value;
-    const priority = document.getElementById('assignmentPriority').value;
-    const notes = document.getElementById('assignmentNotes').value;
-    
-    if (!selectedOrderId || !currentEmployeeName) return;
-    
-    // Find employee_id from workers data
-    const worker = workersData.find(w => w.name === currentEmployeeName);
-    if (!worker) return;
-    
+    if (!selectedOrderId) return;
+
+    const itemAssignments = [];
+    document.querySelectorAll('.item-emp-select').forEach(sel => {
+        if (sel.value && sel.dataset.itemId) {
+            itemAssignments.push({
+                order_item_id: parseInt(sel.dataset.itemId),
+                employee_id: parseInt(sel.value),
+            });
+        }
+    });
+
+    const order = availableOrders.find(o => o.order_id === selectedOrderId);
+    const totalItems = (order && order.order_items) ? order.order_items.length : 0;
+
+    if (itemAssignments.length < totalItems) {
+        const msg = document.getElementById('assignValidationMsg');
+        msg && msg.classList.remove('hidden');
+        return;
+    }
+
+    const priority = (order && order.priority) ? order.priority.toLowerCase() : 'normal';
+    const notes    = document.getElementById('assignmentNotes').value;
+
     const assignBtn = document.getElementById('assignBtn');
     assignBtn.disabled = true;
-    assignBtn.textContent = 'Assigning...';
-    
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
+    assignBtn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Assigning...';
+
     fetch('/assignments', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
         },
         body: JSON.stringify({
             order_id: selectedOrderId,
-            employee_id: worker.id,
-            priority: priority,
+            priority,
             notes: notes || null,
+            item_assignments: itemAssignments,
         }),
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
         if (data.success) {
             closeAssignmentModal();
-            showToast(`Order ${selectedOrderId} successfully assigned to ${currentEmployeeName}!`, 'success');
-            // Reload page to refresh all data
+            showToast(`Order ${selectedOrderId} assigned successfully!`, 'success');
             setTimeout(() => window.location.reload(), 800);
         } else {
-            showToast(data.message || 'Failed to assign order. Please try again.', 'error');
+            showToast(data.message || 'Failed to assign. Please try again.', 'error');
             assignBtn.disabled = false;
-            assignBtn.textContent = 'Assign Order';
+            assignBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.82m5.84-2.56a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.82m2.56-5.84a14.98 14.98 0 00-12.12 6.16"/></svg> Assign Items';
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
+    .catch(() => {
         showToast('An error occurred. Please try again.', 'error');
         assignBtn.disabled = false;
-        assignBtn.textContent = 'Assign Order';
+        assignBtn.innerHTML = 'Assign Items';
     });
 }
 
+// Quick Assign — open main modal with this order pre-selected
 function quickAssignOrder(orderId) {
-    // Open a worker picker for quick assignment
-    const workerNames = workersData.map(w => w.name);
-    if (workerNames.length === 0) {
-        showToast('No employees available for assignment.', 'error');
-        return;
+    currentEmployeeName = '';
+    prefillEmployeeId = null;
+    document.getElementById('modalSubtitle').textContent = 'Assign each product to an employee — different workers can handle different items.';
+
+    const orderSelect = document.getElementById('orderSelect');
+    orderSelect.innerHTML = '<option value="">-- Select an order --</option>' +
+        availableOrders.map(o =>
+            `<option value="${o.order_id}">${o.order_id} — ${o.customer}</option>`
+        ).join('');
+
+    document.getElementById('orderPreview').classList.add('hidden');
+    document.getElementById('assignBtn').disabled = true;
+    document.getElementById('assignmentModal').classList.remove('hidden');
+
+    if (orderId) {
+        orderSelect.value = orderId;
+        updateOrderPreview();
     }
-    
-    // Set the order, then open the quick assign modal
-    quickAssignOrderId = orderId;
-    
-    const pickerHtml = workerNames.map(name => {
-        const worker = workersData.find(w => w.name === name);
-        const activeCount = worker ? worker.active : 0;
-        const onClickAttr = `onclick="confirmQuickAssign('${name}')"`;
-        const statusNote = `<span class="text-xs text-gray-500">${activeCount} active assignment${activeCount !== 1 ? 's' : ''}</span>`;
-        return `
-            <button ${onClickAttr} class="flex items-center justify-between w-full p-3 rounded-lg hover:bg-emerald-50 border border-transparent hover:border-emerald-200 transition-all text-left">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full ${worker.color} flex items-center justify-center text-white font-bold text-xs">${worker.initial}</div>
-                    <div>
-                        <p class="text-sm font-semibold text-gray-900">${name}</p>
-                        ${statusNote}
-                    </div>
-                </div>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
-            </button>
-        `;
-    }).join('');
-    
-    document.getElementById('quickAssignOrderLabel').textContent = orderId;
-    document.getElementById('quickAssignWorkerList').innerHTML = pickerHtml;
-    document.getElementById('quickAssignModal').classList.remove('hidden');
-}
-
-function closeQuickAssignModal() {
-    document.getElementById('quickAssignModal').classList.add('hidden');
-    quickAssignOrderId = '';
-}
-
-function confirmQuickAssign(employeeName) {
-    if (!quickAssignOrderId) return;
-    
-    const worker = workersData.find(w => w.name === employeeName);
-    if (!worker) return;
-    
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
-    // Disable all buttons in the modal
-    document.querySelectorAll('#quickAssignWorkerList button').forEach(btn => btn.disabled = true);
-    
-    fetch('/assignments', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
-            order_id: quickAssignOrderId,
-            employee_id: worker.id,
-            priority: 'normal',
-            notes: null,
-        }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            closeQuickAssignModal();
-            showToast(`Order ${quickAssignOrderId} assigned to ${employeeName}!`, 'success');
-            setTimeout(() => window.location.reload(), 800);
-        } else {
-            showToast('Failed to assign order. Please try again.', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred. Please try again.', 'error');
-    });
 }
 
 // ========== View Full Details Modal ==========

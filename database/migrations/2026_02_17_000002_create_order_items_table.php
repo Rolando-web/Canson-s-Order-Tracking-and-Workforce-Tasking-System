@@ -14,6 +14,7 @@ return new class extends Migration
             $table->foreignId('inventory_item_id')->constrained('inventory_items')->cascadeOnDelete();
             $table->string('name');
             $table->integer('quantity');
+            $table->integer('completed_qty')->default(0);
             $table->decimal('unit_price', 10, 2)->default(0.00);
             $table->decimal('subtotal', 10, 2)->default(0.00);
             $table->timestamps();

@@ -13,7 +13,7 @@
         <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
         <div class="flex items-center gap-3">
             <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">AD</div>
+            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
         </div>
     </div>
 @endsection
@@ -97,12 +97,11 @@
     {{-- Employees Table --}}
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
+            <table class="w-full text-sm text-left min-w-[600px]">
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Employee</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Role</th>
-                        <th class="px-6 py-3.5 font-semibold text-gray-600">Department</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Contact Number</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Status</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600 text-right">Actions</th>
@@ -132,20 +131,6 @@
                                 @endphp
                                 <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $roleConfig['color'] }}">{{ $roleConfig['label'] }}</span>
                             </td>
-                            <td class="px-6 py-4">
-                                @if($emp['role'] === 'employee')
-                                    @php
-                                        $deptConfig = match($emp['department'] ?? 'Worker') {
-                                            'Worker' => ['label' => 'Worker', 'color' => 'bg-emerald-50 text-emerald-700 border-emerald-200'],
-                                            'Driver' => ['label' => 'Driver', 'color' => 'bg-orange-50 text-orange-700 border-orange-200'],
-                                            default => ['label' => 'Worker', 'color' => 'bg-emerald-50 text-emerald-700 border-emerald-200'],
-                                        };
-                                    @endphp
-                                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $deptConfig['color'] }}">{{ $deptConfig['label'] }}</span>
-                                @else
-                                    <span class="text-xs text-gray-400">—</span>
-                                @endif
-                            </td>
                             <td class="px-6 py-4 text-gray-600">{{ $emp['contact'] }}</td>
                             <td class="px-6 py-4">
                                 @if($emp['status'] === 'Active')
@@ -156,7 +141,7 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-1">
-                                    <button onclick="openModal('edit', {{ $emp['id'] }}, '{{ addslashes($emp['first']) }}', '{{ addslashes($emp['last']) }}', '{{ $emp['role'] }}', '{{ $emp['contact'] }}', '{{ $emp['department'] ?? 'Worker' }}')"
+                                    <button onclick="openModal('edit', {{ $emp['id'] }}, '{{ addslashes($emp['first']) }}', '{{ addslashes($emp['last']) }}', '{{ $emp['role'] }}', '{{ $emp['contact'] }}')"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/>
@@ -220,14 +205,6 @@
                         <option value="super_admin">Super Admin</option>
                     </select>
                 </div>
-                <div id="departmentFieldWrapper">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Department</label>
-                    <select id="empDepartment" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
-                        <option value="Worker">Worker</option>
-                        <option value="Driver">Driver</option>
-                    </select>
-                    <p class="text-xs text-gray-400 mt-1">Workers handle orders. Drivers handle delivery (can also help with orders).</p>
-                </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Contact Number</label>
                     <input id="empContact" type="text" placeholder="0917-123-4567"
@@ -259,7 +236,7 @@
     let currentMode = 'create';
     let currentEmployeeId = null;
 
-    function openModal(mode, id = null, firstName = '', lastName = '', role = 'employee', contact = '', department = 'Worker') {
+    function openModal(mode, id = null, firstName = '', lastName = '', role = 'employee', contact = '') {
         currentMode = mode;
         currentEmployeeId = id;
 
@@ -270,12 +247,8 @@
         document.getElementById('empFirstName').value = firstName;
         document.getElementById('empLastName').value = lastName;
         document.getElementById('empRole').value = role;
-        document.getElementById('empDepartment').value = department;
         document.getElementById('empContact').value = contact;
         document.getElementById('empPassword').value = '';
-
-        // Show department field only for employee role
-        toggleDepartmentField(role);
 
         if (mode === 'edit') {
             title.textContent = 'Edit Employee';
@@ -299,21 +272,10 @@
         document.body.classList.remove('overflow-hidden');
     }
 
-    // Show/hide department field based on role
-    function toggleDepartmentField(role) {
-        const wrapper = document.getElementById('departmentFieldWrapper');
-        wrapper.style.display = role === 'employee' ? 'block' : 'none';
-    }
-
-    document.getElementById('empRole').addEventListener('change', function() {
-        toggleDepartmentField(this.value);
-    });
-
     function saveEmployee() {
         const firstName = document.getElementById('empFirstName').value.trim();
         const lastName = document.getElementById('empLastName').value.trim();
         const role = document.getElementById('empRole').value;
-        const department = document.getElementById('empDepartment').value;
         const contact = document.getElementById('empContact').value.trim();
         const password = document.getElementById('empPassword').value;
 
@@ -345,7 +307,6 @@
             empFirstName: firstName,
             empLastName: lastName,
             empRole: role,
-            empDepartment: role === 'employee' ? department : null,
             empContact: contact,
         };
 

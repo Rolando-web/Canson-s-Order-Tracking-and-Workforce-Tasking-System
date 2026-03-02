@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\InventoryItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\ReturnItem;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class OrdersController extends Controller
             ->get();
 
         $orders = Order::with('items')
+            ->whereNotIn('status', ['Delivered', 'Ready for Delivery'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($order) {
@@ -56,6 +58,28 @@ class OrdersController extends Controller
         return view('pages.orders', compact('inventoryItems', 'orders'));
     }
 
+    /**
+     * Return distinct customers for autocomplete (from past orders).
+     */
+    public function customerSuggestions(Request $request)
+    {
+        $q = $request->query('q', '');
+
+        $customers = Order::select('customer_name', 'contact_number', 'delivery_address')
+            ->when($q, fn($query) => $query->where('customer_name', 'LIKE', "%{$q}%"))
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->unique('customer_name')
+            ->map(fn($o) => [
+                'name'    => $o->customer_name,
+                'contact' => $o->contact_number,
+                'address' => $o->delivery_address,
+            ])
+            ->values();
+
+        return response()->json($customers);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -69,6 +93,8 @@ class OrdersController extends Controller
             'items.*.name'    => 'required|string',
             'items.*.qty'     => 'required|integer|min:1',
             'items.*.price'   => 'required|numeric|min:0',
+            'cover_claim_ids' => 'nullable|array',
+            'cover_claim_ids.*' => 'integer|exists:returns,id',
         ]);
 
         DB::beginTransaction();
@@ -116,6 +142,16 @@ class OrdersController extends Controller
                 ]);
             }
 
+
+            // Auto-mark damage claims as Covered
+            if (!empty($validated['cover_claim_ids'])) {
+                ReturnItem::whereIn('id', $validated['cover_claim_ids'])
+                    ->where('status', 'Pending')
+                    ->update([
+                        'status'           => 'Covered',
+                        'covered_by_order' => $order->order_id,
+                    ]);
+            }
 
             DB::commit();
 

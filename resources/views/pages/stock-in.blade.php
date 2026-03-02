@@ -34,7 +34,7 @@
 
     {{-- Stats --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div class="bg-white rounded-xl border-2 border-green-500 p-5">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-center">
                 <div class="w-10 h-10 rounded-xl flex-none bg-green-100 flex items-center justify-center">
                     <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
@@ -72,7 +72,8 @@
 
         {{-- Items Table --}}
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table class="w-full">
+            <div class="overflow-x-auto">
+            <table class="w-full min-w-[600px]">
                 <thead>
                     <tr class="border-b border-gray-200">
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Image</th>
@@ -96,7 +97,7 @@
                         </td>
                         <td class="px-6 py-4">
                             <p class="text-sm font-semibold text-gray-900">{{ $item->name }}</p>
-                            <p class="text-xs text-gray-400">{{ $item->item_id }}</p>
+                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $item->item_id }}</span>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $item->category }}</td>
                         <td class="px-6 py-4 text-sm">
@@ -114,8 +115,10 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
+    {{-- END tab-stock-in-form --}}
 
     {{-- Movement History Tab --}}
     <div id="tab-stock-in-history" class="hidden">
@@ -127,7 +130,8 @@
         </div>
 
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table class="w-full">
+            <div class="overflow-x-auto">
+            <table class="w-full min-w-[800px]">
                 <thead>
                     <tr class="border-b border-gray-200">
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date & Time</th>
@@ -151,7 +155,12 @@
                         <td class="px-6 py-4 text-sm text-gray-600">
                             <span class="inline-flex px-2 py-0.5 rounded text-xs font-mono bg-gray-50 border border-gray-200">{{ $txn->reference_number }}</span>
                         </td>
-                        <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $txn->inventoryItem->name ?? 'N/A' }}</td>
+                        <td class="px-6 py-4">
+                        <p class="text-sm font-semibold text-gray-900">{{ $txn->inventoryItem->name ?? 'N/A' }}</p>
+                        @if($txn->inventoryItem)
+                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $txn->inventoryItem->item_id }}</span>
+                        @endif
+                    </td>
                         <td class="px-6 py-4">
                             <div class="text-sm">
                                 <span class="text-gray-500">{{ number_format($txn->previous_stock) }}</span>
@@ -171,6 +180,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </div>

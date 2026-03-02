@@ -88,7 +88,6 @@
                         <option value="Damage / Waste">Damage / Waste</option>
                         <option value="Internal Use">Internal Use</option>
                         <option value="Adjustment">Stock Adjustment</option>
-                        <option value="Return">Return to Supplier</option>
                         <option value="Other">Other</option>
                     </select>
                 </div>
