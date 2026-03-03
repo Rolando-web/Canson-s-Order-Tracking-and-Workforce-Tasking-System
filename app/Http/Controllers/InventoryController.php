@@ -4,61 +4,50 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\InventoryItem;
-use App\Models\StockTransaction;
+use App\Models\StockIn;
+use App\Models\StockOut;
 use App\Models\User;
 
 class InventoryController extends Controller
 {
     public function index()
     {
-        $items = InventoryItem::orderBy('item_id')->get();
+        $items = InventoryItem::orderBy('item_code')->get();
         $totalItems = $items->count();
         $lowStockAlert = $items->where('stock', '<', 50)->count();
-        
+
         return view('pages.inventory', compact('items', 'totalItems', 'lowStockAlert'));
     }
 
-    /**
-     * Stock In page — list items for stock in + movement history
-     */
     public function stockInPage()
     {
         $items = InventoryItem::orderBy('name')->get();
-        $transactions = StockTransaction::with(['inventoryItem', 'creator'])
-            ->where('transaction_type', 'stock_in')
+        $transactions = StockIn::with(['inventoryItem', 'creator'])
             ->orderBy('created_at', 'desc')
             ->limit(50)
             ->get();
-        $todayCount = StockTransaction::where('transaction_type', 'stock_in')
-            ->whereDate('transaction_date', today())
-            ->count();
+        $todayCount = StockIn::whereDate('created_at', today())->count();
 
         return view('pages.stock-in', compact('items', 'transactions', 'todayCount'));
     }
 
-    /**
-     * Stock Out page — shows automatic stock outs from assignments + history
-     */
     public function stockOutPage()
     {
         $items = InventoryItem::orderBy('name')->get();
-        $transactions = StockTransaction::with(['inventoryItem', 'creator'])
-            ->where('transaction_type', 'stock_out')
+        $transactions = StockOut::with(['inventoryItem', 'creator'])
             ->orderBy('created_at', 'desc')
             ->limit(50)
             ->get();
-        $todayCount = StockTransaction::where('transaction_type', 'stock_out')
-            ->whereDate('transaction_date', today())
-            ->count();
+        $todayCount = StockOut::whereDate('created_at', today())->count();
 
         return view('pages.stock-out', compact('items', 'transactions', 'todayCount'));
     }
 
     public function products()
     {
-        $items = InventoryItem::orderBy('item_id')->get();
+        $items = InventoryItem::orderBy('item_code')->get();
         $categories = $items->pluck('category')->unique()->filter()->values();
-        
+
         return view('pages.products', compact('items', 'categories'));
     }
 
@@ -90,17 +79,14 @@ class InventoryController extends Controller
             'image'      => 'nullable|image|max:2048',
         ]);
 
-        // Generate next item_id
-        $lastItem = InventoryItem::orderBy('id', 'desc')->first();
-        $nextId = $lastItem ? intval(str_replace('INV-', '', $lastItem->item_id)) + 1 : 1;
-        $validated['item_id'] = 'INV-' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
+        $lastItem = InventoryItem::orderBy('Item_Id', 'desc')->first();
+        $nextId = $lastItem ? intval(str_replace('INV-', '', $lastItem->item_code)) + 1 : 1;
+        $validated['item_code'] = 'INV-' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
 
-        // Set default status
         if (empty($validated['status'])) {
             $validated['status'] = $validated['stock'] > 0 ? 'In Stock' : 'Out of Stock';
         }
 
-        // Handle image upload
         if ($request->hasFile('image')) {
             $validated['image_path'] = $request->file('image')->store('products', 'public');
         }
@@ -137,7 +123,6 @@ class InventoryController extends Controller
 
     public function destroy(Request $request, InventoryItem $item)
     {
-        $name = $item->name;
         $item->delete();
 
         if ($request->expectsJson()) {
@@ -150,7 +135,7 @@ class InventoryController extends Controller
     public function stockIn(Request $request)
     {
         $validated = $request->validate([
-            'item_id'   => 'required|exists:inventory_items,id',
+            'item_id'   => 'required|exists:inventory_items,Item_Id',
             'quantity'  => 'required|integer|min:1',
             'supplier'  => 'nullable|string|max:255',
             'notes'     => 'nullable|string',
@@ -165,16 +150,13 @@ class InventoryController extends Controller
             'status' => $newStock > 0 ? ($newStock < 50 ? 'Low Stock' : 'In Stock') : 'Out of Stock',
         ]);
 
-        StockTransaction::create([
-            'item_id'          => $item->id,
-            'transaction_type' => 'stock_in',
+        StockIn::create([
+            'item_id'          => $item->Item_Id,
             'quantity'         => $validated['quantity'],
             'previous_stock'   => $previousStock,
             'new_stock'        => $newStock,
-            'reference_number' => StockTransaction::generateReference('stock_in'),
-            'supplier'         => $validated['supplier'] ?? null,
+            'reference_number' => 'SI-' . now()->format('YmdHis'),
             'notes'            => $validated['notes'] ?? null,
-            'transaction_date' => now()->toDateString(),
             'created_by'       => auth()->id(),
             'created_at'       => now(),
         ]);
@@ -189,7 +171,7 @@ class InventoryController extends Controller
     public function stockOut(Request $request)
     {
         $validated = $request->validate([
-            'item_id'  => 'required|exists:inventory_items,id',
+            'item_id'  => 'required|exists:inventory_items,Item_Id',
             'quantity' => 'required|integer|min:1',
             'reason'   => 'nullable|string|max:100',
             'notes'    => 'nullable|string',
@@ -212,16 +194,14 @@ class InventoryController extends Controller
             'status' => $newStock > 0 ? ($newStock < 50 ? 'Low Stock' : 'In Stock') : 'Out of Stock',
         ]);
 
-        StockTransaction::create([
-            'item_id'          => $item->id,
-            'transaction_type' => 'stock_out',
+        StockOut::create([
+            'item_id'          => $item->Item_Id,
             'quantity'         => $validated['quantity'],
             'previous_stock'   => $previousStock,
             'new_stock'        => $newStock,
-            'reference_number' => StockTransaction::generateReference('stock_out'),
+            'reference_number' => 'SO-' . now()->format('YmdHis'),
             'reason'           => $validated['reason'] ?? null,
             'notes'            => $validated['notes'] ?? null,
-            'transaction_date' => now()->toDateString(),
             'created_by'       => auth()->id(),
             'created_at'       => now(),
         ]);

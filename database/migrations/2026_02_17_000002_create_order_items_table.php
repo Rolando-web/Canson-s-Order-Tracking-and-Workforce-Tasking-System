@@ -9,9 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('order_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
-            $table->foreignId('inventory_item_id')->constrained('inventory_items')->cascadeOnDelete();
+            $table->increments('Order_Item_Id');
+            $table->unsignedInteger('order_id');
+            $table->foreign('order_id')->references('Order_Id')->on('orders')->cascadeOnDelete();
+            $table->unsignedInteger('inventory_item_id');
+            $table->foreign('inventory_item_id')->references('Item_Id')->on('inventory_items')->cascadeOnDelete();
             $table->string('name');
             $table->integer('quantity');
             $table->integer('completed_qty')->default(0);

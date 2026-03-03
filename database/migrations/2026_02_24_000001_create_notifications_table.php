@@ -9,16 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('notifications', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');          // who receives this notification
-            $table->string('type', 50);                     // e.g. new_order, work_assigned, delivery_assigned
+            $table->increments('Notification_Id');
+            $table->unsignedInteger('user_id');
+            $table->string('type', 50);
             $table->string('title');
             $table->text('message');
-            $table->json('data')->nullable();               // extra payload (order_id, assignment_id, etc.)
+            $table->json('data')->nullable();
             $table->boolean('is_read')->default(false);
             $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('User_Id')->on('users')->onDelete('cascade');
             $table->index(['user_id', 'is_read']);
         });
     }

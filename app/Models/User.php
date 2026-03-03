@@ -2,47 +2,31 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    // Role constants
+    protected $primaryKey = 'User_Id';
+
     const ROLE_EMPLOYEE = 'employee';
     const ROLE_ADMIN = 'admin';
     const ROLE_SUPER_ADMIN = 'super_admin';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'password',
         'role',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -51,72 +35,50 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user is an employee
-     *
-     * @return bool
+     * Tell Laravel auth which column is the unique identifier.
      */
+    public function getAuthIdentifierName(): string
+    {
+        return 'User_Id';
+    }
+
+    // ─── Role helpers ────────────────────────────
+
     public function isEmployee(): bool
     {
         return $this->role === self::ROLE_EMPLOYEE;
     }
 
-    /**
-     * Check if user is an admin manager
-     *
-     * @return bool
-     */
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
     }
 
-    /**
-     * Check if user is a super admin (boss)
-     *
-     * @return bool
-     */
     public function isSuperAdmin(): bool
     {
         return $this->role === self::ROLE_SUPER_ADMIN;
     }
 
-    /**
-     * Check if user has at least admin role (admin or super admin)
-     *
-     * @return bool
-     */
     public function isAdminOrAbove(): bool
     {
         return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN]);
     }
 
-    /**
-     * Check if user has a specific role
-     *
-     * @param string $role
-     * @return bool
-     */
     public function hasRole(string $role): bool
     {
         return $this->role === $role;
     }
 
-    /**
-     * Check if user has any of the given roles
-     *
-     * @param array $roles
-     * @return bool
-     */
     public function hasAnyRole(array $roles): bool
     {
         return in_array($this->role, $roles);
     }
 
-    // Relationships
+    // ─── Relationships ───────────────────────────
 
     public function assignments()
     {
-        return $this->hasMany(Assignment::class, 'employee_id');
+        return $this->hasMany(Assignment::class, 'employee_id', 'User_Id');
     }
 
     public function activeAssignments()
@@ -126,7 +88,7 @@ class User extends Authenticatable
 
     public function createdOrders()
     {
-        return $this->hasMany(Order::class, 'created_by');
+        return $this->hasMany(Order::class, 'created_by', 'User_Id');
     }
 
     /**

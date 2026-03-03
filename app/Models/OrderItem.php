@@ -9,6 +9,8 @@ class OrderItem extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'Order_Item_Id';
+
     protected $fillable = [
         'order_id',
         'inventory_item_id',
@@ -28,11 +30,11 @@ class OrderItem extends Model
 
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class, 'order_id', 'Order_Id');
     }
 
     public function inventoryItem()
     {
-        return $this->belongsTo(InventoryItem::class);
+        return $this->belongsTo(InventoryItem::class, 'inventory_item_id', 'Item_Id');
     }
 }

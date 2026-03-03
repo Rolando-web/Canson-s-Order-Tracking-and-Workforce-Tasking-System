@@ -6,18 +6,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('inventory_items', function (Blueprint $table) {
-            $table->id();
+            $table->increments('Item_Id');
             $table->string('name');
-            $table->string('item_id')->unique(); // e.g., INV-001
+            $table->string('item_code')->unique();
             $table->string('category');
             $table->integer('stock')->default(0);
-            $table->string('unit'); // pcs, sheets, liters, reams, etc.
+            $table->string('unit');
             $table->decimal('unit_price', 10, 2)->default(0.00);
             $table->string('status')->default('In Stock');
             $table->boolean('is_best_seller')->default(false);
@@ -26,9 +23,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('inventory_items');

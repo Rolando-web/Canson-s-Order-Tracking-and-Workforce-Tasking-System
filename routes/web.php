@@ -14,6 +14,7 @@ use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\ReturnsController;
+use App\Http\Controllers\OrderProgressController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,6 +47,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/assignments', [AssignmentsController::class, 'index'])->name('assignments');
 
     // Employee can update their own assignment status
+
+    // Order Progress (accessible by ALL authenticated roles)
+    Route::get('/progress', [OrderProgressController::class, 'index'])->name('progress');
+    Route::get('/progress/{order}', [OrderProgressController::class, 'show'])->name('progress.show');
+    Route::put('/order-phase-items/{phaseItem}/progress', [OrderProgressController::class, 'updateItemProgress'])->name('progress.updateItem');
     Route::put('/assignments/{assignment}/status', [AssignmentsController::class, 'updateStatus'])->name('assignments.updateStatus');
 
     // Employee can update progress on order items
@@ -112,6 +118,9 @@ Route::middleware(['auth', 'admin_or_above'])->group(function () {
     Route::put('/assignments/{assignment}', [AssignmentsController::class, 'update'])->name('assignments.update');
     Route::delete('/assignments/{assignment}', [AssignmentsController::class, 'destroy'])->name('assignments.destroy');
 
+
+    // Phase damage carry-forward
+    Route::post('/order-phases/{phase}/damage', [OrderProgressController::class, 'recordDamage'])->name('progress.recordDamage');
     // Damage Claims
     Route::get('/returns', [ReturnsController::class, 'index'])->name('returns');
     Route::post('/returns/pending-for-customer', [ReturnsController::class, 'pendingForCustomer'])->name('returns.pending');

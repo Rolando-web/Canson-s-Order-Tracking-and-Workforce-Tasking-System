@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
+    protected $primaryKey = 'Notification_Id';
+
     protected $fillable = [
         'user_id',
         'type',
@@ -20,14 +22,10 @@ class Notification extends Model
         'is_read' => 'boolean',
     ];
 
-    // ─── Relationships ───────────────────────────
-
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'User_Id');
     }
-
-    // ─── Scopes ──────────────────────────────────
 
     public function scopeUnread($query)
     {
@@ -39,11 +37,6 @@ class Notification extends Model
         return $query->where('user_id', $userId);
     }
 
-    // ─── Helper: create notification(s) ──────────
-
-    /**
-     * Send a notification to a single user.
-     */
     public static function send(int $userId, string $type, string $title, string $message, array $data = []): self
     {
         return self::create([
@@ -55,9 +48,6 @@ class Notification extends Model
         ]);
     }
 
-    /**
-     * Send a notification to multiple users.
-     */
     public static function sendToMany(array $userIds, string $type, string $title, string $message, array $data = []): void
     {
         foreach ($userIds as $uid) {

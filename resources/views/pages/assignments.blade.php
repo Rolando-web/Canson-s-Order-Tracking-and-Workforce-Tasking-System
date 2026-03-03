@@ -483,44 +483,114 @@ function updateOrderPreview() {
         `<option value="${w.id}" ${prefillEmployeeId === w.id ? 'selected' : ''}>${w.name}${w.active > 0 ? ' (' + w.active + ' active)' : ''}</option>`
     ).join('');
 
-    const rowsHtml = (order.order_items || []).map(item => `
-        <tr>
-            <td class="px-4 py-3">
+    // selectedEmployeesPerItem: { [itemId]: [{id, name}, ...] }
+    window.selectedEmployeesPerItem = {};
+
+    const rowsHtml = (order.order_items || []).map(item => {
+        window.selectedEmployeesPerItem[item.id] = [];
+        if (prefillEmployeeId) {
+            const emp = workersData.find(w => w.id === prefillEmployeeId);
+            if (emp) window.selectedEmployeesPerItem[item.id] = [{ id: emp.id, name: emp.name }];
+        }
+        return `
+        <tr class="item-assign-row" data-item-id="${item.id}">
+            <td class="px-4 py-3 align-top">
                 <p class="text-sm font-semibold text-gray-900">${item.name}</p>
                 <p class="text-xs text-gray-400">₱${item.price.toLocaleString('en-US', {minimumFractionDigits: 2})} / unit</p>
             </td>
-            <td class="px-4 py-3 text-center">
+            <td class="px-4 py-3 text-center align-top">
                 <span class="text-sm font-bold text-gray-900">${item.quantity}</span>
             </td>
-            <td class="px-4 py-3">
-                <select class="item-emp-select w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        data-item-id="${item.id}"
-                        onchange="checkAllAssigned()">
-                    <option value="">— Select employee —</option>
-                    ${employeeOptions}
-                </select>
+            <td class="px-4 py-3 align-top">
+                <div class="flex flex-wrap gap-1.5 mb-2 emp-tags-container" id="tags-${item.id}"></div>
+                <div class="flex gap-2">
+                    <select class="item-emp-add-select flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            data-item-id="${item.id}">
+                        <option value="">+ Add employee</option>
+                        ${employeeOptions}
+                    </select>
+                    <button type="button" onclick="addEmployeeToItem(${item.id})"
+                        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
+                        Add
+                    </button>
+                </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 
     document.getElementById('itemAssignmentRows').innerHTML = rowsHtml;
+
+    // Render pre-filled tags
+    (order.order_items || []).forEach(item => {
+        renderItemTags(item.id);
+    });
+
     document.getElementById('assignValidationMsg') && document.getElementById('assignValidationMsg').classList.add('hidden');
     orderPreview.classList.remove('hidden');
-
-    // Enable/disable submit based on whether all items have employees
     checkAllAssigned();
 }
 
+function addEmployeeToItem(itemId) {
+    const sel = document.querySelector(`.item-emp-add-select[data-item-id="${itemId}"]`);
+    if (!sel || !sel.value) return;
+    const empId = parseInt(sel.value);
+    const empName = sel.options[sel.selectedIndex].text;
+
+    if (!window.selectedEmployeesPerItem[itemId]) window.selectedEmployeesPerItem[itemId] = [];
+    // Prevent duplicates
+    if (window.selectedEmployeesPerItem[itemId].find(e => e.id === empId)) {
+        sel.value = '';
+        return;
+    }
+    window.selectedEmployeesPerItem[itemId].push({ id: empId, name: empName });
+    sel.value = '';
+    renderItemTags(itemId);
+    checkAllAssigned();
+}
+
+function removeEmployeeFromItem(itemId, empId) {
+    if (!window.selectedEmployeesPerItem[itemId]) return;
+    window.selectedEmployeesPerItem[itemId] = window.selectedEmployeesPerItem[itemId].filter(e => e.id !== empId);
+    renderItemTags(itemId);
+    checkAllAssigned();
+}
+
+function renderItemTags(itemId) {
+    const container = document.getElementById('tags-' + itemId);
+    if (!container) return;
+    const emps = window.selectedEmployeesPerItem[itemId] || [];
+    container.innerHTML = emps.map(e =>
+        `<span class="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-medium rounded-full">
+            <span class="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px] font-bold flex-none">${e.name.charAt(0).toUpperCase()}</span>
+            ${e.name}
+            <button type="button" onclick="removeEmployeeFromItem(${itemId}, ${e.id})" class="ml-0.5 text-emerald-500 hover:text-red-500 transition-colors">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </span>`
+    ).join('');
+}
+
 function checkAllAssigned() {
-    const selects = document.querySelectorAll('.item-emp-select');
-    const allFilled = selects.length > 0 && Array.from(selects).every(s => s.value !== '');
-    document.getElementById('assignBtn').disabled = !allFilled;
+    if (!window.selectedEmployeesPerItem) { document.getElementById('assignBtn').disabled = true; return; }
+    const rows = document.querySelectorAll('.item-assign-row');
+    const allHaveAtLeastOne = rows.length > 0 && Array.from(rows).every(row => {
+        const itemId = parseInt(row.dataset.itemId);
+        return (window.selectedEmployeesPerItem[itemId] || []).length > 0;
+    });
+    document.getElementById('assignBtn').disabled = !allHaveAtLeastOne;
 }
 
 function fillAllWithEmployee() {
     if (!prefillEmployeeId) return;
-    document.querySelectorAll('.item-emp-select').forEach(sel => {
-        sel.value = String(prefillEmployeeId);
+    const emp = workersData.find(w => w.id === prefillEmployeeId);
+    if (!emp) return;
+    document.querySelectorAll('.item-assign-row').forEach(row => {
+        const itemId = parseInt(row.dataset.itemId);
+        if (!window.selectedEmployeesPerItem[itemId]) window.selectedEmployeesPerItem[itemId] = [];
+        if (!window.selectedEmployeesPerItem[itemId].find(e => e.id === emp.id)) {
+            window.selectedEmployeesPerItem[itemId].push({ id: emp.id, name: emp.name });
+        }
+        renderItemTags(itemId);
     });
     checkAllAssigned();
 }
@@ -529,20 +599,24 @@ function assignOrderToEmployee() {
     const selectedOrderId = document.getElementById('orderSelect').value;
     if (!selectedOrderId) return;
 
+    // Build flat item_assignments array (one entry per employee per item)
     const itemAssignments = [];
-    document.querySelectorAll('.item-emp-select').forEach(sel => {
-        if (sel.value && sel.dataset.itemId) {
+    document.querySelectorAll('.item-assign-row').forEach(row => {
+        const itemId = parseInt(row.dataset.itemId);
+        (window.selectedEmployeesPerItem[itemId] || []).forEach(emp => {
             itemAssignments.push({
-                order_item_id: parseInt(sel.dataset.itemId),
-                employee_id: parseInt(sel.value),
+                order_item_id: itemId,
+                employee_id: emp.id,
             });
-        }
+        });
     });
 
     const order = availableOrders.find(o => o.order_id === selectedOrderId);
     const totalItems = (order && order.order_items) ? order.order_items.length : 0;
 
-    if (itemAssignments.length < totalItems) {
+    // Ensure every item has at least one employee
+    const coveredItems = new Set(itemAssignments.map(ia => ia.order_item_id));
+    if (coveredItems.size < totalItems) {
         const msg = document.getElementById('assignValidationMsg');
         msg && msg.classList.remove('hidden');
         return;

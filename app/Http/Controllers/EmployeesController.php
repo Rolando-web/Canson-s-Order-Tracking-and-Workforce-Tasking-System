@@ -17,18 +17,18 @@ class EmployeesController extends Controller
         $employees = $allEmployees->map(function ($emp, $index) use ($colors) {
             $nameParts = explode(' ', $emp->name, 2);
             return [
-                'id'         => $emp->id,
-                'first'      => $nameParts[0] ?? $emp->name,
-                'last'       => $nameParts[1] ?? '',
-                'role'       => $emp->role,
-                'contact'    => '',
-                'status'     => 'Active',
-                'color'      => $colors[$index % count($colors)],
+                'id'      => $emp->User_Id,
+                'first'   => $nameParts[0] ?? $emp->name,
+                'last'    => $nameParts[1] ?? '',
+                'role'    => $emp->role,
+                'contact' => '',
+                'status'  => 'Active',
+                'color'   => $colors[$index % count($colors)],
             ];
         });
 
         $totalEmployees = $allEmployees->count();
-        $activeCount    = $totalEmployees; // All users are active by default
+        $activeCount    = $totalEmployees;
         $inactiveCount  = 0;
 
         return view('pages.employees', compact('employees', 'totalEmployees', 'activeCount', 'inactiveCount'));
@@ -37,19 +37,19 @@ class EmployeesController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'empFirstName'  => 'required|string|max:100',
-            'empLastName'   => 'required|string|max:100',
-            'empRole'       => 'required|in:employee,admin,super_admin',
-            'empContact'    => 'nullable|string|max:20',
-            'password'      => 'nullable|string|min:6',
+            'empFirstName' => 'required|string|max:100',
+            'empLastName'  => 'required|string|max:100',
+            'empRole'      => 'required|in:employee,admin,super_admin',
+            'empContact'   => 'nullable|string|max:20',
+            'password'     => 'nullable|string|min:6',
         ]);
 
         $name = trim($validated['empFirstName'] . ' ' . $validated['empLastName']);
 
         $user = User::create([
-            'name'       => $name,
-            'role'       => $validated['empRole'],
-            'password'   => Hash::make($validated['password'] ?? 'password123'),
+            'name'     => $name,
+            'role'     => $validated['empRole'],
+            'password' => Hash::make($validated['password'] ?? 'password123'),
         ]);
 
         if ($request->expectsJson()) {
@@ -62,17 +62,17 @@ class EmployeesController extends Controller
     public function update(Request $request, User $employee)
     {
         $validated = $request->validate([
-            'empFirstName'  => 'required|string|max:100',
-            'empLastName'   => 'required|string|max:100',
-            'empRole'       => 'required|in:employee,admin,super_admin',
-            'empContact'    => 'nullable|string|max:20',
-            'password'      => 'nullable|string|min:6',
+            'empFirstName' => 'required|string|max:100',
+            'empLastName'  => 'required|string|max:100',
+            'empRole'      => 'required|in:employee,admin,super_admin',
+            'empContact'   => 'nullable|string|max:20',
+            'password'     => 'nullable|string|min:6',
         ]);
 
         $name = trim($validated['empFirstName'] . ' ' . $validated['empLastName']);
         $updateData = [
-            'name'       => $name,
-            'role'       => $validated['empRole'],
+            'name' => $name,
+            'role' => $validated['empRole'],
         ];
 
         if (!empty($validated['password'])) {
@@ -90,7 +90,6 @@ class EmployeesController extends Controller
 
     public function destroy(Request $request, User $employee)
     {
-        $name = $employee->name;
         $employee->delete();
 
         if ($request->expectsJson()) {

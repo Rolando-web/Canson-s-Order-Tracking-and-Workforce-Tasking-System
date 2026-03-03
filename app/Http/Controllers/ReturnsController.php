@@ -22,9 +22,6 @@ class ReturnsController extends Controller
         return view('pages.returns', compact('claims', 'stats'));
     }
 
-    /**
-     * API: Get pending damage claims for a customer (used when creating a new order).
-     */
     public function pendingForCustomer(Request $request)
     {
         $request->validate(['customer_name' => 'required|string']);
@@ -34,14 +31,14 @@ class ReturnsController extends Controller
         return response()->json([
             'claims' => $claims->map(function ($c) {
                 return [
-                    'id'            => $c->id,
-                    'return_id'     => $c->return_id,
-                    'item_id'       => $c->item_id,
-                    'item_name'     => $c->inventoryItem->name ?? 'N/A',
-                    'quantity'      => $c->quantity,
-                    'reason'        => $c->reason,
-                    'order_ref'     => $c->order_reference,
-                    'date'          => $c->created_at->format('M d, Y'),
+                    'id'          => $c->Return_Id,
+                    'return_id'   => $c->return_number,
+                    'item_id'     => $c->item_id,
+                    'item_name'   => $c->inventoryItem->name ?? 'N/A',
+                    'quantity'    => $c->quantity,
+                    'reason'      => $c->reason,
+                    'order_ref'   => $c->order_reference,
+                    'date'        => $c->created_at->format('M d, Y'),
                 ];
             }),
         ]);

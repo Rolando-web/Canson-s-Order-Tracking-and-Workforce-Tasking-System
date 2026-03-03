@@ -1,11 +1,12 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\InventoryItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderPhase;
+use App\Models\OrderPhaseItem;
 use App\Models\ReturnItem;
 use App\Models\Notification;
 use App\Models\User;
@@ -15,11 +16,11 @@ class OrdersController extends Controller
 {
     public function index()
     {
-        $inventoryItems = InventoryItem::select('id', 'name', 'item_id', 'stock', 'unit', 'unit_price')
+        $inventoryItems = InventoryItem::select('Item_Id', 'name', 'item_code', 'stock', 'unit', 'unit_price')
             ->orderBy('name')
             ->get();
 
-        $orders = Order::with('items')
+        $orders = Order::with(['items', 'phases'])
             ->whereNotIn('status', ['Delivered', 'Ready for Delivery'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -31,8 +32,8 @@ class OrdersController extends Controller
                 ];
 
                 return [
-                    'id'            => $order->order_id,
-                    'db_id'         => $order->id,
+                    'id'            => $order->order_number,
+                    'db_id'         => $order->Order_Id,
                     'customer'      => $order->customer_name,
                     'contact'       => $order->contact_number,
                     'address'       => $order->delivery_address,
@@ -46,6 +47,8 @@ class OrdersController extends Controller
                     'priority'      => $order->priority,
                     'priorityColor' => $priorityColors[$order->priority] ?? $priorityColors['Normal'],
                     'notes'         => $order->notes,
+                    'has_phases'    => $order->phases->count() > 0,
+                    'phase_count'   => $order->phases->count(),
                     'order_items'   => $order->items->map(fn($i) => [
                         'name'     => $i->name,
                         'qty'      => $i->quantity,
@@ -58,9 +61,6 @@ class OrdersController extends Controller
         return view('pages.orders', compact('inventoryItems', 'orders'));
     }
 
-    /**
-     * Return distinct customers for autocomplete (from past orders).
-     */
     public function customerSuggestions(Request $request)
     {
         $q = $request->query('q', '');
@@ -83,18 +83,24 @@ class OrdersController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'customer_name'   => 'required|string|max:100',
-            'contact_number'  => 'required|string|max:11',
-            'delivery_address'=> 'required|string',
-            'delivery_date'   => 'required|date',
-            'priority'        => 'required|in:Normal,High,Urgent',
-            'notes'           => 'nullable|string',
-            'items'           => 'required|array|min:1',
-            'items.*.name'    => 'required|string',
-            'items.*.qty'     => 'required|integer|min:1',
-            'items.*.price'   => 'required|numeric|min:0',
-            'cover_claim_ids' => 'nullable|array',
-            'cover_claim_ids.*' => 'integer|exists:returns,id',
+            'customer_name'            => 'required|string|max:100',
+            'contact_number'           => 'required|string|max:11',
+            'delivery_address'         => 'required|string',
+            'delivery_date'            => 'required|date',
+            'priority'                 => 'required|in:Normal,High,Urgent',
+            'notes'                    => 'nullable|string',
+            'items'                    => 'required|array|min:1',
+            'items.*.name'             => 'required|string',
+            'items.*.qty'              => 'required|integer|min:1',
+            'items.*.price'            => 'required|numeric|min:0',
+            'cover_claim_ids'          => 'nullable|array',
+            'cover_claim_ids.*'        => 'integer|exists:returns,Return_Id',
+            // Phases (optional)
+            'phases'                   => 'nullable|array',
+            'phases.*.delivery_date'   => 'required_with:phases|date',
+            'phases.*.items'           => 'required_with:phases|array',
+            'phases.*.items.*.name'    => 'required|string',
+            'phases.*.items.*.qty'     => 'required|integer|min:0',
         ]);
 
         DB::beginTransaction();
@@ -104,19 +110,18 @@ class OrdersController extends Controller
                 $totalAmount += $item['qty'] * $item['price'];
             }
 
-            // Validate stock availability
             foreach ($validated['items'] as $item) {
-                $inventoryItem = InventoryItem::where('name', $item['name'])->first();
-                if ($inventoryItem && $item['qty'] > $inventoryItem->stock) {
+                $inv = InventoryItem::where('name', $item['name'])->first();
+                if ($inv && $item['qty'] > $inv->stock) {
                     return response()->json([
                         'success' => false,
-                        'message' => "\"{$item['name']}\" only has {$inventoryItem->stock} in stock. Please reduce the quantity.",
+                        'message' => "\"{$item['name']}\" only has {$inv->stock} in stock.",
                     ], 422);
                 }
             }
 
             $order = Order::create([
-                'order_id'         => Order::generateOrderId(),
+                'order_number'     => Order::generateOrderId(),
                 'customer_name'    => $validated['customer_name'],
                 'contact_number'   => $validated['contact_number'],
                 'delivery_address' => $validated['delivery_address'],
@@ -129,12 +134,10 @@ class OrdersController extends Controller
             ]);
 
             foreach ($validated['items'] as $item) {
-                // Find inventory item by name
-                $inventoryItem = InventoryItem::where('name', $item['name'])->first();
-
+                $inv = InventoryItem::where('name', $item['name'])->first();
                 OrderItem::create([
-                    'order_id'          => $order->id,
-                    'inventory_item_id' => $inventoryItem ? $inventoryItem->id : 0,
+                    'order_id'          => $order->Order_Id,
+                    'inventory_item_id' => $inv ? $inv->Item_Id : 0,
                     'name'              => $item['name'],
                     'quantity'          => $item['qty'],
                     'unit_price'        => $item['price'],
@@ -142,42 +145,63 @@ class OrdersController extends Controller
                 ]);
             }
 
-
-            // Auto-mark damage claims as Covered
+            // Cover damage claims
             if (!empty($validated['cover_claim_ids'])) {
-                ReturnItem::whereIn('id', $validated['cover_claim_ids'])
+                ReturnItem::whereIn('Return_Id', $validated['cover_claim_ids'])
                     ->where('status', 'Pending')
                     ->update([
                         'status'           => 'Covered',
-                        'covered_by_order' => $order->order_id,
+                        'covered_by_order' => $order->order_number,
                     ]);
+            }
+
+            // Create phases if provided
+            if (!empty($validated['phases'])) {
+                foreach ($validated['phases'] as $phaseIndex => $phaseData) {
+                    $phaseNumber = $phaseIndex + 1;
+
+                    $phase = OrderPhase::create([
+                        'order_id'      => $order->Order_Id,
+                        'phase_number'  => $phaseNumber,
+                        'delivery_date' => $phaseData['delivery_date'],
+                        'status'        => 'Pending',
+                        'damage_qty'    => 0,
+                        'notes'         => $phaseData['notes'] ?? null,
+                    ]);
+
+                    foreach ($phaseData['items'] as $phaseItem) {
+                        if (($phaseItem['qty'] ?? 0) <= 0) continue;
+
+                        $inv = InventoryItem::where('name', $phaseItem['name'])->first();
+                        OrderPhaseItem::create([
+                            'phase_id'          => $phase->Phase_Id,
+                            'inventory_item_id' => $inv ? $inv->Item_Id : null,
+                            'name'              => $phaseItem['name'],
+                            'base_qty'          => $phaseItem['qty'],
+                            'damage_carry'      => 0,
+                            'required_qty'      => $phaseItem['qty'],
+                            'completed_qty'     => 0,
+                        ]);
+                    }
+                }
             }
 
             DB::commit();
 
-            // Notify all admin managers about the new order
-            $managerIds = User::where('role', 'admin')->pluck('id')->toArray();
+            $managerIds = User::where('role', 'admin')->pluck('User_Id')->toArray();
             Notification::sendToMany(
                 $managerIds,
                 'new_order',
                 'New Order Created',
-                "Order {$order->order_id} for {$order->customer_name} worth ₱" . number_format($totalAmount, 2) . " needs to be assigned to a worker.",
-                ['order_id' => $order->order_id]
+                "Order {$order->order_number} for {$order->customer_name} (₱" . number_format($totalAmount, 2) . ") needs to be assigned.",
+                ['order_id' => $order->order_number]
             );
 
-            if ($request->expectsJson()) {
-                return response()->json(['success' => true, 'order' => $order->load('items')]);
-            }
+            return response()->json(['success' => true, 'order' => $order->load('items')]);
 
-            return redirect()->back()->with('success', 'Order created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-            }
-
-            return redirect()->back()->with('error', 'Failed to create order: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -189,26 +213,13 @@ class OrdersController extends Controller
             'priority' => 'sometimes|in:Normal,High,Urgent',
             'notes'    => 'sometimes|nullable|string',
         ]);
-
-        $oldStatus = $order->status;
         $order->update($validated);
-
-        if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'order' => $order]);
-        }
-
-        return redirect()->back()->with('success', 'Order updated successfully.');
+        return response()->json(['success' => true, 'order' => $order]);
     }
 
     public function destroy(Request $request, Order $order)
     {
-        $orderId = $order->order_id;
         $order->delete();
-
-        if ($request->expectsJson()) {
-            return response()->json(['success' => true]);
-        }
-
-        return redirect()->back()->with('success', 'Order deleted successfully.');
+        return response()->json(['success' => true]);
     }
 }

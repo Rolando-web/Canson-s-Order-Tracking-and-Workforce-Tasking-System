@@ -9,8 +9,10 @@ class Assignment extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'Assignment_Id';
+
     protected $fillable = [
-        'order_id',
+        'order_number',
         'order_item_id',
         'employee_id',
         'priority',
@@ -26,21 +28,21 @@ class Assignment extends Model
 
     public function orderItem()
     {
-        return $this->belongsTo(OrderItem::class, 'order_item_id');
+        return $this->belongsTo(OrderItem::class, 'order_item_id', 'Order_Item_Id');
     }
 
     public function employee()
     {
-        return $this->belongsTo(User::class, 'employee_id');
+        return $this->belongsTo(User::class, 'employee_id', 'User_Id');
     }
 
     public function assignedByUser()
     {
-        return $this->belongsTo(User::class, 'assigned_by');
+        return $this->belongsTo(User::class, 'assigned_by', 'User_Id');
     }
 
     public function order()
     {
-        return $this->belongsTo(Order::class, 'order_id', 'order_id');
+        return $this->belongsTo(Order::class, 'order_number', 'order_number');
     }
 }

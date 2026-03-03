@@ -10,9 +10,10 @@ class ReturnItem extends Model
     use HasFactory;
 
     protected $table = 'returns';
+    protected $primaryKey = 'Return_Id';
 
     protected $fillable = [
-        'return_id',
+        'return_number',
         'item_id',
         'quantity',
         'reason',
@@ -32,17 +33,14 @@ class ReturnItem extends Model
 
     public function inventoryItem()
     {
-        return $this->belongsTo(InventoryItem::class, 'item_id');
+        return $this->belongsTo(InventoryItem::class, 'item_id', 'Item_Id');
     }
 
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by', 'User_Id');
     }
 
-    /**
-     * Get pending damage claims for a specific customer.
-     */
     public static function pendingForCustomer(string $customerName)
     {
         return static::with('inventoryItem')
@@ -51,20 +49,17 @@ class ReturnItem extends Model
             ->get();
     }
 
-    /**
-     * Generate damage claim ID like DC-2026-0001
-     */
     public static function generateReturnId(): string
     {
         $prefix = 'DC';
         $year = date('Y');
-        $last = static::where('return_id', 'like', "{$prefix}-{$year}-%")
-            ->orderBy('id', 'desc')
+        $last = static::where('return_number', 'like', "{$prefix}-{$year}-%")
+            ->orderBy('Return_Id', 'desc')
             ->first();
 
         $nextNum = 1;
-        if ($last && $last->return_id) {
-            $parts = explode('-', $last->return_id);
+        if ($last && $last->return_number) {
+            $parts = explode('-', $last->return_number);
             $nextNum = intval(end($parts)) + 1;
         }
 

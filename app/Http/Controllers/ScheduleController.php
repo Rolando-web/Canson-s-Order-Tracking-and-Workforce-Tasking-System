@@ -15,27 +15,24 @@ class ScheduleController extends Controller
             ->get()
             ->map(function ($note) {
                 return [
-                    'id'            => $note->id,
+                    'id'            => $note->Schedule_Note_Id,
                     'title'         => $note->title,
                     'description'   => $note->description,
                     'schedule_date' => $note->schedule_date->format('Y-m-d'),
                     'start_time'    => $note->start_time,
                     'end_time'      => $note->end_time,
-                    'is_all_day'    => $note->is_all_day,
                     'priority'      => $note->priority,
                     'created_by'    => $note->creator ? $note->creator->name : 'System',
                 ];
             });
 
-        // Load orders for calendar display (show as bars from created_at to delivery_date)
-        // Exclude completed/delivered orders — no need to show them on the calendar
         $orders = Order::orderBy('delivery_date')
             ->whereNotIn('status', ['Completed', 'Delivered'])
             ->get()
             ->map(function ($order) {
                 return [
-                    'id'            => $order->id,
-                    'order_id'      => $order->order_id,
+                    'id'            => $order->Order_Id,
+                    'order_id'      => $order->order_number,
                     'customer_name' => $order->customer_name,
                     'start_date'    => $order->created_at->format('Y-m-d'),
                     'end_date'      => $order->delivery_date->format('Y-m-d'),
@@ -58,7 +55,6 @@ class ScheduleController extends Controller
             'title'         => $validated['title'],
             'description'   => $validated['description'] ?? null,
             'schedule_date' => now()->toDateString(),
-            'is_all_day'    => true,
             'priority'      => 'medium',
             'created_by'    => auth()->id(),
             'created_at'    => now(),
@@ -79,8 +75,8 @@ class ScheduleController extends Controller
         ]);
 
         $note->update([
-            'title'         => $validated['title'],
-            'description'   => $validated['description'] ?? null,
+            'title'       => $validated['title'],
+            'description' => $validated['description'] ?? null,
         ]);
 
         if ($request->expectsJson()) {
@@ -92,7 +88,6 @@ class ScheduleController extends Controller
 
     public function destroyNote(Request $request, ScheduleNote $note)
     {
-        $title = $note->title;
         $note->delete();
 
         if ($request->expectsJson()) {

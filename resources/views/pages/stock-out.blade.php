@@ -75,11 +75,12 @@
 
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
-        <table class="w-full min-w-[800px]">
+        <table class="w-full min-w-[950px]">
             <thead>
                 <tr class="border-b border-gray-200">
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date & Time</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Reference No.</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item ID</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock Change</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Reason</th>
@@ -100,18 +101,14 @@
                         <span class="inline-flex px-2 py-0.5 rounded text-xs font-mono bg-gray-50 border border-gray-200">{{ $txn->reference_number }}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <p class="text-sm font-semibold text-gray-900">{{ $txn->inventoryItem->name ?? 'N/A' }}</p>
-                        @if($txn->inventoryItem)
-                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $txn->inventoryItem->item_id }}</span>
-                        @endif
+                        <span class="inline-flex px-2 py-1 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $txn->inventoryItem->item_id ?? '—' }}</span>
                     </td>
+                    <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $txn->inventoryItem->name ?? 'N/A' }}</td>
                     <td class="px-6 py-4">
-                        <div class="text-sm">
-                            <span class="text-gray-500">{{ number_format($txn->previous_stock) }}</span>
-                            <svg class="w-3 h-3 inline mx-1 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
-                            <span class="font-bold text-red-600">{{ number_format($txn->new_stock) }}</span>
-                            <span class="text-xs text-red-500 ml-1">(-{{ number_format($txn->quantity) }})</span>
-                        </div>
+                        <span class="inline-flex items-center gap-1 text-sm font-bold text-red-600">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/></svg>
+                            -{{ number_format($txn->quantity) }}
+                        </span>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $txn->reason ?? 'Order Assignment' }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $txn->notes ?? '—' }}</td>
@@ -119,7 +116,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-sm text-gray-400">No stock out transactions yet. Stock is automatically deducted when orders are assigned.</td>
+                    <td colspan="8" class="px-6 py-12 text-center text-sm text-gray-400">No stock out transactions yet. Stock is automatically deducted when orders are assigned.</td>
                 </tr>
                 @endforelse
             </tbody>

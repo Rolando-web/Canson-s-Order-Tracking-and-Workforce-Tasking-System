@@ -3,7 +3,9 @@
 // All orders page functions. inventoryItems is injected by the blade template.
 
 // ========== Order Details Modal ==========
-window.showOrderDetails = function(orderId, order) {
+window.showOrderDetails = function(orderId) {
+    const order = (window.ordersData || {})[orderId];
+    if (!order) return;
     document.getElementById('modalOrderId').textContent = `Order ${order.id}`;
     document.getElementById('modalCustomerName').textContent = order.customer;
     const nameBody = document.getElementById('modalCustomerNameBody');
@@ -28,20 +30,20 @@ window.showOrderDetails = function(orderId, order) {
 
     // Order items table
     let itemsHTML = '';
-    order.order_items.forEach(item => {
+    (order.order_items || []).forEach(item => {
         itemsHTML += `
             <tr>
                 <td class="px-4 py-2 text-sm text-gray-900">${item.name}</td>
                 <td class="px-4 py-2 text-sm text-gray-600 text-right">${item.qty}</td>
-                <td class="px-4 py-2 text-sm text-gray-600 text-right">₱${item.price.toFixed(2)}</td>
-                <td class="px-4 py-2 text-sm font-semibold text-gray-900 text-right">₱${item.subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="px-4 py-2 text-sm text-gray-600 text-right">₱${parseFloat(item.price).toFixed(2)}</td>
+                <td class="px-4 py-2 text-sm font-semibold text-gray-900 text-right">₱${parseFloat(item.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>
         `;
     });
     document.getElementById('modalOrderItems').innerHTML = itemsHTML;
 
     // Total
-    document.getElementById('modalTotalAmount').textContent = `₱${order.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    document.getElementById('modalTotalAmount').textContent = `₱${parseFloat(order.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     // Notes
     document.getElementById('modalNotes').textContent = order.notes || 'No notes provided';
@@ -60,7 +62,29 @@ window.openAddOrderModal = function() {
     document.getElementById('addOrderForm').reset();
     orderItemIndex = 1;
     window.pendingCoverClaimIds = [];
-    document.getElementById('addOrderItemsBody').innerHTML = createOrderItemRow(0);
+
+    // Reset items table: remove all rows except the first, reset first row
+    const tbody = document.getElementById('addOrderItemsBody');
+    const allRows = tbody.querySelectorAll('.order-item-row');
+    allRows.forEach((row, i) => {
+        if (i === 0) {
+            // Reset first row values (keep the PHP-rendered options intact)
+            const sel = row.querySelector('select');
+            if (sel) sel.value = '';
+            const qty = row.querySelector('.item-qty');
+            if (qty) qty.value = 1;
+            const price = row.querySelector('.item-price');
+            if (price) price.value = 0;
+            const subtotal = row.querySelector('.item-subtotal');
+            if (subtotal) subtotal.textContent = '₱0.00';
+            const indicator = row.querySelector('.stock-indicator');
+            if (indicator) indicator.textContent = '';
+        } else {
+            row.remove();
+        }
+    });
+    // Reset phases
+    if (typeof resetPhases === 'function') resetPhases();
     // Hide damage claims alert
     var dcAlert = document.getElementById('damageClaimsAlert');
     if (dcAlert) dcAlert.classList.add('hidden');
@@ -82,6 +106,7 @@ window.openAddOrderModal = function() {
 
 window.closeAddOrderModal = function() {
     document.getElementById('addOrderModal').classList.add('hidden');
+    if (typeof resetPhases === 'function') resetPhases();
 };
 
 function createOrderItemRow(index) {
@@ -122,7 +147,43 @@ function createOrderItemRow(index) {
 
 window.addOrderItem = function() {
     const tbody = document.getElementById('addOrderItemsBody');
-    tbody.insertAdjacentHTML('beforeend', createOrderItemRow(orderItemIndex));
+    // Clone the select options from the very first row (PHP-rendered, always has full list)
+    const firstSelect = tbody.querySelector('select');
+    let optionsHtml = '<option value="">-- Select item --</option>';
+    if (firstSelect) {
+        Array.from(firstSelect.options).forEach(opt => {
+            if (opt.value) {
+                optionsHtml += `<option value="${opt.value}" data-price="${opt.getAttribute('data-price') || 0}" data-stock="${opt.getAttribute('data-stock') || 0}">${opt.text}</option>`;
+            }
+        });
+    }
+    const row = `
+        <tr class="order-item-row">
+            <td class="px-4 py-2">
+                <select name="items[${orderItemIndex}][name]" required onchange="onItemSelected(this)"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    ${optionsHtml}
+                </select>
+                <div class="stock-indicator mt-1 text-xs"></div>
+            </td>
+            <td class="px-4 py-2">
+                <input type="number" name="items[${orderItemIndex}][qty]" required min="1" value="1"
+                    class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 item-qty"
+                    oninput="recalcOrderTotal()">
+            </td>
+            <td class="px-4 py-2">
+                <input type="number" name="items[${orderItemIndex}][price]" required min="0" step="0.01" value="0"
+                    class="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 item-price"
+                    oninput="recalcOrderTotal()">
+            </td>
+            <td class="px-4 py-2 text-right text-sm font-semibold text-gray-900 item-subtotal">₱0.00</td>
+            <td class="px-4 py-2 text-center">
+                <button type="button" onclick="removeOrderItem(this)" class="text-gray-300 hover:text-red-500 transition-colors" title="Remove item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </td>
+        </tr>`;
+    tbody.insertAdjacentHTML('beforeend', row);
     orderItemIndex++;
 };
 
@@ -207,6 +268,24 @@ window.submitAddOrder = function(event) {
     if (orderData.items.length === 0) {
         alert('Please add at least one item to the order.');
         return;
+    }
+
+    // Collect phases if any
+    const phaseCards = document.querySelectorAll('.phase-card');
+    if (phaseCards.length > 0) {
+        orderData.phases = [];
+        phaseCards.forEach((card, ci) => {
+            const deliveryDate = card.querySelector('input[type="date"]')?.value;
+            const phaseItems = [];
+            card.querySelectorAll('.phase-item-row').forEach(row => {
+                const nameInput = row.querySelector('input[type="hidden"]');
+                const qtyInput  = row.querySelector('.phase-qty-input');
+                const name = nameInput ? nameInput.value : '';
+                const qty  = parseInt(qtyInput?.value) || 0;
+                if (name && qty > 0) phaseItems.push({ name, qty });
+            });
+            orderData.phases.push({ delivery_date: deliveryDate, items: phaseItems });
+        });
     }
 
     // Validate stock availability (skip cover items — they use price=0)

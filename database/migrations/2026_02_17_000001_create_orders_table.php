@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('orders', function (Blueprint $table) {
-            $table->id();
-            $table->string('order_id', 20)->unique();
+            $table->increments('Order_Id');
+            $table->string('order_number', 20)->unique();
             $table->string('customer_name', 100);
             $table->string('contact_number', 11);
             $table->text('delivery_address');
@@ -20,7 +20,8 @@ return new class extends Migration
             $table->enum('priority', ['Normal', 'High', 'Urgent'])->default('Normal');
             $table->string('assigned', 100)->nullable();
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedInteger('created_by')->nullable();
+            $table->foreign('created_by')->references('User_Id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
     }

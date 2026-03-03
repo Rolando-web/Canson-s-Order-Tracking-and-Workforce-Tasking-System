@@ -29,7 +29,22 @@ class DatabaseSeeder extends Seeder
 
         // Create Employee (Worker)
         User::firstOrCreate(
-            ['name' => 'employee'],
+            ['name' => 'employee1'],
+            ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE]
+        );
+
+            User::firstOrCreate(
+            ['name' => 'employee2'],
+            ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE]
+        );
+
+            User::firstOrCreate(
+            ['name' => 'employee3'],
+            ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE]
+        );
+
+            User::firstOrCreate(
+            ['name' => 'employee4'],
             ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE]
         );
 

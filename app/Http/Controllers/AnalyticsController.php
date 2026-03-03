@@ -15,20 +15,16 @@ class AnalyticsController extends Controller
     {
         $period = $request->input('period', 'this_month');
 
-        // === Date range based on period ===
         [$startDate, $endDate] = $this->getPeriodRange($period);
 
-        // === Sales KPIs (scoped to period) ===
         $totalRevenue       = Order::whereBetween('created_at', [$startDate, $endDate])->sum('total_amount');
         $totalOrders        = Order::whereBetween('created_at', [$startDate, $endDate])->count();
         $avgOrderValue      = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
         $completedThisMonth = Order::whereBetween('created_at', [$startDate, $endDate])->where('status', 'Completed')->count();
 
-        // Active customers in period
         $activeCustomers = Order::whereBetween('created_at', [$startDate, $endDate])
             ->distinct('customer_name')->count('customer_name');
 
-        // Revenue trend (12 months always for the chart)
         $revenueTrend = [];
         for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
@@ -39,13 +35,12 @@ class AnalyticsController extends Controller
             $revenueTrend[$monthLabel] = (float)$monthRevenue;
         }
 
-        // Sales by category (scoped to period)
         $salesByCategory = OrderItem::select(
                 'inventory_items.category',
                 DB::raw('SUM(order_items.subtotal) as total')
             )
-            ->join('inventory_items', 'order_items.inventory_item_id', '=', 'inventory_items.id')
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('inventory_items', 'order_items.inventory_item_id', '=', 'inventory_items.Item_Id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.Order_Id')
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->groupBy('inventory_items.category')
             ->orderByDesc('total')
@@ -53,13 +48,12 @@ class AnalyticsController extends Controller
             ->map(fn($row) => ['category' => $row->category, 'total' => (float)$row->total])
             ->toArray();
 
-        // Top products (scoped to period)
         $topProducts = OrderItem::select(
                 'order_items.name',
                 DB::raw('SUM(order_items.quantity) as total_sold'),
                 DB::raw('SUM(order_items.subtotal) as total_revenue')
             )
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.Order_Id')
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->groupBy('order_items.name')
             ->orderByDesc('total_revenue')
@@ -71,7 +65,6 @@ class AnalyticsController extends Controller
                 'revenue' => (float)$item->total_revenue,
             ])->toArray();
 
-        // Top customers (scoped to period)
         $topCustomers = Order::select(
                 'customer_name',
                 DB::raw('COUNT(*) as order_count'),
@@ -89,7 +82,6 @@ class AnalyticsController extends Controller
                 'initial' => strtoupper(substr($c->customer_name, 0, 1)),
             ])->toArray();
 
-        // Production chart (this week always)
         $prodDays    = [];
         $dayNames    = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         $startOfWeek = now()->startOfWeek();
@@ -99,14 +91,12 @@ class AnalyticsController extends Controller
                 ->withSum('items', 'quantity')->get()->sum('items_sum_quantity') ?? 0;
         }
 
-        // Order status distribution (scoped to period)
         $orderStatusCounts = [
             'Pending'     => Order::whereBetween('created_at', [$startDate, $endDate])->where('status', 'Pending')->count(),
             'In-Progress' => Order::whereBetween('created_at', [$startDate, $endDate])->where('status', 'In-Progress')->count(),
             'Completed'   => Order::whereBetween('created_at', [$startDate, $endDate])->where('status', 'Completed')->count(),
         ];
 
-        // Worker efficiency
         $employees = \App\Models\User::where('role', 'employee')->get();
         $workerEfficiency = $employees->map(function ($emp) {
             $total     = $emp->assignments()->count();
@@ -151,7 +141,7 @@ class AnalyticsController extends Controller
             fputcsv($h, ['Transaction ID', 'Customer', 'Items', 'Total Amount (PHP)', 'Status', 'Date']);
             foreach ($orders as $o) {
                 fputcsv($h, [
-                    $o->order_id,
+                    $o->order_number,
                     $o->customer_name,
                     $o->items->map(fn($i) => $i->name)->implode('; '),
                     number_format($o->total_amount, 2),
@@ -165,7 +155,6 @@ class AnalyticsController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    // ---------------------------------------------------------------
     private function getPeriodRange(string $period): array
     {
         return match($period) {

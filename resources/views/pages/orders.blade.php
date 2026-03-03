@@ -67,6 +67,7 @@
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Amount</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Phases</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>
@@ -104,7 +105,17 @@
                         <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $order['priorityColor'] }}">{{ $order['priority'] }}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <button onclick="showOrderDetails('{{ $order['id'] }}', {{ json_encode($order) }})" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
+                        @if($order['phase_count'] > 0)
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-600 border border-indigo-200">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25"/></svg>
+                                {{ $order['phase_count'] }} {{ Str::plural('phase', $order['phase_count']) }}
+                            </span>
+                        @else
+                            <span class="text-xs text-gray-400">—</span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4">
+                        <button onclick="showOrderDetails('{{ $order['id'] }}')" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             View Details
                         </button>
@@ -265,6 +276,27 @@
                             </div>
                         </div>
 
+                        {{-- Phases --}}
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
+                                    Delivery Phases
+                                    <span class="text-xs text-gray-400 font-normal">(optional — split order into batches)</span>
+                                </h4>
+                                <button type="button" onclick="addPhase()" class="text-indigo-600 hover:text-indigo-700 text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-indigo-50 border border-indigo-200 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                    Add Phase
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3">Phases auto-fill from Order Items above. Just set how many to deliver per phase.</p>
+                            {{-- Remaining qty hint bar --}}
+                            <div id="phaseQtyWarning" class="hidden mb-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2"></div>
+                            <div id="phasesContainer" class="space-y-3">
+                                {{-- Phase cards added dynamically --}}
+                            </div>
+                        </div>
+
                         {{-- Notes --}}
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1.5">Notes</label>
@@ -290,7 +322,8 @@
 
 <script>
 window.inventoryItems = @json($inventoryItems ?? []);
-window.pendingCoverClaimIds = []; // Track claim IDs to mark as Covered on submit
+window.ordersData = @json(collect($orders)->keyBy('id'));
+window.pendingCoverClaimIds = [];
 
 function filterOrders() {
     var search = document.getElementById('orderSearch').value.toLowerCase();
@@ -472,6 +505,159 @@ function removeCoverRows() {
     document.querySelectorAll('.cover-item-row').forEach(function(row) {
         row.remove();
     });
+}
+
+// ========== Phases Builder ==========
+var phaseCount = 0;
+
+// Read current order items from the table
+function getOrderItems() {
+    var rows = document.querySelectorAll('#addOrderItemsBody .order-item-row:not(.cover-item-row)');
+    var items = [];
+    rows.forEach(function(row) {
+        var nameEl = row.querySelector('select[name*="[name]"]') || row.querySelector('input[name*="[name]"]');
+        var qtyEl  = row.querySelector('input[name*="[qty]"]');
+        if (!nameEl || !qtyEl) return;
+        var name = nameEl.value ? nameEl.value.trim() : '';
+        var qty  = parseInt(qtyEl.value) || 0;
+        if (name && qty > 0) items.push({ name: name, qty: qty });
+    });
+    return items;
+}
+
+// Sum qty allocated in ALL phases for a given item name
+function getAllocatedQty(itemName) {
+    var total = 0;
+    document.querySelectorAll('.phase-card').forEach(function(card) {
+        card.querySelectorAll('.phase-item-row').forEach(function(row) {
+            var n = row.dataset.itemName;
+            var q = parseInt(row.querySelector('.phase-qty-input').value) || 0;
+            if (n === itemName) total += q;
+        });
+    });
+    return total;
+}
+
+function updatePhaseWarnings() {
+    var orderItems = getOrderItems();
+    var warnings = [];
+    orderItems.forEach(function(oi) {
+        var allocated = getAllocatedQty(oi.name);
+        if (allocated > oi.qty) {
+            warnings.push('<strong>' + oi.name + '</strong>: allocated ' + allocated + ' but order only has ' + oi.qty);
+        }
+    });
+    var warnDiv = document.getElementById('phaseQtyWarning');
+    if (warnings.length) {
+        warnDiv.innerHTML = '⚠ Over-allocated: ' + warnings.join('; ');
+        warnDiv.classList.remove('hidden');
+    } else {
+        warnDiv.classList.add('hidden');
+    }
+    // Also refresh remaining hints on all phase item rows
+    document.querySelectorAll('.phase-item-row').forEach(function(row) {
+        var itemName = row.dataset.itemName;
+        var orderQty = 0;
+        orderItems.forEach(function(oi) { if (oi.name === itemName) orderQty = oi.qty; });
+        var allocated = getAllocatedQty(itemName);
+        var hint = row.querySelector('.phase-qty-hint');
+        if (hint) {
+            var remaining = orderQty - allocated;
+            hint.textContent = allocated + ' of ' + orderQty + ' allocated' + (remaining < 0 ? ' (over by ' + Math.abs(remaining) + ')' : '');
+            hint.className = 'phase-qty-hint text-xs mt-0.5 ' + (remaining < 0 ? 'text-red-500 font-semibold' : 'text-gray-400');
+        }
+    });
+}
+
+function addPhase() {
+    var orderItems = getOrderItems();
+    if (orderItems.length === 0) {
+        alert('Please add Order Items first before adding a phase.');
+        return;
+    }
+
+    phaseCount++;
+    var pi = document.querySelectorAll('.phase-card').length; // zero-based index
+    var container = document.getElementById('phasesContainer');
+
+    var rowsHtml = '';
+    orderItems.forEach(function(item, ii) {
+        // Remaining after already-allocated phases
+        var allocated = getAllocatedQty(item.name);
+        var remaining = Math.max(0, item.qty - allocated);
+        rowsHtml +=
+            '<tr class="phase-item-row" data-item-name="' + item.name.replace(/"/g, '&quot;') + '">' +
+                '<td class="px-3 py-2">' +
+                    '<div class="text-sm font-medium text-gray-800">' + item.name + '</div>' +
+                    '<input type="hidden" name="phases[' + pi + '][items][' + ii + '][name]" value="' + item.name.replace(/"/g, '&quot;') + '">' +
+                '</td>' +
+                '<td class="px-3 py-2 w-32">' +
+                    '<input type="number" name="phases[' + pi + '][items][' + ii + '][qty]" ' +
+                        'value="' + remaining + '" min="0" max="' + item.qty + '" ' +
+                        'class="phase-qty-input w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:ring-1 focus:ring-indigo-400" ' +
+                        'oninput="updatePhaseWarnings()">' +
+                    '<div class="phase-qty-hint text-xs mt-0.5 text-gray-400"></div>' +
+                '</td>' +
+            '</tr>';
+    });
+
+    var card = document.createElement('div');
+    card.className = 'phase-card border border-indigo-200 rounded-xl bg-white overflow-hidden shadow-sm';
+    card.dataset.phaseIndex = pi;
+    card.innerHTML =
+        '<div class="flex items-center justify-between px-4 py-2.5 bg-indigo-50 border-b border-indigo-200">' +
+            '<div class="flex items-center gap-3">' +
+                '<span class="phase-label text-xs font-bold text-indigo-700 uppercase tracking-wide">Phase ' + phaseCount + '</span>' +
+                '<div class="flex items-center gap-1.5">' +
+                    '<label class="text-[11px] text-indigo-500">Delivery Date</label>' +
+                    '<input type="date" name="phases[' + pi + '][delivery_date]" required ' +
+                        'class="px-2 py-1 border border-indigo-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white">' +
+                '</div>' +
+            '</div>' +
+            '<button type="button" onclick="removePhase(this)" class="text-indigo-300 hover:text-red-500 transition-colors ml-2" title="Remove phase">' +
+                '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>' +
+            '</button>' +
+        '</div>' +
+        '<div class="p-3">' +
+            '<table class="w-full">' +
+                '<thead>' +
+                    '<tr class="border-b border-gray-100">' +
+                        '<th class="px-3 py-1.5 text-left text-xs font-semibold text-gray-500">Item</th>' +
+                        '<th class="px-3 py-1.5 text-right text-xs font-semibold text-gray-500 w-32">Qty to Deliver</th>' +
+                    '</tr>' +
+                '</thead>' +
+                '<tbody class="divide-y divide-gray-50">' + rowsHtml + '</tbody>' +
+            '</table>' +
+        '</div>';
+
+    container.appendChild(card);
+    updatePhaseWarnings();
+}
+
+function removePhase(btn) {
+    btn.closest('.phase-card').remove();
+    renumberPhases();
+    updatePhaseWarnings();
+}
+
+function renumberPhases() {
+    phaseCount = 0;
+    document.querySelectorAll('.phase-card').forEach(function(card, ci) {
+        phaseCount++;
+        card.dataset.phaseIndex = ci;
+        var label = card.querySelector('.phase-label');
+        if (label) label.textContent = 'Phase ' + phaseCount;
+        card.querySelectorAll('[name]').forEach(function(el) {
+            el.name = el.name.replace(/phases\[\d+\]/, 'phases[' + ci + ']');
+        });
+    });
+}
+
+// Reset phases when modal closes
+function resetPhases() {
+    phaseCount = 0;
+    document.getElementById('phasesContainer').innerHTML = '';
+    document.getElementById('phaseQtyWarning').classList.add('hidden');
 }
 </script>
 @endsection

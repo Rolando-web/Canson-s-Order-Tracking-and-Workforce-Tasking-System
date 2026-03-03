@@ -9,6 +9,8 @@ class ScheduleNote extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'Schedule_Note_Id';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -17,7 +19,6 @@ class ScheduleNote extends Model
         'schedule_date',
         'start_time',
         'end_time',
-        'is_all_day',
         'priority',
         'created_by',
         'created_at',
@@ -25,12 +26,11 @@ class ScheduleNote extends Model
 
     protected $casts = [
         'schedule_date' => 'date',
-        'is_all_day' => 'boolean',
         'created_at' => 'datetime',
     ];
 
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by', 'User_Id');
     }
 }

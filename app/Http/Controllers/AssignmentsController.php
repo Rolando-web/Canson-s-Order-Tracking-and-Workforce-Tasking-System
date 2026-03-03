@@ -8,7 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use App\Models\InventoryItem;
-use App\Models\StockTransaction;
+use App\Models\StockOut;
 use App\Models\Notification;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +18,6 @@ class AssignmentsController extends Controller
     {
         $user = auth()->user();
 
-        // If the user is an employee, show only their own assignments
         if ($user->isEmployee()) {
             return $this->employeeView($user);
         }
@@ -26,24 +25,20 @@ class AssignmentsController extends Controller
         return $this->adminView();
     }
 
-    /**
-     * Employee view — only shows their own assignments
-     */
     private function employeeView($user)
     {
         $myAssignments = Assignment::with(['order.items', 'orderItem'])
-            ->where('employee_id', $user->id)
+            ->where('employee_id', $user->User_Id)
             ->orderByRaw("FIELD(status, 'in_progress', 'pending', 'completed', 'cancelled')")
             ->orderBy('assigned_date', 'desc')
             ->get()
             ->map(function ($a) {
                 $order = $a->order;
 
-                // If this is a per-item assignment, only show that item
                 if ($a->order_item_id && $a->orderItem) {
                     $assignedItem = $a->orderItem;
                     $orderItems = [[
-                        'id'            => $assignedItem->id,
+                        'id'            => $assignedItem->Order_Item_Id,
                         'name'          => $assignedItem->name,
                         'quantity'      => $assignedItem->quantity,
                         'completed_qty' => $assignedItem->completed_qty ?? 0,
@@ -52,7 +47,7 @@ class AssignmentsController extends Controller
                     $itemsLabel = $assignedItem->quantity . ' ' . $assignedItem->name;
                 } else {
                     $orderItems = $order ? $order->items->map(fn($i) => [
-                        'id'            => $i->id,
+                        'id'            => $i->Order_Item_Id,
                         'name'          => $i->name,
                         'quantity'      => $i->quantity,
                         'completed_qty' => $i->completed_qty ?? 0,
@@ -62,8 +57,8 @@ class AssignmentsController extends Controller
                 }
 
                 return [
-                    'id'               => $a->id,
-                    'order_id'         => $a->order_id,
+                    'id'               => $a->Assignment_Id,
+                    'order_id'         => $a->order_number,
                     'order_item_id'    => $a->order_item_id,
                     'customer'         => $order ? $order->customer_name : 'N/A',
                     'customer_contact' => $order ? $order->contact_number : '',
@@ -81,24 +76,20 @@ class AssignmentsController extends Controller
                 ];
             })->toArray();
 
-        $newAssignmentCount = Assignment::where('employee_id', $user->id)
+        $newAssignmentCount = Assignment::where('employee_id', $user->User_Id)
             ->where('status', 'pending')
             ->count();
 
         return view('pages.assignments-employee', compact('myAssignments', 'newAssignmentCount'));
     }
 
-    /**
-     * Admin/Super Admin view — full workforce management
-     */
     private function adminView()
     {
         $colors = ['bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500'];
 
-        // Get all employees
         $employees = User::where('role', 'employee')->get();
         $workers = $employees->map(function ($emp, $index) use ($colors) {
-            $activeCount = Assignment::where('employee_id', $emp->id)
+            $activeCount = Assignment::where('employee_id', $emp->User_Id)
                 ->whereIn('status', ['pending', 'in_progress'])
                 ->count();
 
@@ -111,7 +102,7 @@ class AssignmentsController extends Controller
             }
 
             return [
-                'id'          => $emp->id,
+                'id'          => $emp->User_Id,
                 'name'        => $emp->name,
                 'initial'     => $emp->initial,
                 'color'       => $colors[$index % count($colors)],
@@ -121,11 +112,10 @@ class AssignmentsController extends Controller
             ];
         });
 
-        // Get assignments grouped by employee
         $assignmentsData = [];
         foreach ($employees as $emp) {
             $empAssignments = Assignment::with(['order.items', 'orderItem'])
-                ->where('employee_id', $emp->id)
+                ->where('employee_id', $emp->User_Id)
                 ->whereNotIn('status', ['completed', 'cancelled'])
                 ->orderBy('assigned_date', 'desc')
                 ->get()
@@ -135,8 +125,8 @@ class AssignmentsController extends Controller
                         ? "{$a->orderItem->quantity}x {$a->orderItem->name}"
                         : null;
                     return [
-                        'id'               => $a->id,
-                        'order_id'         => $a->order_id,
+                        'id'               => $a->Assignment_Id,
+                        'order_id'         => $a->order_number,
                         'order_item_id'    => $a->order_item_id,
                         'assigned_item'    => $assignedItem,
                         'customer'         => $order ? $order->customer_name : 'N/A',
@@ -157,18 +147,17 @@ class AssignmentsController extends Controller
             $assignmentsData[$emp->name] = $empAssignments;
         }
 
-        // Get unassigned orders
-        $assignedOrderIds = Assignment::whereIn('status', ['pending', 'in_progress'])
-            ->pluck('order_id')
+        $assignedOrderNumbers = Assignment::whereIn('status', ['pending', 'in_progress'])
+            ->pluck('order_number')
             ->toArray();
 
-        $availableOrders = Order::whereNotIn('order_id', $assignedOrderIds)
+        $availableOrders = Order::whereNotIn('order_number', $assignedOrderNumbers)
             ->whereNotIn('status', ['Ready for Delivery', 'Delivered'])
             ->with('items')
             ->get()
             ->map(function ($order) {
                 return [
-                    'order_id'         => $order->order_id,
+                    'order_id'         => $order->order_number,
                     'customer'         => $order->customer_name,
                     'customer_contact' => $order->contact_number,
                     'priority'         => strtolower($order->priority ?? 'normal'),
@@ -178,7 +167,7 @@ class AssignmentsController extends Controller
                     'total_amount'     => (float) $order->total_amount,
                     'notes'            => $order->notes,
                     'order_items'      => $order->items->map(fn($i) => [
-                        'id'       => $i->id,
+                        'id'       => $i->Order_Item_Id,
                         'name'     => $i->name,
                         'quantity' => $i->quantity,
                         'price'    => (float) $i->unit_price,
@@ -194,15 +183,15 @@ class AssignmentsController extends Controller
         // ── Per-item assignment (multiple products → multiple employees) ──
         if ($request->has('item_assignments')) {
             $validated = $request->validate([
-                'order_id'                         => 'required|string|exists:orders,order_id',
+                'order_id'                         => 'required|string|exists:orders,order_number',
                 'priority'                         => 'required|in:normal,high,urgent',
                 'notes'                            => 'nullable|string',
                 'item_assignments'                 => 'required|array|min:1',
-                'item_assignments.*.order_item_id' => 'required|exists:order_items,id',
-                'item_assignments.*.employee_id'   => 'required|exists:users,id',
+                'item_assignments.*.order_item_id' => 'required|exists:order_items,Order_Item_Id',
+                'item_assignments.*.employee_id'   => 'required|exists:users,User_Id',
             ]);
 
-            $order = Order::where('order_id', $validated['order_id'])->first();
+            $order = Order::where('order_number', $validated['order_id'])->first();
 
             DB::beginTransaction();
             try {
@@ -214,7 +203,7 @@ class AssignmentsController extends Controller
                     if (!$employee) continue;
 
                     $assignment = Assignment::create([
-                        'order_id'      => $validated['order_id'],
+                        'order_number'  => $validated['order_id'],
                         'order_item_id' => $ia['order_item_id'],
                         'employee_id'   => $ia['employee_id'],
                         'priority'      => $validated['priority'],
@@ -225,9 +214,8 @@ class AssignmentsController extends Controller
                     ]);
 
                     $createdAssignments[] = $assignment;
-                    $employeesById[$employee->id] = $employee;
+                    $employeesById[$employee->User_Id] = $employee;
 
-                    // Deduct stock for this specific item
                     $orderItem = OrderItem::find($ia['order_item_id']);
                     if ($orderItem) {
                         $inventoryItem = InventoryItem::find($orderItem->inventory_item_id);
@@ -240,16 +228,14 @@ class AssignmentsController extends Controller
                                 'status' => $newStock > 0 ? ($newStock < 50 ? 'Low Stock' : 'In Stock') : 'Out of Stock',
                             ]);
 
-                            StockTransaction::create([
-                                'item_id'          => $inventoryItem->id,
-                                'transaction_type' => 'stock_out',
+                            StockOut::create([
+                                'item_id'          => $inventoryItem->Item_Id,
                                 'quantity'         => $orderItem->quantity,
                                 'previous_stock'   => $previousStock,
                                 'new_stock'        => $newStock,
-                                'reference_number' => StockTransaction::generateReference('stock_out'),
+                                'reference_number' => 'SO-' . now()->format('YmdHis') . rand(10, 99),
                                 'reason'           => 'Order Assignment',
                                 'notes'            => "Auto stock out for order {$validated['order_id']} – {$orderItem->name} assigned to {$employee->name}",
-                                'transaction_date' => now()->toDateString(),
                                 'created_by'       => auth()->id(),
                                 'created_at'       => now(),
                             ]);
@@ -257,7 +243,6 @@ class AssignmentsController extends Controller
                     }
                 }
 
-                // Update order status
                 if ($order) {
                     $assignedNames = count($employeesById) > 1
                         ? 'Multiple'
@@ -269,9 +254,7 @@ class AssignmentsController extends Controller
                     ]);
                 }
 
-                // Notify each unique employee
                 foreach ($employeesById as $empId => $employee) {
-                    // Which items are assigned to this employee?
                     $empItemNames = collect($validated['item_assignments'])
                         ->where('employee_id', $empId)
                         ->map(fn($ia) => OrderItem::find($ia['order_item_id'])?->name)
@@ -306,7 +289,7 @@ class AssignmentsController extends Controller
         // ── Legacy: assign whole order to a single employee ──
         $validated = $request->validate([
             'order_id'    => 'required|string',
-            'employee_id' => 'required|exists:users,id',
+            'employee_id' => 'required|exists:users,User_Id',
             'priority'    => 'required|in:normal,high,urgent',
             'notes'       => 'nullable|string',
         ]);
@@ -314,7 +297,7 @@ class AssignmentsController extends Controller
         $employee = User::findOrFail($validated['employee_id']);
 
         $assignment = Assignment::create([
-            'order_id'      => $validated['order_id'],
+            'order_number'  => $validated['order_id'],
             'order_item_id' => null,
             'employee_id'   => $validated['employee_id'],
             'priority'      => $validated['priority'],
@@ -324,15 +307,13 @@ class AssignmentsController extends Controller
             'assigned_date' => now()->toDateString(),
         ]);
 
-        // Update order's assigned field and set status to In-Progress
-        $order = Order::where('order_id', $validated['order_id'])->first();
+        $order = Order::where('order_number', $validated['order_id'])->first();
         if ($order) {
             $order->update([
                 'assigned' => $employee->name,
                 'status'   => 'In-Progress',
             ]);
 
-            // Automatic stock out for all items in this order
             foreach ($order->items as $orderItem) {
                 $inventoryItem = InventoryItem::find($orderItem->inventory_item_id);
                 if ($inventoryItem) {
@@ -344,16 +325,14 @@ class AssignmentsController extends Controller
                         'status' => $newStock > 0 ? ($newStock < 50 ? 'Low Stock' : 'In Stock') : 'Out of Stock',
                     ]);
 
-                    StockTransaction::create([
-                        'item_id'          => $inventoryItem->id,
-                        'transaction_type' => 'stock_out',
+                    StockOut::create([
+                        'item_id'          => $inventoryItem->Item_Id,
                         'quantity'         => $orderItem->quantity,
                         'previous_stock'   => $previousStock,
                         'new_stock'        => $newStock,
-                        'reference_number' => StockTransaction::generateReference('stock_out'),
+                        'reference_number' => 'SO-' . now()->format('YmdHis') . rand(10, 99),
                         'reason'           => 'Order Assignment',
                         'notes'            => "Auto stock out for order {$validated['order_id']} assigned to {$employee->name}",
-                        'transaction_date' => now()->toDateString(),
                         'created_by'       => auth()->id(),
                         'created_at'       => now(),
                     ]);
@@ -361,13 +340,12 @@ class AssignmentsController extends Controller
             }
         }
 
-        // Notify the employee about the new work assignment
         Notification::send(
-            $employee->id,
+            $employee->User_Id,
             'work_assigned',
             'New Work Assigned',
             "You have been assigned to work on order {$validated['order_id']}. Priority: {$validated['priority']}.",
-            ['order_id' => $validated['order_id'], 'assignment_id' => $assignment->id]
+            ['order_id' => $validated['order_id'], 'assignment_id' => $assignment->Assignment_Id]
         );
 
         if ($request->expectsJson()) {
@@ -396,7 +374,6 @@ class AssignmentsController extends Controller
 
     public function destroy(Request $request, Assignment $assignment)
     {
-        $orderId = $assignment->order_id;
         $assignment->delete();
 
         if ($request->expectsJson()) {
@@ -406,15 +383,11 @@ class AssignmentsController extends Controller
         return redirect()->back()->with('success', 'Assignment removed successfully.');
     }
 
-    /**
-     * Employee updates their own assignment status (pending -> in_progress -> completed)
-     */
     public function updateStatus(Request $request, Assignment $assignment)
     {
         $user = auth()->user();
 
-        // Only allow employees to update their own assignments
-        if ($assignment->employee_id !== $user->id) {
+        if ($assignment->employee_id !== $user->User_Id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -427,36 +400,31 @@ class AssignmentsController extends Controller
         return response()->json(['success' => true, 'assignment' => $assignment]);
     }
 
-    /**
-     * Employee updates their progress on order items (e.g., completed 150 out of 250)
-     */
     public function updateProgress(Request $request)
     {
         $user = auth()->user();
 
         $validated = $request->validate([
-            'assignment_id' => 'required|exists:assignments,id',
-            'items'         => 'required|array',
-            'items.*.id'    => 'required|exists:order_items,id',
+            'assignment_id'   => 'required|exists:assignments,Assignment_Id',
+            'items'           => 'required|array',
+            'items.*.id'      => 'required|exists:order_items,Order_Item_Id',
             'items.*.add_qty' => 'required|integer|min:1',
         ]);
 
         $assignment = Assignment::findOrFail($validated['assignment_id']);
 
-        // Only allow the assigned employee to update
-        if ($assignment->employee_id !== $user->id) {
+        if ($assignment->employee_id !== $user->User_Id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
-        $order = Order::where('order_id', $assignment->order_id)->first();
+        $order = Order::where('order_number', $assignment->order_number)->first();
         if (!$order) {
             return response()->json(['success' => false, 'message' => 'Order not found'], 404);
         }
 
-        // Update each order item's completed_qty by ADDING the new input
         foreach ($validated['items'] as $itemData) {
-            $orderItem = OrderItem::where('id', $itemData['id'])
-                ->where('order_id', $order->id)
+            $orderItem = OrderItem::where('Order_Item_Id', $itemData['id'])
+                ->where('order_id', $order->Order_Id)
                 ->first();
 
             if ($orderItem) {
@@ -465,32 +433,27 @@ class AssignmentsController extends Controller
             }
         }
 
-        // Check if ALL order items are fully completed (for order readiness)
         $order->refresh();
         $allDone = $order->items->every(fn($i) => $i->completed_qty >= $i->quantity);
 
         if ($allDone) {
-            // Mark order as Ready for Delivery
             $order->update(['status' => 'Ready for Delivery']);
 
-            // Mark ALL active assignments for this order as completed
-            Assignment::where('order_id', $order->order_id)
+            Assignment::where('order_number', $order->order_number)
                 ->whereNotIn('status', ['cancelled'])
                 ->update(['status' => 'completed']);
 
-            // Notify managers
-            $managerIds = User::where('role', 'admin')->pluck('id')->toArray();
+            $managerIds = User::where('role', 'admin')->pluck('User_Id')->toArray();
             Notification::sendToMany(
                 $managerIds,
                 'order_ready',
                 'Order Ready for Delivery',
-                "Order {$order->order_id} is ready for delivery. All items have been completed by {$user->name}.",
-                ['order_id' => $order->order_id]
+                "Order {$order->order_number} is ready for delivery. All items have been completed by {$user->name}.",
+                ['order_id' => $order->order_number]
             );
         } else {
-            // Check if THIS employee's assigned item is done (per-item assignment)
             if ($assignment->order_item_id) {
-                $assignedItem = $order->items->firstWhere('id', $assignment->order_item_id);
+                $assignedItem = $order->items->firstWhere('Order_Item_Id', $assignment->order_item_id);
                 $thisDone = $assignedItem && $assignedItem->completed_qty >= $assignedItem->quantity;
                 $assignment->update(['status' => $thisDone ? 'completed' : 'in_progress']);
             } else {
