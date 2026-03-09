@@ -97,7 +97,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @foreach($orders as $order)
-                <tr class="dispatch-card hover:bg-gray-50 transition-colors" data-status="{{ $order['status'] }}" data-search="{{ strtolower($order['customer'] . ' ' . $order['order_id'] . ' ' . $order['items']) }}">
+                <tr class="dispatch-card hover:bg-gray-50 transition-colors cursor-pointer" data-status="{{ $order['status'] }}" data-search="{{ strtolower($order['customer'] . ' ' . $order['order_id'] . ' ' . $order['items']) }}" data-order-id="{{ $order['id'] }}" onclick="openDetailModal({{ $order['id'] }})">
                     <td class="px-5 py-3">
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">{{ $order['order_id'] }}</span>
                         @if($order['has_phases'] && $order['current_phase'])
@@ -136,7 +136,7 @@
                     </td>
                     <td class="px-5 py-3">
                         @if($order['status'] === 'Ready for Delivery')
-                        <button onclick="deliverOrder({{ $order['id'] }}, this)" class="deliver-btn flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors">
+                        <button onclick="event.stopPropagation();deliverOrder({{ $order['id'] }}, this)" class="deliver-btn flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             Deliver
                         </button>
@@ -215,204 +215,159 @@
 </div>
 
 <script>
-var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-// Store all orders data for the damage modal
-var allOrders = @json($orders);
-
-// ========== Deliver Order ==========
-function deliverOrder(orderId, btn) {
-    if (!confirm('Mark this order as delivered?')) return;
-
-    var originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Delivering...';
-
-    // Find the order data to show in damage modal
-    var order = allOrders.find(function(o) { return o.id === orderId; });
-    if (order && order.item_details && order.item_details.length > 0) {
-        openDamageModal(orderId, order);
-    } else {
-        // No items info — just deliver without damage check
-        submitDelivery(orderId, [], btn, originalText);
-    }
-}
-
-// ========== Damage Report Modal ==========
-var currentDeliveryOrderId = null;
-var currentDeliveryBtn = null;
-var currentDeliveryBtnOriginal = '';
-
-function openDamageModal(orderId, order) {
-    currentDeliveryOrderId = orderId;
-
-    document.getElementById('dmgOrderRef').textContent = order.order_id + ' — ' + order.customer;
-
-    // Build item rows
-    var body = document.getElementById('dmgItemsBody');
-    body.innerHTML = '';
-
-    order.item_details.forEach(function(item, index) {
-        var isCover = item.is_cover || false;
-        var row = document.createElement('tr');
-        row.className = 'dmg-item-row border-b border-gray-100' + (isCover ? ' bg-amber-50/50' : '');
-        row.innerHTML =
-            '<td class="px-4 py-3">' +
-                '<label class="flex items-center gap-2 cursor-pointer">' +
-                    '<input type="checkbox" class="dmg-check w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500" data-index="' + index + '" data-item-id="' + item.product_id + '" data-item-name="' + item.name + '" onchange="toggleDamageRow(this)">' +
-                    '<span class="text-sm font-medium text-gray-900">' + item.name + '</span>' +
-                '</label>' +
-                (isCover ? '<span class="ml-6 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-800"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>DAMAGE COVER — FREE</span>' : '') +
-            '</td>' +
-            '<td class="px-4 py-3 text-sm text-gray-500 text-center">' + item.quantity + '</td>' +
-            '<td class="px-4 py-3">' +
-                '<input type="number" class="dmg-qty w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-center focus:outline-none focus:ring-1 focus:ring-red-500 disabled:bg-gray-50 disabled:text-gray-300" disabled min="1" max="' + item.quantity + '" value="1">' +
-            '</td>' +
-            '<td class="px-4 py-3">' +
-                '<input type="text" class="dmg-reason w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-red-500 disabled:bg-gray-50 disabled:text-gray-300" disabled placeholder="e.g. Crushed in transit">' +
-            '</td>';
-        body.appendChild(row);
-    });
-
-    var modal = document.getElementById('damageModal');
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-
-function toggleDamageRow(checkbox) {
-    var row = checkbox.closest('tr');
-    var qtyInput = row.querySelector('.dmg-qty');
-    var reasonInput = row.querySelector('.dmg-reason');
-    if (checkbox.checked) {
-        qtyInput.disabled = false;
-        reasonInput.disabled = false;
-        reasonInput.required = true;
-        row.classList.add('bg-red-50');
-    } else {
-        qtyInput.disabled = true;
-        reasonInput.disabled = true;
-        reasonInput.required = false;
-        qtyInput.value = 1;
-        reasonInput.value = '';
-        row.classList.remove('bg-red-50');
-    }
-}
-
-function closeDamageModal() {
-    document.getElementById('damageModal').style.display = 'none';
-    document.body.style.overflow = '';
-    currentDeliveryOrderId = null;
-    // Re-enable deliver button
-    var btns = document.querySelectorAll('.deliver-btn');
-    btns.forEach(function(b) { b.disabled = false; b.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Deliver'; });
-}
-
-function skipDamageReport() {
-    // Deliver with no damages
-    submitDelivery(currentDeliveryOrderId, []);
-}
-
-function submitDamageReport() {
-    var damages = [];
-    var rows = document.querySelectorAll('.dmg-item-row');
-    var valid = true;
-
-    rows.forEach(function(row) {
-        var check = row.querySelector('.dmg-check');
-        if (check.checked) {
-            var qty = parseInt(row.querySelector('.dmg-qty').value);
-            var reason = row.querySelector('.dmg-reason').value.trim();
-
-            if (!reason) {
-                row.querySelector('.dmg-reason').classList.add('border-red-400');
-                valid = false;
-                return;
-            }
-            row.querySelector('.dmg-reason').classList.remove('border-red-400');
-
-            damages.push({
-                item_id:   parseInt(check.getAttribute('data-item-id')),
-                item_name: check.getAttribute('data-item-name'),
-                quantity:  qty,
-                reason:    reason,
-            });
-        }
-    });
-
-    if (!valid) { alert('Please provide a damage reason for all checked items.'); return; }
-
-    if (damages.length === 0) {
-        submitDelivery(currentDeliveryOrderId, []);
-        return;
-    }
-
-    submitDelivery(currentDeliveryOrderId, damages);
-}
-
-function submitDelivery(orderId, damages, btn, originalText) {
-    var submitBtn = document.getElementById('dmgSubmitBtn');
-    var skipBtn = document.getElementById('dmgSkipBtn');
-    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Processing...'; }
-    if (skipBtn) { skipBtn.disabled = true; }
-
-    fetch('/dispatch/deliver', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({ order_id: orderId, damages: damages }),
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.success) {
-            closeDamageModal();
-            window.location.reload();
-        } else {
-            alert(data.message || 'Failed to deliver order.');
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit & Deliver'; }
-            if (skipBtn) { skipBtn.disabled = false; }
-            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
-        }
-    })
-    .catch(function(error) {
-        console.error('Error:', error);
-        alert('An error occurred.');
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit & Deliver'; }
-        if (skipBtn) { skipBtn.disabled = false; }
-        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
-    });
-}
-
-// ========== Tab Filter ==========
-var currentDispatchTab = 'Ready for Delivery';
-
-function filterDispatch() {
-    var search = document.getElementById('dispatchSearch').value.toLowerCase();
-
-    document.querySelectorAll('.dispatch-card').forEach(function(card) {
-        var matchSearch = !search || card.getAttribute('data-search').includes(search);
-        var matchStatus = card.getAttribute('data-status') === currentDispatchTab;
-        card.style.display = (matchSearch && matchStatus) ? '' : 'none';
-    });
-}
-
-// Tab switching
-var dispatchTabs = document.querySelectorAll('.dispatch-tab-btn');
-dispatchTabs.forEach(function(tab) {
-    tab.addEventListener('click', function() {
-        dispatchTabs.forEach(function(t) {
-            t.className = 'dispatch-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50';
-        });
-        tab.className = 'dispatch-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white';
-        currentDispatchTab = tab.getAttribute('data-status');
-        filterDispatch();
-    });
-});
-
-// Apply default filter on load
-filterDispatch();
+window.allOrders = @json($orders);
 </script>
 
+{{-- ============================================ --}}
+{{-- ORDER DETAIL MODALS (Blade-rendered per order) --}}
+{{-- ============================================ --}}
+@foreach($orders as $order)
+@php
+    $detailStatusConfig = match($order['status']) {
+        'Ready for Delivery' => 'bg-amber-50 text-amber-600 border-amber-200',
+        'Delivered' => 'bg-green-50 text-green-600 border-green-200',
+        default => 'bg-gray-50 text-gray-500 border-gray-200',
+    };
+@endphp
+<div id="dispatchDetailModal-{{ $order['id'] }}" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center p-4" style="display:none;" onclick="if(event.target===this)closeDetailModal({{ $order['id'] }})">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+        {{-- Header --}}
+        <div class="sticky top-0 bg-emerald-600 rounded-t-2xl px-6 py-4 flex items-center justify-between z-10">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Order Details</h3>
+                    <p class="text-emerald-100 text-xs">{{ $order['order_id'] }}</p>
+                </div>
+            </div>
+            <button onclick="closeDetailModal({{ $order['id'] }})" class="text-white/70 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Body --}}
+        <div class="p-6 space-y-5">
+            {{-- Customer Info --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Customer</p>
+                    <p class="text-sm font-semibold text-gray-900">{{ $order['customer'] }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Contact</p>
+                    <p class="text-sm text-gray-700">{{ $order['contact'] ?? '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Delivery Address</p>
+                    <p class="text-sm text-gray-700">{{ $order['address'] ?? '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Delivery Date</p>
+                    <p class="text-sm text-gray-700">{{ date('M d, Y', strtotime($order['delivery_date'])) }}</p>
+                </div>
+            </div>
+
+            {{-- Status & Amount --}}
+            <div class="flex flex-wrap items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <div class="flex-1 min-w-[120px]">
+                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Status</p>
+                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $detailStatusConfig }}">{{ $order['status'] }}</span>
+                </div>
+                <div class="flex-1 min-w-[120px]">
+                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Total Amount</p>
+                    <p class="text-lg font-bold text-emerald-600">₱{{ number_format((float)$order['total_amount'], 2) }}</p>
+                </div>
+            </div>
+
+            {{-- Items Table --}}
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Order Items</p>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                    <table class="w-full min-w-[400px]">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Item</th>
+                                <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 w-20">Qty</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 w-28">Price</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 w-28">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach($order['item_details'] as $item)
+                            <tr>
+                                <td class="px-4 py-2.5 text-sm text-gray-900">
+                                    {{ $item['name'] }}
+                                    @if($item['is_cover'] ?? false)
+                                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200 ml-1">COVER</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-2.5 text-sm text-gray-600 text-center">{{ $item['quantity'] }}</td>
+                                <td class="px-4 py-2.5 text-sm text-gray-600 text-right">₱{{ number_format((float)$item['unit_price'], 2) }}</td>
+                                <td class="px-4 py-2.5 text-sm font-semibold text-gray-900 text-right">₱{{ number_format($item['quantity'] * (float)$item['unit_price'], 2) }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Phases Section --}}
+            @if($order['has_phases'] && count($order['phases']) > 0)
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Delivery Phases</p>
+                <div class="space-y-2">
+                    @foreach($order['phases'] as $phase)
+                    @php
+                        $phaseStatusClass = $phase['status'] === 'Delivered'
+                            ? 'bg-green-50 text-green-600 border-green-200'
+                            : 'bg-indigo-50 text-indigo-600 border-indigo-200';
+                    @endphp
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold text-indigo-700 uppercase">Phase {{ $phase['phase_number'] }}</span>
+                            <span class="text-xs text-gray-500">{{ $phase['delivery_date'] }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            @if(($phase['damage_qty'] ?? 0) > 0)
+                            <span class="text-[10px] font-medium text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">{{ $phase['damage_qty'] }} damaged</span>
+                            @endif
+                            <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium border {{ $phaseStatusClass }}">{{ $phase['status'] }}</span>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- Delivered At --}}
+            @if($order['status'] === 'Delivered')
+            <div class="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-xs text-green-700">Delivered on <strong>{{ $order['delivered_at'] }}</strong></p>
+            </div>
+            @endif
+        </div>
+
+        {{-- Footer --}}
+        <div class="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+            <button type="button" onclick="closeDetailModal({{ $order['id'] }})" class="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+@endforeach
+
 @endsection
+
+@push('scripts')
+@vite('resources/js/pages/dispatch.js')
+@endpush

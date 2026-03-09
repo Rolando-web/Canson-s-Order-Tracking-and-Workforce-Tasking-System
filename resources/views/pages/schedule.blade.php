@@ -22,6 +22,7 @@
     <script>
         window.scheduleNotes = @json($scheduleData);
         window.scheduleOrders = @json($orderData);
+        window.scheduleNotesUrl = '{{ route("schedule.notes.store") }}';
     </script>
     @vite('resources/js/pages/schedule.js')
 @endpush
@@ -159,60 +160,4 @@
     </div>
 </div>
 
-<script>
-function openViewNoteModal(title, description) {
-    document.getElementById('viewNoteTitle').textContent = title;
-    document.getElementById('viewNoteDescription').textContent = description || 'No description provided.';
-    document.getElementById('viewNoteModal').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-window.openViewNoteModal = openViewNoteModal;
-
-function closeViewNoteModal() {
-    document.getElementById('viewNoteModal').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-}
-window.closeViewNoteModal = closeViewNoteModal;
-
-function closeScheduleModal() {
-    document.getElementById('scheduleNoteModal').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-}
-
-function openScheduleModal(date = null) {
-    document.getElementById('scheduleNoteModal').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function saveScheduleNote() {
-    const data = {
-        title: document.getElementById('noteTitle').value,
-        description: document.getElementById('noteDescription').value,
-        _token: document.querySelector('meta[name="csrf-token"]')?.content
-    };
-
-    fetch('{{ route("schedule.notes.store") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': data._token,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(r => r.json())
-    .then(() => { closeScheduleModal(); location.reload(); })
-    .catch(err => { console.error(err); alert('Failed to save note'); });
-}
-
-// Add button to open modal when clicking on calendar dates
-document.addEventListener('DOMContentLoaded', () => {
-    // You can add click handlers to calendar dates here
-    const addNoteBtn = document.createElement('button');
-    addNoteBtn.className = 'fixed bottom-8 right-8 w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors';
-    addNoteBtn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>';
-    addNoteBtn.onclick = () => openScheduleModal();
-    document.querySelector('.schedule-page').appendChild(addNoteBtn);
-});
-</script>
 @endsection

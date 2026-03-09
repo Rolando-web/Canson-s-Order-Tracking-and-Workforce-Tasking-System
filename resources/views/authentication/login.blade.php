@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Canson's School & Office Supplies</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
-    @vite(['resources/css/app.css', 'resources/css/pages/login.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/pages/login.css', 'resources/js/app.js', 'resources/js/pages/login.js'])
 </head>
 <body class="min-h-screen bg-gray-50">
 
@@ -228,22 +228,5 @@
         </div>
     </div>
 
-    <script>
-        function togglePassword() {
-            const input = document.getElementById('password');
-            const eyeOpen = document.getElementById('eye-open');
-            const eyeClosed = document.getElementById('eye-closed');
-
-            if (input.type === 'password') {
-                input.type = 'text';
-                eyeOpen.classList.add('hidden');
-                eyeClosed.classList.remove('hidden');
-            } else {
-                input.type = 'password';
-                eyeOpen.classList.remove('hidden');
-                eyeClosed.classList.add('hidden');
-            }
-        }
-    </script>
 </body>
 </html>
