@@ -36,7 +36,7 @@
 
     {{-- Search & Filter --}}
     <div class="bg-white rounded-xl border border-gray-200 p-4 mb-0">
-        <div class="flex items-center gap-4">
+        <div class="flex items-center flex-col sm:flex-row gap-4">
             <div class="relative max-w-md">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
                 <input id="orderSearch" type="text" placeholder="Search orders, customers..." oninput="filterOrders()" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
@@ -138,7 +138,7 @@
         <div class="absolute inset-0 flex items-center justify-center p-4">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative" onclick="event.stopPropagation()">
                 {{-- Header --}}
-                <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+                <div class="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between z-10">
                     <div>
                         <h3 class="text-xl font-bold text-gray-900">New Order</h3>
                         <p class="text-sm text-gray-500 mt-0.5">Fill in the details to create a new order</p>
@@ -152,14 +152,14 @@
 
                 {{-- Form --}}
                 <form id="addOrderForm" onsubmit="submitAddOrder(event)">
-                    <div class="px-6 py-5 space-y-6">
+                    <div class="px-4 sm:px-6 py-5 space-y-6">
                         {{-- Customer Information --}}
                         <div>
                             <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
                                 <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
                                 Customer Information
                             </h4>
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="relative">
                                     <label class="block text-xs font-medium text-gray-600 mb-1.5">Customer Name <span class="text-red-500">*</span></label>
                                     <input type="text" name="customer_name" id="orderCustomerName" required placeholder="e.g. St. Mary School" autocomplete="off" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" oninput="onCustomerNameInput(this.value)" onblur="setTimeout(function(){ hideCustomerDropdown(); }, 200)">
@@ -198,8 +198,20 @@
                                 <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
                                 Order Details
                             </h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
+                            {{-- Delivery Mode --}}
+                            <div class="flex flex-wrap gap-3 sm:gap-6 mb-3 px-1">
+                                <label class="flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="radio" name="delivery_mode" value="single" id="deliveryModeSingle" checked onchange="setDeliveryMode('single')" class="accent-emerald-600 w-4 h-4">
+                                    <span class="text-sm font-medium text-gray-700">Single Delivery</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="radio" name="delivery_mode" value="phased" id="deliveryModePhased" onchange="setDeliveryMode('phased')" class="accent-indigo-600 w-4 h-4">
+                                    <span class="text-sm font-medium text-gray-700">Phased Delivery</span>
+                                    <span class="text-xs text-gray-400 ml-1">(delivery date set by Phase 1)</span>
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div id="deliveryDateWrap">
                                     <label class="block text-xs font-medium text-gray-600 mb-1.5">Delivery Date <span class="text-red-500">*</span></label>
                                     <input type="date" name="delivery_date" id="deliveryDateInput" required min="{{ date('Y-m-d') }}" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                                 </div>
@@ -277,12 +289,12 @@
                         </div>
 
                         {{-- Phases --}}
-                        <div>
+                        <div id="phasesSection">
                             <div class="flex items-center justify-between mb-1">
                                 <h4 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
                                     <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
                                     Delivery Phases
-                                    <span class="text-xs text-gray-400 font-normal">(optional — split order into batches)</span>
+                                    <span id="phaseSectionHint" class="text-xs text-gray-400 font-normal">(optional — split order into batches)</span>
                                 </h4>
                                 <button type="button" onclick="addPhase()" class="text-indigo-600 hover:text-indigo-700 text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-indigo-50 border border-indigo-200 transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
@@ -305,7 +317,7 @@
                     </div>
 
                     {{-- Footer --}}
-                    <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+                    <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-4 sm:px-6 py-4 flex justify-end gap-3">
                         <button type="button" onclick="closeAddOrderModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                             Cancel
                         </button>
@@ -525,24 +537,74 @@ function getOrderItems() {
     return items;
 }
 
-// Sum qty allocated in ALL phases for a given item name
-function getAllocatedQty(itemName) {
+// Sum qty allocated in ALL phases for a given item index
+function getAllocatedQty(itemIndex) {
     var total = 0;
     document.querySelectorAll('.phase-card').forEach(function(card) {
         card.querySelectorAll('.phase-item-row').forEach(function(row) {
-            var n = row.dataset.itemName;
-            var q = parseInt(row.querySelector('.phase-qty-input').value) || 0;
-            if (n === itemName) total += q;
+            if (parseInt(row.dataset.itemIndex) === itemIndex) {
+                total += parseInt(row.querySelector('.phase-qty-input').value) || 0;
+            }
         });
     });
     return total;
 }
 
+// Auto-clamp a phase qty input so total allocated never exceeds order qty
+function clampPhaseQty(input) {
+    var row = input.closest('.phase-item-row');
+    if (!row) return;
+    var itemIndex = parseInt(row.dataset.itemIndex);
+    var orderItems = getOrderItems();
+    var orderQty = (orderItems[itemIndex] || {}).qty || 0;
+    if (orderQty === 0) return;
+
+    // Sum allocated by OTHER phase cards for this item
+    var thisCard = input.closest('.phase-card');
+    var otherAllocated = 0;
+    document.querySelectorAll('.phase-card').forEach(function(card) {
+        if (card === thisCard) return;
+        card.querySelectorAll('.phase-item-row').forEach(function(r) {
+            if (parseInt(r.dataset.itemIndex) === itemIndex) {
+                otherAllocated += parseInt(r.querySelector('.phase-qty-input').value) || 0;
+            }
+        });
+    });
+
+    var maxAllowed = Math.max(0, orderQty - otherAllocated);
+    var current = parseInt(input.value) || 0;
+    if (current > maxAllowed) {
+        input.value = maxAllowed;
+    }
+}
+
+function enforcePhaseDateOrder() {
+    var cards = document.querySelectorAll('.phase-card');
+    var prevDate = null;
+    cards.forEach(function(card) {
+        var input = card.querySelector('input[type="date"]');
+        if (!input) return;
+        if (prevDate) {
+            // min must be at least one day after the previous phase date
+            var d = new Date(prevDate);
+            d.setDate(d.getDate() + 1);
+            var minStr = d.toISOString().split('T')[0];
+            input.min = minStr;
+            // If current value violates the new min, clear it
+            if (input.value && input.value <= prevDate) {
+                input.value = '';
+            }
+        }
+        if (input.value) prevDate = input.value;
+    });
+}
+
 function updatePhaseWarnings() {
+    enforcePhaseDateOrder();
     var orderItems = getOrderItems();
     var warnings = [];
-    orderItems.forEach(function(oi) {
-        var allocated = getAllocatedQty(oi.name);
+    orderItems.forEach(function(oi, idx) {
+        var allocated = getAllocatedQty(idx);
         if (allocated > oi.qty) {
             warnings.push('<strong>' + oi.name + '</strong>: allocated ' + allocated + ' but order only has ' + oi.qty);
         }
@@ -556,10 +618,9 @@ function updatePhaseWarnings() {
     }
     // Also refresh remaining hints on all phase item rows
     document.querySelectorAll('.phase-item-row').forEach(function(row) {
-        var itemName = row.dataset.itemName;
-        var orderQty = 0;
-        orderItems.forEach(function(oi) { if (oi.name === itemName) orderQty = oi.qty; });
-        var allocated = getAllocatedQty(itemName);
+        var itemIndex = parseInt(row.dataset.itemIndex);
+        var orderQty = (orderItems[itemIndex] || {}).qty || 0;
+        var allocated = getAllocatedQty(itemIndex);
         var hint = row.querySelector('.phase-qty-hint');
         if (hint) {
             var remaining = orderQty - allocated;
@@ -583,10 +644,10 @@ function addPhase() {
     var rowsHtml = '';
     orderItems.forEach(function(item, ii) {
         // Remaining after already-allocated phases
-        var allocated = getAllocatedQty(item.name);
+        var allocated = getAllocatedQty(ii);
         var remaining = Math.max(0, item.qty - allocated);
         rowsHtml +=
-            '<tr class="phase-item-row" data-item-name="' + item.name.replace(/"/g, '&quot;') + '">' +
+            '<tr class="phase-item-row" data-item-name="' + item.name.replace(/"/g, '&quot;') + '" data-item-index="' + ii + '">' +
                 '<td class="px-3 py-2">' +
                     '<div class="text-sm font-medium text-gray-800">' + item.name + '</div>' +
                     '<input type="hidden" name="phases[' + pi + '][items][' + ii + '][name]" value="' + item.name.replace(/"/g, '&quot;') + '">' +
@@ -595,7 +656,7 @@ function addPhase() {
                     '<input type="number" name="phases[' + pi + '][items][' + ii + '][qty]" ' +
                         'value="' + remaining + '" min="0" max="' + item.qty + '" ' +
                         'class="phase-qty-input w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:ring-1 focus:ring-indigo-400" ' +
-                        'oninput="updatePhaseWarnings()">' +
+                        'oninput="clampPhaseQty(this);updatePhaseWarnings()">' +
                     '<div class="phase-qty-hint text-xs mt-0.5 text-gray-400"></div>' +
                 '</td>' +
             '</tr>';
@@ -605,12 +666,13 @@ function addPhase() {
     card.className = 'phase-card border border-indigo-200 rounded-xl bg-white overflow-hidden shadow-sm';
     card.dataset.phaseIndex = pi;
     card.innerHTML =
-        '<div class="flex items-center justify-between px-4 py-2.5 bg-indigo-50 border-b border-indigo-200">' +
-            '<div class="flex items-center gap-3">' +
+        '<div class="flex flex-wrap items-center justify-between px-4 py-2.5 bg-indigo-50 border-b border-indigo-200 gap-2">' +
+            '<div class="flex flex-wrap items-center gap-2 sm:gap-3">' +
                 '<span class="phase-label text-xs font-bold text-indigo-700 uppercase tracking-wide">Phase ' + phaseCount + '</span>' +
                 '<div class="flex items-center gap-1.5">' +
                     '<label class="text-[11px] text-indigo-500">Delivery Date</label>' +
                     '<input type="date" name="phases[' + pi + '][delivery_date]" required ' +
+                        'onchange="enforcePhaseDateOrder()" ' +
                         'class="px-2 py-1 border border-indigo-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white">' +
                 '</div>' +
             '</div>' +

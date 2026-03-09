@@ -125,7 +125,7 @@
                             @endif
                         </td>
                         <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $item->item_id }}</span>
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">INV-{{ str_pad($item->Product_Id, 4, '0', STR_PAD_LEFT) }}</span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">

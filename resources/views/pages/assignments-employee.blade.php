@@ -4,20 +4,6 @@
     @vite('resources/css/pages/assignments.css')
 @endpush
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">My Work</span></h1>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="flex items-center gap-2">
-                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-700">Employee</span>
-                <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">
-                    {{ auth()->user()->initial }}
-                </div>
-            </div>
-        </div>
-    </div>
-@endsection
 
 @section('content')
 <div class="assignments-page">
@@ -62,9 +48,6 @@
         </div>
     </div>
 
-    {{-- ============================================== --}}
-    {{-- ASSIGNED WORK SECTION (Both Workers & Drivers) --}}
-    {{-- ============================================== --}}
     <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <div class="flex items-center gap-2 mb-1">
             <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -99,7 +82,7 @@
                         default => ['label' => 'NORMAL', 'color' => 'bg-gray-50 text-gray-500 border-gray-200'],
                     };
                 @endphp
-                <div class="border border-gray-200 rounded-xl p-5 border-l-4 {{ $statusConfig['bg'] }} hover:shadow-md transition-shadow">
+                <div class="border border-gray-200 rounded-xl p-2 sm:p-5 border-l-4 {{ $statusConfig['bg'] }} hover:shadow-md transition-shadow">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
@@ -112,7 +95,7 @@
                                 <p class="text-xs text-gray-500">{{ $assignment['customer'] }} &bull; Assigned {{ \Carbon\Carbon::parse($assignment['assigned_date'])->format('M d, Y') }}</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center flex-col gap-2">
                             <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border {{ $priorityConfig['color'] }}">{{ $priorityConfig['label'] }}</span>
                             <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border {{ $statusConfig['color'] }}">{{ $statusConfig['label'] }}</span>
                         </div>
@@ -158,7 +141,7 @@
                             <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/>
                             </svg>
-                            Item Progress
+                            Item Progress{{ $assignment['phase_number'] ? ' — Phase ' . $assignment['phase_number'] : '' }}
                         </h5>
                         <form onsubmit="submitProgress(event, {{ $assignment['id'] }})" id="progressForm-{{ $assignment['id'] }}">
                             <div class="space-y-3">
@@ -171,7 +154,7 @@
                                     </div>
                                     <div class="flex flex-col items-end gap-1">
                                         <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $item['id'] }}">
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex items-center flex-col gap-2">
                                             <span class="text-xs text-gray-400">+</span>
                                             <input type="number" name="items[{{ $loop->index }}][add_qty]" 
                                                    value="0" 
@@ -185,7 +168,7 @@
                                 </div>
                                 @endforeach
                             </div>
-                            <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-200">
+                            <div class="flex items-center justify-between mt-4 flex-col sm:flex-row pt-3 border-t border-gray-200">
                                 @php
                                     $totalQty = collect($assignment['order_items'])->sum('quantity');
                                     $totalCompleted = collect($assignment['order_items'])->sum('completed_qty');
@@ -197,7 +180,7 @@
                                     </div>
                                     <span class="text-xs font-semibold text-gray-600">{{ $totalCompleted }} / {{ $totalQty }} items &middot; {{ $progressPct }}% done</span>
                                 </div>
-                                <button type="submit" class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors">
+                                <button type="submit" class="flex items-center my-2 gap-1.5 px-2 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182"/>
                                     </svg>
@@ -205,13 +188,40 @@
                                 </button>
                             </div>
                         </form>
+
+                        {{-- Progress History --}}
+                        @if(!empty($assignment['progress_history']))
+                        <div class="mt-4 border border-gray-100 rounded-lg overflow-hidden">
+                            <div class="bg-gray-100 px-3 py-2 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Progress History</p>
+                            </div>
+                            <div class="divide-y divide-gray-100 max-h-48 overflow-y-auto">
+                                @foreach($assignment['progress_history'] as $log)
+                                <div class="flex items-center justify-between px-3 py-2 bg-white">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-[10px] font-bold text-emerald-700 shrink-0">
+                                            {{ strtoupper(substr($log['employee'], 0, 1)) }}
+                                        </div>
+                                        <span class="text-xs font-semibold text-gray-800">{{ $log['employee'] }}</span>
+                                        <span class="text-xs text-gray-400">added</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">+{{ $log['qty_added'] }} pcs</span>
+                                    </div>
+                                    <span class="text-[10px] text-gray-400 shrink-0 ml-2">{{ $log['time'] }}</span>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     @endif
 
                     {{-- Show completed progress for completed assignments --}}
                     @if(!empty($assignment['order_items']) && $assignment['status'] === 'completed')
                     <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-4">
-                        <h5 class="text-xs font-bold text-emerald-700 uppercase mb-3">All Items Completed</h5>
+                        <h5 class="text-xs font-bold text-emerald-700 uppercase mb-3">All Items Completed{{ $assignment['phase_number'] ? ' — Phase ' . $assignment['phase_number'] : '' }}</h5>
                         <div class="space-y-2">
                             @foreach($assignment['order_items'] as $item)
                             <div class="flex items-center justify-between text-sm">
@@ -220,6 +230,33 @@
                             </div>
                             @endforeach
                         </div>
+
+                        {{-- Progress History for completed --}}
+                        @if(!empty($assignment['progress_history']))
+                        <div class="mt-4 border border-emerald-100 rounded-lg overflow-hidden">
+                            <div class="bg-emerald-100 px-3 py-2 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Progress History</p>
+                            </div>
+                            <div class="divide-y divide-emerald-50 max-h-48 overflow-y-auto">
+                                @foreach($assignment['progress_history'] as $log)
+                                <div class="flex items-center justify-between px-3 py-2 bg-white">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-[10px] font-bold text-emerald-700 shrink-0">
+                                            {{ strtoupper(substr($log['employee'], 0, 1)) }}
+                                        </div>
+                                        <span class="text-xs font-semibold text-gray-800">{{ $log['employee'] }}</span>
+                                        <span class="text-xs text-gray-400">added</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">+{{ $log['qty_added'] }} pcs</span>
+                                    </div>
+                                    <span class="text-[10px] text-gray-400 shrink-0 ml-2">{{ $log['time'] }}</span>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     @endif
 

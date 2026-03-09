@@ -97,14 +97,12 @@ class OrderProgressController extends Controller
 
         $phaseItem->update(['completed_qty' => $newDone]);
 
-        // Check if the whole phase is done
         $phase = $phaseItem->phase()->with('items')->first();
         $allDone = $phase->items->every(fn($i) => $i->completed_qty >= $i->required_qty);
 
         if ($allDone && $phase->status !== 'Completed') {
             $phase->update(['status' => 'Completed']);
 
-            // Notify admins
             $managerIds = User::where('role', 'admin')->orWhere('role', 'super_admin')->pluck('User_Id')->toArray();
             Notification::sendToMany(
                 $managerIds,
@@ -136,11 +134,9 @@ class OrderProgressController extends Controller
             'damages.*.damage_qty'  => 'required|integer|min:0',
         ]);
 
-        // Record the damage on this phase
         $totalDamage = array_sum(array_column($validated['damages'], 'damage_qty'));
         $phase->update(['damage_qty' => $totalDamage, 'status' => 'Delivered']);
 
-        // Find next phase
         $nextPhase = OrderPhase::where('order_id', $phase->order_id)
             ->where('phase_number', $phase->phase_number + 1)
             ->with('items')
@@ -159,20 +155,17 @@ class OrderProgressController extends Controller
                         'required_qty' => $newRequired,
                     ]);
                 } else {
-                    // Item doesn't exist in next phase yet — create it
                     OrderPhaseItem::create([
-                        'phase_id'           => $nextPhase->Phase_Id,
-                        'inventory_item_id'  => null,
-                        'name'               => $dmg['name'],
-                        'base_qty'           => 0,
-                        'damage_carry'       => $dmg['damage_qty'],
-                        'required_qty'       => $dmg['damage_qty'],
-                        'completed_qty'      => 0,
+                        'phase_id'     => $nextPhase->Phase_Id,
+                        'name'         => $dmg['name'],
+                        'base_qty'     => 0,
+                        'damage_carry' => $dmg['damage_qty'],
+                        'required_qty' => $dmg['damage_qty'],
+                        'completed_qty'=> 0,
                     ]);
                 }
             }
 
-            // Notify (optional)
             $managerIds = User::where('role', 'admin')->orWhere('role', 'super_admin')->pluck('User_Id')->toArray();
             Notification::sendToMany(
                 $managerIds,

@@ -119,8 +119,8 @@ class SalesController extends Controller
 
         $salesPaginated->setCollection($sales);
 
-        $topCategory = OrderItem::select('inventory_item_id', DB::raw('SUM(subtotal) as total'))
-            ->groupBy('inventory_item_id')->orderByDesc('total')->first();
+        $topCategory = OrderItem::select('product_id', DB::raw('SUM(subtotal) as total'))
+            ->groupBy('product_id')->orderByDesc('total')->first();
         $topCategoryName = $topCategory && $topCategory->inventoryItem
             ? $topCategory->inventoryItem->category : 'N/A';
 

@@ -97,7 +97,7 @@
                         </td>
                         <td class="px-6 py-4">
                             <p class="text-sm font-semibold text-gray-900">{{ $item->name }}</p>
-                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $item->item_id }}</span>
+                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $item->item_code }}</span>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $item->category }}</td>
                         <td class="px-6 py-4 text-sm">
@@ -105,7 +105,7 @@
                             <span class="text-gray-400">{{ $item->unit }}</span>
                         </td>
                         <td class="px-6 py-4">
-                            <button onclick="openStockInModal({{ json_encode(['id' => $item->id, 'name' => $item->name, 'code' => $item->item_id, 'stock' => $item->stock, 'unit' => $item->unit, 'image' => $item->image_path ? asset('storage/'.$item->image_path) : null]) }})"
+                            <button onclick="openStockInModal({{ json_encode(['id' => $item->Product_Id, 'name' => $item->name, 'code' => $item->item_code, 'stock' => $item->stock, 'unit' => $item->unit, 'image' => $item->image_path ? asset('storage/'.$item->image_path) : null]) }})"
                                 class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                                 Stock In
@@ -158,7 +158,7 @@
                         <td class="px-6 py-4">
                         <p class="text-sm font-semibold text-gray-900">{{ $txn->inventoryItem->name ?? 'N/A' }}</p>
                         @if($txn->inventoryItem)
-                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $txn->inventoryItem->item_id }}</span>
+                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $txn->inventoryItem->item_code }}</span>
                         @endif
                     </td>
                         <td class="px-6 py-4">
@@ -169,7 +169,7 @@
                                 <span class="text-xs text-green-500 ml-1">(+{{ number_format($txn->quantity) }})</span>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ $txn->supplier ?? '—' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ $txn->supplier->name ?? '—' }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $txn->notes ?? '—' }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $txn->creator->name ?? 'System' }}</td>
                     </tr>

@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
             ['password' => bcrypt('password'), 'role' => User::ROLE_ADMIN]
         );
 
-        // Create Employee (Worker)
+        // Create Employees (Workers)
         User::firstOrCreate(
             ['name' => 'employee1'],
             ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE]

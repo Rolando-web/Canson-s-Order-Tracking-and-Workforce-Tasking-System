@@ -31,9 +31,22 @@ window.showOrderDetails = function(orderId) {
     // Order items table
     let itemsHTML = '';
     (order.order_items || []).forEach(item => {
+        const completed = item.completed_qty || 0;
+        const total     = item.qty || 0;
+        const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const barColor  = pct >= 100 ? 'bg-emerald-500' : pct > 0 ? 'bg-blue-400' : 'bg-gray-200';
+        const textColor = pct >= 100 ? 'text-emerald-600' : pct > 0 ? 'text-blue-500' : 'text-gray-400';
         itemsHTML += `
             <tr>
-                <td class="px-4 py-2 text-sm text-gray-900">${item.name}</td>
+                <td class="px-4 py-2 text-sm text-gray-900">
+                    ${item.name}
+                    <div class="mt-1 flex items-center gap-2">
+                        <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div class="${barColor} h-full rounded-full transition-all" style="width:${pct}%"></div>
+                        </div>
+                        <span class="text-xs font-medium ${textColor} whitespace-nowrap">${completed}/${total} (${pct}%)</span>
+                    </div>
+                </td>
                 <td class="px-4 py-2 text-sm text-gray-600 text-right">${item.qty}</td>
                 <td class="px-4 py-2 text-sm text-gray-600 text-right">₱${parseFloat(item.price).toFixed(2)}</td>
                 <td class="px-4 py-2 text-sm font-semibold text-gray-900 text-right">₱${parseFloat(item.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -47,6 +60,64 @@ window.showOrderDetails = function(orderId) {
 
     // Notes
     document.getElementById('modalNotes').textContent = order.notes || 'No notes provided';
+
+    // Delivery Phases
+    const phasesSection = document.getElementById('modalPhasesSection');
+    const phasesContainer = document.getElementById('modalPhasesContainer');
+    const phases = order.phases || [];
+    if (phases.length === 0) {
+        phasesSection.classList.add('hidden');
+    } else {
+        phasesSection.classList.remove('hidden');
+        const statusColors = {
+            'Pending':   'bg-gray-100 text-gray-600',
+            'In-Progress': 'bg-blue-50 text-blue-600',
+            'Completed': 'bg-green-50 text-green-600',
+            'Delivered': 'bg-emerald-50 text-emerald-600',
+        };
+        phasesContainer.innerHTML = phases.map(phase => {
+            const deliveryDate = new Date(phase.delivery_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            const badge = statusColors[phase.status] || 'bg-gray-100 text-gray-600';
+            const itemRows = (phase.items || []).map(pi => {
+                const pct = pi.required_qty > 0 ? Math.round((pi.completed_qty / pi.required_qty) * 100) : 0;
+                return `
+                    <tr>
+                        <td class="px-3 py-2 text-sm text-gray-900">${pi.name}</td>
+                        <td class="px-3 py-2 text-sm text-gray-600 text-right">${pi.required_qty}</td>
+                        <td class="px-3 py-2 text-sm text-gray-600 text-right">${pi.completed_qty}</td>
+                        <td class="px-3 py-2 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <div class="w-20 bg-gray-200 rounded-full h-1.5">
+                                    <div class="h-1.5 rounded-full ${pct >= 100 ? 'bg-green-500' : 'bg-blue-500'}" style="width:${pct}%"></div>
+                                </div>
+                                <span class="text-xs text-gray-500 w-8 text-right">${pct}%</span>
+                            </div>
+                        </td>
+                    </tr>`;
+            }).join('');
+            return `
+                <div class="border border-gray-200 rounded-xl overflow-hidden">
+                    <div class="flex items-center justify-between bg-gray-50 border-b border-gray-200 px-4 py-2.5">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-gray-800">Phase ${phase.number}</span>
+                            <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badge}">${phase.status}</span>
+                        </div>
+                        <span class="text-xs text-gray-500">📅 ${deliveryDate}</span>
+                    </div>
+                    <table class="w-full">
+                        <thead class="bg-white border-b border-gray-100">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Item</th>
+                                <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500">Required</th>
+                                <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500">Completed</th>
+                                <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500">Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">${itemRows}</tbody>
+                    </table>
+                </div>`;
+        }).join('');
+    }
 
     document.getElementById('orderDetailsModal').classList.remove('hidden');
 };
@@ -101,12 +172,49 @@ window.openAddOrderModal = function() {
     if (dateInput) {
         dateInput.min = `${yyyy}-${mm}-${dd}`;
     }
+    // Reset delivery mode to single
+    setDeliveryMode('single');
     document.getElementById('addOrderModal').classList.remove('hidden');
 };
 
 window.closeAddOrderModal = function() {
     document.getElementById('addOrderModal').classList.add('hidden');
     if (typeof resetPhases === 'function') resetPhases();
+};
+
+window.setDeliveryMode = function(mode) {
+    const singleRadio = document.getElementById('deliveryModeSingle');
+    const phasedRadio = document.getElementById('deliveryModePhased');
+    const dateInput   = document.getElementById('deliveryDateInput');
+    const hint        = document.getElementById('phaseSectionHint');
+    const phasesSection = document.getElementById('phasesSection');
+
+    if (mode === 'phased') {
+        if (singleRadio) singleRadio.checked = false;
+        if (phasedRadio) phasedRadio.checked = true;
+        if (dateInput) {
+            dateInput.disabled = true;
+            dateInput.removeAttribute('required');
+            dateInput.value = '';
+            dateInput.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+            dateInput.classList.remove('focus:ring-emerald-500');
+        }
+        if (hint) hint.textContent = '(required — at least one phase)';
+        if (phasesSection) phasesSection.classList.remove('hidden');
+    } else {
+        if (singleRadio) singleRadio.checked = true;
+        if (phasedRadio) phasedRadio.checked = false;
+        if (dateInput) {
+            dateInput.disabled = false;
+            dateInput.setAttribute('required', '');
+            dateInput.classList.remove('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+            dateInput.classList.add('focus:ring-emerald-500');
+        }
+        if (hint) hint.textContent = '(optional — split order into batches)';
+        if (phasesSection) phasesSection.classList.add('hidden');
+        // Clear any existing phases
+        if (typeof resetPhases === 'function') resetPhases();
+    }
 };
 
 function createOrderItemRow(index) {
@@ -237,6 +345,8 @@ window.submitAddOrder = function(event) {
     const form = document.getElementById('addOrderForm');
     const formData = new FormData(form);
 
+    const deliveryMode = document.querySelector('input[name="delivery_mode"]:checked')?.value || 'single';
+
     const orderData = {
         customer_name:    formData.get('customer_name'),
         contact_number:   formData.get('contact_number'),
@@ -270,8 +380,22 @@ window.submitAddOrder = function(event) {
         return;
     }
 
-    // Collect phases if any
+    // Phased mode: require at least one phase and use Phase 1 date as order delivery date
     const phaseCards = document.querySelectorAll('.phase-card');
+    if (deliveryMode === 'phased') {
+        if (phaseCards.length === 0) {
+            alert('Phased Delivery requires at least one phase. Please add a phase.');
+            return;
+        }
+        const phase1Date = phaseCards[0].querySelector('input[type="date"]')?.value;
+        if (!phase1Date) {
+            alert('Please set a delivery date for Phase 1.');
+            return;
+        }
+        orderData.delivery_date = phase1Date;
+    }
+
+    // Collect phases if any
     if (phaseCards.length > 0) {
         orderData.phases = [];
         phaseCards.forEach((card, ci) => {

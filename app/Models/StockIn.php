@@ -12,8 +12,10 @@ class StockIn extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'item_id',
+        'product_id',
         'quantity',
+        'previous_stock',
+        'new_stock',
         'reference_number',
         'supplier_id',
         'notes',
@@ -27,7 +29,7 @@ class StockIn extends Model
 
     public function inventoryItem()
     {
-        return $this->belongsTo(InventoryItem::class, 'item_id', 'Item_Id');
+        return $this->belongsTo(InventoryItem::class, 'product_id', 'Product_Id');
     }
 
     public function supplier()

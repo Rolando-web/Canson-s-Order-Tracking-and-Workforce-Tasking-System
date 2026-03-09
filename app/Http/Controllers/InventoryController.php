@@ -22,7 +22,7 @@ class InventoryController extends Controller
     public function stockInPage()
     {
         $items = InventoryItem::orderBy('name')->get();
-        $transactions = StockIn::with(['inventoryItem', 'creator'])
+        $transactions = StockIn::with(['inventoryItem', 'creator', 'supplier'])
             ->orderBy('created_at', 'desc')
             ->limit(50)
             ->get();
@@ -79,7 +79,7 @@ class InventoryController extends Controller
             'image'      => 'nullable|image|max:2048',
         ]);
 
-        $lastItem = InventoryItem::orderBy('Item_Id', 'desc')->first();
+        $lastItem = InventoryItem::orderBy('Product_Id', 'desc')->first();
         $nextId = $lastItem ? intval(str_replace('INV-', '', $lastItem->item_code)) + 1 : 1;
         $validated['item_code'] = 'INV-' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
 
@@ -135,7 +135,7 @@ class InventoryController extends Controller
     public function stockIn(Request $request)
     {
         $validated = $request->validate([
-            'item_id'   => 'required|exists:inventory_items,Item_Id',
+            'item_id'   => 'required|exists:products,Product_Id',
             'quantity'  => 'required|integer|min:1',
             'supplier'  => 'nullable|string|max:255',
             'notes'     => 'nullable|string',
@@ -151,7 +151,7 @@ class InventoryController extends Controller
         ]);
 
         StockIn::create([
-            'item_id'          => $item->Item_Id,
+            'product_id'       => $item->Product_Id,
             'quantity'         => $validated['quantity'],
             'previous_stock'   => $previousStock,
             'new_stock'        => $newStock,
@@ -171,7 +171,7 @@ class InventoryController extends Controller
     public function stockOut(Request $request)
     {
         $validated = $request->validate([
-            'item_id'  => 'required|exists:inventory_items,Item_Id',
+            'item_id'  => 'required|exists:products,Product_Id',
             'quantity' => 'required|integer|min:1',
             'reason'   => 'nullable|string|max:100',
             'notes'    => 'nullable|string',
@@ -195,7 +195,7 @@ class InventoryController extends Controller
         ]);
 
         StockOut::create([
-            'item_id'          => $item->Item_Id,
+            'product_id'       => $item->Product_Id,
             'quantity'         => $validated['quantity'],
             'previous_stock'   => $previousStock,
             'new_stock'        => $newStock,

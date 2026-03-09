@@ -13,7 +13,7 @@ class OrderItem extends Model
 
     protected $fillable = [
         'order_id',
-        'inventory_item_id',
+        'product_id',
         'name',
         'quantity',
         'completed_qty',
@@ -22,10 +22,10 @@ class OrderItem extends Model
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
-        'completed_qty' => 'integer',
-        'unit_price' => 'decimal:2',
-        'subtotal' => 'decimal:2',
+        'quantity'     => 'integer',
+        'completed_qty'=> 'integer',
+        'unit_price'   => 'decimal:2',
+        'subtotal'     => 'decimal:2',
     ];
 
     public function order()
@@ -35,6 +35,6 @@ class OrderItem extends Model
 
     public function inventoryItem()
     {
-        return $this->belongsTo(InventoryItem::class, 'inventory_item_id', 'Item_Id');
+        return $this->belongsTo(InventoryItem::class, 'product_id', 'Product_Id');
     }
 }

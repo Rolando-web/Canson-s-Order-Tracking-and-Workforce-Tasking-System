@@ -26,9 +26,9 @@
             <h3 class="text-lg font-bold text-gray-900">Workforce</h3>
             <p class="text-sm text-gray-500 mb-4">Select a worker to manage assignments</p>
 
-            <div class="space-y-1" id="workerList">
+            <div class="space-y-1 flex-col md:flex-row" id="workerList">
                 @foreach($workers as $worker)
-                <div class="worker-item flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-200 transition-all" onclick="showWorkerAssignments('{{ $worker['name'] }}', '{{ $worker['initial'] }}', '{{ $worker['color'] }}', '{{ $worker['status'] }}', {{ $worker['active'] }})">
+                <div class="worker-item flex items-center flex-row lg:flex-col xl:flex-row justify-between p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-200 transition-all" onclick="showWorkerAssignments('{{ $worker['name'] }}', '{{ $worker['initial'] }}', '{{ $worker['color'] }}', '{{ $worker['status'] }}', {{ $worker['active'] }})">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full {{ $worker['color'] }} flex items-center justify-center text-white font-bold text-sm">
                             {{ $worker['initial'] }}
@@ -87,84 +87,334 @@
         </div>
     </div>
 
-    {{-- Available Orders Section --}}
-    <div class="mt-6 bg-white rounded-xl border border-gray-200 p-6">
+    {{-- Orders Section --}}
+    <div class="mt-6 bg-white rounded-xl border border-gray-200 p-3">
+        {{-- Header with Toggle --}}
         <div class="flex items-center justify-between mb-4">
             <div>
                 <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
                     <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
                     </svg>
-                    Available Orders
+                    <span id="ordersSectionTitle">Unassigned Orders</span>
                 </h3>
-                <p class="text-sm text-gray-500">Unassigned orders ready to be assigned to employees</p>
+                <p class="text-sm text-gray-500" id="ordersSectionSubtitle">Unassigned orders ready to be assigned to employees</p>
             </div>
-            <span id="availableOrderCount" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-700">{{ count($availableOrders) }} orders</span>
-        </div>
-
-        @if(count($availableOrders) === 0)
-        <div class="text-center py-10">
-            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <p class="text-gray-500 font-medium">All orders have been assigned!</p> 
-            <p class="text-gray-400 text-sm mt-1">New unassigned orders will appear here</p>
-        </div>
-        @else
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="availableOrdersGrid">
-            @foreach($availableOrders as $order)
-            <div class="available-order-card border-2 border-gray-200 rounded-xl p-4 hover:border-emerald-400 hover:shadow-md transition-all group" data-order-id="{{ $order['order_id'] }}">
-                {{-- Order Header --}}
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex items-center gap-2">
-                        <div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-bold text-gray-900">{{ $order['order_id'] }}</h4>
-                            <p class="text-xs text-gray-500">{{ $order['customer'] }}</p>
-                        </div>
-                    </div>
-                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-200">UNASSIGNED</span>
-                </div>
-
-                {{-- Order Details --}}
-                <div class="space-y-2 mb-3">
-                    <div class="flex items-center gap-2 text-xs text-gray-600">
-                        <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
-                        </svg>
-                        <span class="truncate" title="{{ $order['items'] }}">{{ Str::limit($order['items'], 40) }}</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-xs text-gray-600">
-                        <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/>
-                        </svg>
-                        Deliver by {{ \Carbon\Carbon::parse($order['delivery_date'])->format('M d, Y') }}
-                    </div>
-                    <div class="flex items-center gap-2 text-xs text-gray-600">
-                        <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/>
-                        </svg>
-                        <span class="truncate" title="{{ $order['delivery_address'] }}">{{ Str::limit($order['delivery_address'], 35) }}</span>
-                    </div>
-                </div>
-
-                {{-- Footer --}}
-                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                    <p class="text-sm font-bold text-emerald-600">₱{{ number_format((float)$order['total_amount'], 2) }}</p>
-                    <button onclick="quickAssignOrder('{{ $order['order_id'] }}')" class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors opacity-0 group-hover:opacity-100">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                        Assign
+            <div class="flex items-center flex-col sm:flex-row gap-3">
+                <span id="ordersTabCount" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-700">{{ count($availableOrders) }} orders</span>
+                {{-- Toggle --}}
+                <div class="flex items-center flex-col sm:flex-row bg-gray-100 rounded-lg p-1">
+                    <button id="tabUnassigned" onclick="switchOrdersTab('unassigned')" class="px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-emerald-700 shadow-sm transition-all">
+                        Unassigned
+                    </button>
+                    <button id="tabActive" onclick="switchOrdersTab('active')" class="px-6 py-1.5 text-xs font-semibold rounded-md text-gray-500 hover:text-gray-700 transition-all">
+                        Active
                     </button>
                 </div>
             </div>
-            @endforeach
         </div>
-        @endif
+
+        {{-- Unassigned Orders Panel --}}
+        <div id="panelUnassigned">
+            @if(count($availableOrders) === 0)
+            <div class="text-center py-10">
+                <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p class="text-gray-500 font-medium">All orders have been assigned!</p>
+                <p class="text-gray-400 text-sm mt-1">New unassigned orders will appear here</p>
+            </div>
+            @else
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="availableOrdersGrid">
+                @foreach($availableOrders as $order)
+                <div class="available-order-card border-2 border-gray-200 rounded-xl p-4 hover:border-emerald-400 hover:shadow-md transition-all group" data-order-id="{{ $order['order_id'] }}">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-900">{{ $order['order_id'] }}</h4>
+                                <p class="text-xs text-gray-500">{{ $order['customer'] }}</p>
+                            </div>
+                        </div>
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-200">UNASSIGNED</span>
+                    </div>
+                    <div class="space-y-2 mb-3">
+                        <div class="flex items-center flex-col sm:flex-row gap-2 text-xs text-gray-600">
+                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+                            <span class="truncate" title="{{ $order['items'] }}">{{ Str::limit($order['items'], 40) }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-gray-600">
+                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/></svg>
+                            Deliver by {{ \Carbon\Carbon::parse($order['delivery_date'])->format('M d, Y') }}
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-gray-600">
+                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+                            <span class="truncate" title="{{ $order['delivery_address'] }}">{{ Str::limit($order['delivery_address'], 35) }}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <p class="text-sm font-bold text-emerald-600">₱{{ number_format((float)$order['total_amount'], 2) }}</p>
+                        <button onclick="quickAssignOrder('{{ $order['order_id'] }}')" class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors opacity-0 group-hover:opacity-100">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                            Assign
+                        </button>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @endif
+        </div>
+
+        {{-- Active Orders Panel --}}
+        <div id="panelActive" class="hidden">
+            @php $activeOrders = $activeOrders ?? []; @endphp
+            @if(count($activeOrders) === 0)
+            <div class="text-center py-10">
+                <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"/>
+                </svg>
+                <p class="text-gray-500 font-medium">No active orders</p>
+                <p class="text-gray-400 text-sm mt-1">Orders in progress will appear here</p>
+            </div>
+            @else
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                @foreach($activeOrders as $order)
+                @php
+                    $statusColor = match($order['status']) {
+                        'In-Progress' => 'bg-blue-50 text-blue-600 border-blue-200',
+                        'Pending'     => 'bg-gray-50 text-gray-500 border-gray-200',
+                        default       => 'bg-gray-50 text-gray-500 border-gray-200',
+                    };
+                    $priorityColor = match($order['priority']) {
+                        'urgent' => 'bg-red-50 text-red-600 border-red-200',
+                        'high'   => 'bg-orange-50 text-orange-600 border-orange-200',
+                        default  => 'bg-emerald-50 text-emerald-600 border-emerald-200',
+                    };
+                @endphp
+                <div class="border-2 flex-col sm:flex-row border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-900">{{ $order['order_id'] }}</h4>
+                                <p class="text-xs text-gray-500">{{ $order['customer'] }}</p>
+                            </div>
+                        </div>
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border {{ $statusColor }}">{{ strtoupper($order['status']) }}</span>
+                    </div>
+                    <div class="space-y-2 mb-3">
+                        <div class="flex items-center gap-2 text-xs text-gray-600">
+                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+                            <span class="truncate" title="{{ $order['items'] }}">{{ Str::limit($order['items'], 40) }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-gray-600">
+                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/></svg>
+                            Deliver by {{ \Carbon\Carbon::parse($order['delivery_date'])->format('M d, Y') }}
+                        </div>
+                        @if(count($order['assigned_to']) > 0)
+                        <div class="flex items-center gap-2 text-xs text-gray-600">
+                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                            <span class="truncate">{{ implode(', ', $order['assigned_to']) }}</span>
+                        </div>
+                        @endif
+                        @if($order['phase_count'] > 0)
+                        <div class="flex items-center gap-2 text-xs text-indigo-600">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25"/></svg>
+                            {{ $order['phase_count'] }} {{ Str::plural('phase', $order['phase_count']) }}
+                        </div>
+                        @endif
+                    </div>
+                    <div class="flex items-center flex-col sm:flex-row  justify-between pt-3 border-t border-gray-100">
+                        <p class="text-sm font-bold text-emerald-600">₱{{ number_format((float)$order['total_amount'], 2) }}</p>
+                        <div class="flex items-center mt-3 gap-2">
+                            <button onclick="openOrderProgressModal('{{ $order['order_id'] }}')" class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                View Details
+                            </button>
+                            <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border {{ $priorityColor }}">{{ strtoupper($order['priority']) }}</span>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @endif
+        </div>
+    </div>
+
+    <script>
+    const _unassignedCount = {{ count($availableOrders) }};
+    const _activeCount = {{ count($activeOrders ?? []) }};
+    const _activeOrdersData = @json(collect($activeOrders ?? [])->keyBy('order_id'));
+
+    function openOrderProgressModal(orderId) {
+        const order = _activeOrdersData[orderId];
+        if (!order) return;
+
+        document.getElementById('opModalTitle').textContent = orderId;
+        document.getElementById('opModalCustomer').textContent = order.customer + ' · ' + new Date(order.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        const hasMeaningfulPhases = order.phases_progress && order.phases_progress.length > 0;
+        const phasedSection  = document.getElementById('opPhasedSection');
+        const overallSection = document.getElementById('opOverallSection');
+
+        if (hasMeaningfulPhases) {
+            phasedSection.classList.remove('hidden');
+            overallSection.classList.add('hidden');
+            let html = '';
+            order.phases_progress.forEach(function(phase) {
+                const statusBadge = {
+                    'Completed':   'bg-green-50 text-green-600',
+                    'In-Progress': 'bg-blue-50 text-blue-600',
+                    'Pending':     'bg-gray-100 text-gray-500',
+                    'Delivered':   'bg-emerald-50 text-emerald-600',
+                }[phase.status] || 'bg-gray-100 text-gray-500';
+                const delivDate = new Date(phase.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const rows = phase.items.map(function(item) {
+                    const pct = item.required_qty > 0 ? Math.round((item.completed_qty / item.required_qty) * 100) : 0;
+                    const barColor = pct >= 100 ? 'bg-emerald-500' : pct > 0 ? 'bg-blue-400' : 'bg-gray-200';
+                    return `<tr class="border-t border-gray-100">
+                        <td class="px-4 py-2.5 text-sm text-gray-800">${item.name}</td>
+                        <td class="px-4 py-2.5 text-sm text-center font-medium text-gray-700">${item.required_qty}</td>
+                        <td class="px-4 py-2.5 text-sm text-center font-medium text-gray-700">${item.completed_qty}</td>
+                        <td class="px-4 py-2.5">
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="${barColor} h-full rounded-full transition-all" style="width:${pct}%"></div>
+                                </div>
+                                <span class="text-xs font-semibold text-gray-500 w-9 text-right">${pct}%</span>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('');
+                html += `<div class="mb-4">
+                    <div class="flex items-center justify-between px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-t-lg">
+                        <span class="text-xs font-bold text-indigo-700 uppercase">Phase ${phase.number}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500">${delivDate}</span>
+                            <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge}">${phase.status}</span>
+                        </div>
+                    </div>
+                    <div class="border border-t-0 border-indigo-200 rounded-b-lg overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500">Item</th>
+                                    <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500">Required</th>
+                                    <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500">Completed</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500">Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('opPhasedContent').innerHTML = html;
+        } else {
+            phasedSection.classList.add('hidden');
+            overallSection.classList.remove('hidden');
+            const rows = (order.progress_items || []).map(function(item) {
+                const pct = item.required_qty > 0 ? Math.round((item.completed_qty / item.required_qty) * 100) : 0;
+                const barColor = pct >= 100 ? 'bg-emerald-500' : pct > 0 ? 'bg-blue-400' : 'bg-gray-200';
+                return `<tr class="border-t border-gray-100">
+                    <td class="px-4 py-2.5 text-sm text-gray-800">${item.name}</td>
+                    <td class="px-4 py-2.5 text-sm text-center font-medium text-gray-700">${item.required_qty}</td>
+                    <td class="px-4 py-2.5 text-sm text-center font-medium text-gray-700">${item.completed_qty}</td>
+                    <td class="px-4 py-2.5">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="${barColor} h-full rounded-full transition-all" style="width:${pct}%"></div>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-500 w-9 text-right">${pct}%</span>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('opOverallBody').innerHTML = rows || '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-400 text-sm">No items found</td></tr>';
+        }
+
+        document.getElementById('orderProgressModal').classList.remove('hidden');
+    }
+
+    function closeOrderProgressModal() {
+        document.getElementById('orderProgressModal').classList.add('hidden');
+    }
+
+    function switchOrdersTab(tab) {
+        const isUnassigned = tab === 'unassigned';
+        document.getElementById('panelUnassigned').classList.toggle('hidden', !isUnassigned);
+        document.getElementById('panelActive').classList.toggle('hidden', isUnassigned);
+
+        const tabUnassigned = document.getElementById('tabUnassigned');
+        const tabActive = document.getElementById('tabActive');
+        if (isUnassigned) {
+            tabUnassigned.className = 'px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-emerald-700 shadow-sm transition-all';
+            tabActive.className = 'px-3 py-1.5 text-xs font-semibold rounded-md text-gray-500 hover:text-gray-700 transition-all';
+        } else {
+            tabActive.className = 'px-6 py-1.5 text-xs font-semibold rounded-md bg-white text-blue-600 shadow-sm transition-all';
+            tabUnassigned.className = 'px-3 py-1.5 text-xs font-semibold rounded-md text-gray-500 hover:text-gray-700 transition-all';
+        }
+
+        document.getElementById('ordersSectionTitle').textContent = isUnassigned ? 'Unassigned Orders' : 'Active Orders';
+        document.getElementById('ordersSectionSubtitle').textContent = isUnassigned
+            ? 'Unassigned orders ready to be assigned to employees'
+            : 'Orders currently in progress or pending';
+        document.getElementById('ordersTabCount').textContent = (isUnassigned ? _unassignedCount : _activeCount) + ' orders';
+        document.getElementById('ordersTabCount').className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold '
+            + (isUnassigned ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700');
+    }
+    </script>
+</div>
+
+{{-- Order Progress Modal --}}
+<div id="orderProgressModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeOrderProgressModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col" onclick="event.stopPropagation()">
+            {{-- Header --}}
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900" id="opModalTitle">Order Progress</h3>
+                    <p class="text-sm text-gray-500 mt-0.5" id="opModalCustomer"></p>
+                </div>
+                <button onclick="closeOrderProgressModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            {{-- Body --}}
+            <div class="overflow-y-auto px-6 py-5 space-y-4">
+                {{-- Non-phased: single items table --}}
+                <div id="opOverallSection">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 rounded-lg">
+                            <tr>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 rounded-tl-lg">Item</th>
+                                <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-500">Required</th>
+                                <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-500">Completed</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 rounded-tr-lg">Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody id="opOverallBody" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+                {{-- Phased: per-phase accordion --}}
+                <div id="opPhasedSection" class="hidden">
+                    <div id="opPhasedContent" class="space-y-4"></div>
+                </div>
+            </div>
+            {{-- Footer --}}
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <button onclick="closeOrderProgressModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -223,6 +473,12 @@
                             <button type="button" onclick="fillAllWithEmployee()" id="fillAllBtn" class="text-xs text-emerald-600 hover:text-emerald-700 font-medium hidden">Fill all with pre-selected</button>
                         </div>
                         <p class="text-xs text-gray-400 mb-3">Assign each product to a different employee — or the same one for all.</p>
+
+                        {{-- Phase Tabs (shown when order has phases) --}}
+                        <div id="phaseTabsWrapper" class="hidden mb-3">
+                            <div id="phaseTabs" class="flex gap-2 flex-wrap mb-3"></div>
+                        </div>
+
                         <div class="border border-gray-200 rounded-xl overflow-hidden">
                             <div class="overflow-x-auto">
                                 <table class="w-full min-w-[480px]">
@@ -486,44 +742,119 @@ function updateOrderPreview() {
     // selectedEmployeesPerItem: { [itemId]: [{id, name}, ...] }
     window.selectedEmployeesPerItem = {};
 
-    const rowsHtml = (order.order_items || []).map(item => {
-        window.selectedEmployeesPerItem[item.id] = [];
-        if (prefillEmployeeId) {
-            const emp = workersData.find(w => w.id === prefillEmployeeId);
-            if (emp) window.selectedEmployeesPerItem[item.id] = [{ id: emp.id, name: emp.name }];
+    const phases = order.phases || [];
+    const phaseTabsWrapper = document.getElementById('phaseTabsWrapper');
+    const phaseTabs = document.getElementById('phaseTabs');
+
+    if (phases.length > 0) {
+        // --- Phase-tabbed mode ---
+        phaseTabsWrapper.classList.remove('hidden');
+        window._currentPhases = phases;
+        window._activePhaseIndex = 0;
+
+        // pre-init selectedEmployeesPerItem for all items across all phases
+        phases.forEach(phase => {
+            phase.items.forEach(item => {
+                if (!window.selectedEmployeesPerItem[item.id]) {
+                    window.selectedEmployeesPerItem[item.id] = [];
+                    if (prefillEmployeeId) {
+                        const emp = workersData.find(w => w.id === prefillEmployeeId);
+                        if (emp) window.selectedEmployeesPerItem[item.id] = [{ id: emp.id, name: emp.name }];
+                    }
+                }
+            });
+        });
+
+        function renderPhaseTabs() {
+            phaseTabs.innerHTML = phases.map((phase, i) => {
+                const date = new Date(phase.delivery_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const isActive = i === window._activePhaseIndex;
+                return `<button type="button" onclick="window._activePhaseIndex=${i}; renderPhaseItems();"
+                    class="px-4 py-2 rounded-lg text-xs font-semibold border transition-colors ${isActive
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400 hover:text-indigo-600'}">
+                    Phase ${phase.number} <span class="opacity-70 ml-1">${date}</span>
+                </button>`;
+            }).join('');
         }
-        return `
-        <tr class="item-assign-row" data-item-id="${item.id}">
-            <td class="px-4 py-3 align-top">
-                <p class="text-sm font-semibold text-gray-900">${item.name}</p>
-                <p class="text-xs text-gray-400">₱${item.price.toLocaleString('en-US', {minimumFractionDigits: 2})} / unit</p>
-            </td>
-            <td class="px-4 py-3 text-center align-top">
-                <span class="text-sm font-bold text-gray-900">${item.quantity}</span>
-            </td>
-            <td class="px-4 py-3 align-top">
-                <div class="flex flex-wrap gap-1.5 mb-2 emp-tags-container" id="tags-${item.id}"></div>
-                <div class="flex gap-2">
-                    <select class="item-emp-add-select flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            data-item-id="${item.id}">
-                        <option value="">+ Add employee</option>
-                        ${employeeOptions}
-                    </select>
-                    <button type="button" onclick="addEmployeeToItem(${item.id})"
-                        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
-                        Add
-                    </button>
-                </div>
-            </td>
-        </tr>`;
-    }).join('');
 
-    document.getElementById('itemAssignmentRows').innerHTML = rowsHtml;
+        window.renderPhaseItems = function() {
+            renderPhaseTabs();
+            const phase = phases[window._activePhaseIndex];
+            const rowsHtml = (phase.items || []).map(item => {
+                return `
+                <tr class="item-assign-row" data-item-id="${item.id}">
+                    <td class="px-4 py-3 align-top">
+                        <p class="text-sm font-semibold text-gray-900">${item.name}</p>
+                        <p class="text-xs text-gray-400">₱${item.price.toLocaleString('en-US', {minimumFractionDigits: 2})} / unit</p>
+                    </td>
+                    <td class="px-4 py-3 text-center align-top">
+                        <span class="text-sm font-bold text-gray-900">${item.required_qty}</span>
+                    </td>
+                    <td class="px-4 py-3 align-top">
+                        <div class="flex flex-wrap gap-1.5 mb-2 emp-tags-container" id="tags-${item.id}"></div>
+                        <div class="flex gap-2">
+                            <select class="item-emp-add-select flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    data-item-id="${item.id}">
+                                <option value="">+ Add employee</option>
+                                ${employeeOptions}
+                            </select>
+                            <button type="button" onclick="addEmployeeToItem(${item.id})"
+                                class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
+                                Add
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('itemAssignmentRows').innerHTML = rowsHtml;
+            (phase.items || []).forEach(item => renderItemTags(item.id));
+            checkAllAssigned();
+        };
 
-    // Render pre-filled tags
-    (order.order_items || []).forEach(item => {
-        renderItemTags(item.id);
-    });
+        renderPhaseTabs();
+        window.renderPhaseItems();
+
+    } else {
+        // --- No phases: flat items mode ---
+        phaseTabsWrapper.classList.add('hidden');
+        window._currentPhases = [];
+
+        const rowsHtml = (order.order_items || []).map(item => {
+            window.selectedEmployeesPerItem[item.id] = [];
+            if (prefillEmployeeId) {
+                const emp = workersData.find(w => w.id === prefillEmployeeId);
+                if (emp) window.selectedEmployeesPerItem[item.id] = [{ id: emp.id, name: emp.name }];
+            }
+            return `
+            <tr class="item-assign-row" data-item-id="${item.id}">
+                <td class="px-4 py-3 align-top">
+                    <p class="text-sm font-semibold text-gray-900">${item.name}</p>
+                    <p class="text-xs text-gray-400">₱${item.price.toLocaleString('en-US', {minimumFractionDigits: 2})} / unit</p>
+                </td>
+                <td class="px-4 py-3 text-center align-top">
+                    <span class="text-sm font-bold text-gray-900">${item.quantity}</span>
+                </td>
+                <td class="px-4 py-3 align-top">
+                    <div class="flex flex-wrap gap-1.5 mb-2 emp-tags-container" id="tags-${item.id}"></div>
+                    <div class="flex gap-2">
+                        <select class="item-emp-add-select flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                data-item-id="${item.id}">
+                            <option value="">+ Add employee</option>
+                            ${employeeOptions}
+                        </select>
+                        <button type="button" onclick="addEmployeeToItem(${item.id})"
+                            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
+                            Add
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+
+        document.getElementById('itemAssignmentRows').innerHTML = rowsHtml;
+        (order.order_items || []).forEach(item => renderItemTags(item.id));
+    }
 
     document.getElementById('assignValidationMsg') && document.getElementById('assignValidationMsg').classList.add('hidden');
     orderPreview.classList.remove('hidden');
@@ -572,11 +903,21 @@ function renderItemTags(itemId) {
 
 function checkAllAssigned() {
     if (!window.selectedEmployeesPerItem) { document.getElementById('assignBtn').disabled = true; return; }
-    const rows = document.querySelectorAll('.item-assign-row');
-    const allHaveAtLeastOne = rows.length > 0 && Array.from(rows).every(row => {
-        const itemId = parseInt(row.dataset.itemId);
-        return (window.selectedEmployeesPerItem[itemId] || []).length > 0;
-    });
+
+    let itemIds = [];
+    if (window._currentPhases && window._currentPhases.length > 0) {
+        // Only check items in the currently active phase
+        const phase = window._currentPhases[window._activePhaseIndex || 0];
+        (phase.items || []).forEach(item => {
+            if (!itemIds.includes(item.id)) itemIds.push(item.id);
+        });
+    } else {
+        document.querySelectorAll('.item-assign-row').forEach(row => itemIds.push(parseInt(row.dataset.itemId)));
+    }
+
+    const allHaveAtLeastOne = itemIds.length > 0 && itemIds.every(id =>
+        (window.selectedEmployeesPerItem[id] || []).length > 0
+    );
     document.getElementById('assignBtn').disabled = !allHaveAtLeastOne;
 }
 
@@ -599,20 +940,46 @@ function assignOrderToEmployee() {
     const selectedOrderId = document.getElementById('orderSelect').value;
     if (!selectedOrderId) return;
 
-    // Build flat item_assignments array (one entry per employee per item)
+    // Build flat item_assignments array (one entry per employee per item, for active phase only)
     const itemAssignments = [];
-    document.querySelectorAll('.item-assign-row').forEach(row => {
-        const itemId = parseInt(row.dataset.itemId);
-        (window.selectedEmployeesPerItem[itemId] || []).forEach(emp => {
-            itemAssignments.push({
-                order_item_id: itemId,
-                employee_id: emp.id,
+    if (window._currentPhases && window._currentPhases.length > 0) {
+        // Phase mode: only create assignments for the currently active/selected phase
+        const phase = window._currentPhases[window._activePhaseIndex || 0];
+        (phase.items || []).forEach(item => {
+            (window.selectedEmployeesPerItem[item.id] || []).forEach(emp => {
+                itemAssignments.push({
+                    order_item_id: item.id,
+                    phase_id:      phase.phase_id,
+                    employee_id:   emp.id,
+                });
             });
         });
-    });
+    } else {
+        document.querySelectorAll('.item-assign-row').forEach(row => {
+            const itemId = parseInt(row.dataset.itemId);
+            (window.selectedEmployeesPerItem[itemId] || []).forEach(emp => {
+                itemAssignments.push({
+                    order_item_id: itemId,
+                    employee_id: emp.id,
+                });
+            });
+        });
+    }
 
     const order = availableOrders.find(o => o.order_id === selectedOrderId);
-    const totalItems = (order && order.order_items) ? order.order_items.length : 0;
+
+    // Determine total unique item IDs to validate coverage
+    let allItemIds = [];
+    if (window._currentPhases && window._currentPhases.length > 0) {
+        // Only validate coverage for the currently active phase
+        const phase = window._currentPhases[window._activePhaseIndex || 0];
+        (phase.items || []).forEach(item => {
+            if (!allItemIds.includes(item.id)) allItemIds.push(item.id);
+        });
+    } else {
+        allItemIds = (order && order.order_items) ? order.order_items.map(i => i.id) : [];
+    }
+    const totalItems = allItemIds.length;
 
     // Ensure every item has at least one employee
     const coveredItems = new Set(itemAssignments.map(ia => ia.order_item_id));
@@ -662,7 +1029,6 @@ function assignOrderToEmployee() {
     });
 }
 
-// Quick Assign — open main modal with this order pre-selected
 function quickAssignOrder(orderId) {
     currentEmployeeName = '';
     prefillEmployeeId = null;

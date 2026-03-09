@@ -101,7 +101,7 @@
                         <span class="inline-flex px-2 py-0.5 rounded text-xs font-mono bg-gray-50 border border-gray-200">{{ $txn->reference_number }}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="inline-flex px-2 py-1 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $txn->inventoryItem->item_id ?? '—' }}</span>
+                        <span class="inline-flex px-2 py-1 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $txn->inventoryItem->item_code ?? '—' }}</span>
                     </td>
                     <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $txn->inventoryItem->name ?? 'N/A' }}</td>
                     <td class="px-6 py-4">

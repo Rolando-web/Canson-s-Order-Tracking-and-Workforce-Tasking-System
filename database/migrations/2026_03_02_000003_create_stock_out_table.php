@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('stock_out', function (Blueprint $table) {
             $table->increments('Stock_Out_Id');
-            $table->unsignedInteger('item_id');
-            $table->foreign('item_id')->references('Item_Id')->on('inventory_items')->cascadeOnDelete();
+            $table->unsignedInteger('product_id');
+            $table->foreign('product_id')->references('Product_Id')->on('products')->cascadeOnDelete();
             $table->integer('quantity');
             $table->integer('previous_stock')->default(0);
             $table->integer('new_stock')->default(0);

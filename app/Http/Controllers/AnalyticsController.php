@@ -36,13 +36,13 @@ class AnalyticsController extends Controller
         }
 
         $salesByCategory = OrderItem::select(
-                'inventory_items.category',
+                'products.category',
                 DB::raw('SUM(order_items.subtotal) as total')
             )
-            ->join('inventory_items', 'order_items.inventory_item_id', '=', 'inventory_items.Item_Id')
+            ->join('products', 'order_items.product_id', '=', 'products.Product_Id')
             ->join('orders', 'order_items.order_id', '=', 'orders.Order_Id')
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->groupBy('inventory_items.category')
+            ->groupBy('products.category')
             ->orderByDesc('total')
             ->get()
             ->map(fn($row) => ['category' => $row->category, 'total' => (float)$row->total])

@@ -18,10 +18,6 @@
             @endif
         </span></h1>
         <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            @if(auth()->user()->isEmployee())
-                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-700">Worker</span>
-            @endif
             <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ auth()->user()->initial }}</div>
         </div>
     </div>
@@ -212,6 +208,175 @@
             </a>
         </div>
     </div>
+
+    {{-- All Orders Board (sticky-note style) --}}
+    @php
+        $myAssignedOrderNumbers = \App\Models\Assignment::where('employee_id', $empUser->id)
+            ->whereNotIn('status', ['cancelled'])
+            ->pluck('order_number')
+            ->unique()
+            ->toArray();
+
+        $allOrders = \App\Models\Order::with('items')
+            ->whereNotIn('status', ['Delivered'])
+            ->orderByRaw("FIELD(status, 'In-Progress', 'Pending', 'Ready for Delivery', 'Completed')")
+            ->orderBy('delivery_date', 'asc')
+            ->get()
+            ->map(function ($order) use ($myAssignedOrderNumbers) {
+                $totalQty     = $order->items->sum('quantity');
+                $completedQty = $order->items->sum('completed_qty');
+                $overallPct   = $totalQty > 0 ? min(100, round(($completedQty / $totalQty) * 100)) : 0;
+                $isAssigned   = in_array($order->order_number, $myAssignedOrderNumbers);
+
+                return [
+                    'order_number'  => $order->order_number,
+                    'customer'      => $order->customer_name,
+                    'delivery_date' => $order->delivery_date->format('M d, Y'),
+                    'status'        => $order->status,
+                    'overall_pct'   => $overallPct,
+                    'is_assigned'   => $isAssigned,
+                    'items'         => $order->items->map(fn($i) => [
+                        'name'      => $i->name,
+                        'qty'       => $i->quantity,
+                        'completed' => $i->completed_qty ?? 0,
+                        'pct'       => $i->quantity > 0 ? min(100, round((($i->completed_qty ?? 0) / $i->quantity) * 100)) : 0,
+                    ])->toArray(),
+                ];
+            });
+    @endphp
+
+    <div class="mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">All Orders</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Live progress board for all active orders</p>
+            </div>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                {{ $allOrders->count() }} {{ Str::plural('order', $allOrders->count()) }}
+            </span>
+        </div>
+
+        @if($allOrders->isEmpty())
+        <div class="bg-white rounded-xl border border-gray-200 p-10 text-center">
+            <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/>
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-gray-500">No active orders right now</p>
+        </div>
+        @else
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            @foreach($allOrders as $mo)
+            @php
+                $orderStatus = $mo['status'];
+                $statusConfig = match(true) {
+                    $orderStatus === 'In-Progress'        => ['label' => 'In Progress',        'dot' => 'bg-blue-500',    'badge' => 'bg-blue-100 text-blue-700',    'border' => 'border-blue-200',    'ring' => '#3b82f6'],
+                    $orderStatus === 'Ready for Delivery' => ['label' => 'Ready for Delivery', 'dot' => 'bg-indigo-500',  'badge' => 'bg-indigo-100 text-indigo-700','border' => 'border-indigo-200',  'ring' => '#6366f1'],
+                    $orderStatus === 'Completed'          => ['label' => 'Completed',          'dot' => 'bg-emerald-500', 'badge' => 'bg-emerald-100 text-emerald-700','border'=> 'border-emerald-200', 'ring' => '#10b981'],
+                    default                               => ['label' => 'Pending',            'dot' => 'bg-amber-400',   'badge' => 'bg-amber-100 text-amber-700',  'border' => 'border-amber-200',   'ring' => '#f59e0b'],
+                };
+                $dueDate  = \Carbon\Carbon::parse($mo['delivery_date']);
+                $daysLeft = now()->startOfDay()->diffInDays($dueDate->startOfDay(), false);
+                $dueBadge = $daysLeft < 0
+                    ? ['text' => 'Overdue',              'class' => 'text-red-600 bg-red-50 border-red-200']
+                    : ($daysLeft === 0
+                        ? ['text' => 'Due today',        'class' => 'text-orange-600 bg-orange-50 border-orange-200']
+                        : ($daysLeft <= 3
+                            ? ['text' => "Due in {$daysLeft}d", 'class' => 'text-amber-600 bg-amber-50 border-amber-200']
+                            : ['text' => $mo['delivery_date'],  'class' => 'text-gray-500 bg-gray-50 border-gray-200']));
+                $pct  = $mo['overall_pct'];
+                $r    = 20; $circ = round(2 * M_PI * $r, 2);
+                $dash = round($circ * $pct / 100, 2);
+            @endphp
+            <div class="bg-white rounded-2xl border {{ $statusConfig['border'] }} shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                {{-- Sticky-note colour strip --}}
+                <div class="h-1.5 rounded-t-2xl {{ $statusConfig['dot'] }}"></div>
+
+                <div class="p-4 flex flex-col flex-1 gap-3">
+                    {{-- Header: order id + customer + ring --}}
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-xs font-bold text-gray-700">{{ $mo['order_number'] }}</span>
+                                @if($mo['is_assigned'])
+                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[0.6rem] font-semibold bg-emerald-100 text-emerald-700">
+                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                                    Assigned to you
+                                </span>
+                                @endif
+                            </div>
+                            <p class="text-sm font-semibold text-gray-900 mt-0.5 truncate">{{ $mo['customer'] }}</p>
+                        </div>
+                        {{-- Progress ring --}}
+                        <div class="flex-shrink-0 relative w-14 h-14">
+                            <svg class="w-14 h-14 -rotate-90" viewBox="0 0 48 48">
+                                <circle cx="24" cy="24" r="{{ $r }}" fill="none" stroke="#e5e7eb" stroke-width="4"/>
+                                <circle cx="24" cy="24" r="{{ $r }}" fill="none" stroke="{{ $statusConfig['ring'] }}" stroke-width="4"
+                                    stroke-dasharray="{{ $dash }} {{ $circ }}" stroke-linecap="round"/>
+                            </svg>
+                            <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-800">{{ $pct }}%</span>
+                        </div>
+                    </div>
+
+                    {{-- Status + due date badges --}}
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {{ $statusConfig['badge'] }}">
+                            <span class="w-1.5 h-1.5 rounded-full {{ $statusConfig['dot'] }}"></span>
+                            {{ $statusConfig['label'] }}
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border {{ $dueBadge['class'] }}">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5A2.25 2.25 0 015.25 5.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5"/></svg>
+                            {{ $dueBadge['text'] }}
+                        </span>
+                    </div>
+
+                    {{-- Items table: Item Name + Qty + mini progress bar --}}
+                    <div class="rounded-lg border border-gray-100 overflow-hidden">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-100">
+                                    <th class="px-3 py-1.5 text-left font-semibold text-gray-500">Item Name</th>
+                                    <th class="px-3 py-1.5 text-right font-semibold text-gray-500 w-12">Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                @foreach($mo['items'] as $it)
+                                <tr>
+                                    <td class="px-3 py-2">
+                                        <span class="text-gray-800 font-medium">{{ $it['name'] }}</span>
+                                        <div class="mt-1 flex items-center gap-1.5">
+                                            <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                                <div class="h-full rounded-full {{ $it['pct'] >= 100 ? 'bg-emerald-500' : ($it['pct'] > 0 ? 'bg-blue-400' : 'bg-gray-200') }}"
+                                                    style="width:{{ $it['pct'] }}%"></div>
+                                            </div>
+                                            <span class="text-[0.6rem] font-medium whitespace-nowrap {{ $it['pct'] >= 100 ? 'text-emerald-600' : ($it['pct'] > 0 ? 'text-blue-500' : 'text-gray-400') }}">
+                                                {{ $it['completed'] }}/{{ $it['qty'] }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-2 text-right text-gray-700 font-semibold">{{ $it['qty'] }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Footer --}}
+                    @if($mo['is_assigned'])
+                    <div class="mt-auto pt-2 border-t border-gray-100">
+                        <a href="{{ route('assignments') }}" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                            Go to My Assignments
+                        </a>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @endif
+    </div>
     @endif
 
     @if(auth()->user()->isAdminOrAbove())
@@ -222,7 +387,7 @@
                 <h3 class="text-lg font-bold text-gray-900">Sales Overview</h3>
                 <p class="text-xs text-gray-400 mt-0.5">Weekly revenue trend</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center flex-col sm:flex-row gap-2">
                 <button class="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200">Weekly</button>
                 <button class="px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:bg-gray-50 border border-gray-200">Monthly</button>
                 <button class="px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:bg-gray-50 border border-gray-200">Yearly</button>

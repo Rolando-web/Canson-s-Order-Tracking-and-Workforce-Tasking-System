@@ -31,10 +31,10 @@
             </div>
 
             {{-- Center: Hero Content --}}
-            <div class="flex-1 flex flex-col justify-center max-w-lg -mt-8">
+            <div class="flex-1 flex flex-col justify-center max-w-xl -mt-8">
                 <div class="fade-in-up fade-in-up-delay-1">
                     <h1 class="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight">
-                        Canson's Order & Sales Tracking
+                        Canson's Order Tracking and Workforce Tasking
                         <span class="block mt-1 text-emerald-400">System</span>
                     </h1>
                 </div>

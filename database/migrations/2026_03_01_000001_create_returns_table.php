@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('returns', function (Blueprint $table) {
             $table->increments('Return_Id');
             $table->string('return_number', 20)->unique();
-            $table->unsignedInteger('item_id');
-            $table->foreign('item_id')->references('Item_Id')->on('inventory_items')->cascadeOnDelete();
+            $table->unsignedInteger('product_id');
+            $table->foreign('product_id')->references('Product_Id')->on('products')->cascadeOnDelete();
             $table->integer('quantity');
             $table->string('reason', 255);
             $table->enum('status', ['Pending', 'Covered'])->default('Pending');

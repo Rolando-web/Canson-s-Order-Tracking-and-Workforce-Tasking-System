@@ -5,11 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class InventoryItem extends Model
+class Product extends Model
 {
     use HasFactory;
 
-    protected $table = 'products';
     protected $primaryKey = 'Product_Id';
 
     protected $fillable = [
@@ -17,7 +16,6 @@ class InventoryItem extends Model
         'item_code',
         'category',
         'stock',
-        'unit',
         'unit_price',
         'status',
         'is_best_seller',
@@ -48,5 +46,10 @@ class InventoryItem extends Model
     public function returns()
     {
         return $this->hasMany(ReturnItem::class, 'product_id', 'Product_Id');
+    }
+
+    public function phaseItems()
+    {
+        return $this->hasMany(OrderPhaseItem::class, 'product_id', 'Product_Id');
     }
 }

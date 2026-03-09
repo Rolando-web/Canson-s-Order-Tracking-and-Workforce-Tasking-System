@@ -8,13 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('inventory_items', function (Blueprint $table) {
-            $table->increments('Item_Id');
+        Schema::create('products', function (Blueprint $table) {
+            $table->increments('Product_Id');
             $table->string('name');
             $table->string('item_code')->unique();
             $table->string('category');
             $table->integer('stock')->default(0);
-            $table->string('unit');
+            $table->string('unit', 50)->nullable();
             $table->decimal('unit_price', 10, 2)->default(0.00);
             $table->string('status')->default('In Stock');
             $table->boolean('is_best_seller')->default(false);
@@ -25,6 +25,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('inventory_items');
+        Schema::dropIfExists('products');
     }
 };

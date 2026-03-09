@@ -89,6 +89,14 @@
                     </div>
                 </div>
 
+                {{-- Delivery Phases --}}
+                <div id="modalPhasesSection">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Delivery Phases</label>
+                    <div id="modalPhasesContainer" class="space-y-3">
+                        {{-- Populated via JS --}}
+                    </div>
+                </div>
+
                 {{-- Notes --}}
                 <div id="modalNotesSection">
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Notes</label>

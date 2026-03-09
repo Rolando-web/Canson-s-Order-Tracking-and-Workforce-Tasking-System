@@ -12,8 +12,8 @@ return new class extends Migration
             $table->increments('Order_Item_Id');
             $table->unsignedInteger('order_id');
             $table->foreign('order_id')->references('Order_Id')->on('orders')->cascadeOnDelete();
-            $table->unsignedInteger('inventory_item_id');
-            $table->foreign('inventory_item_id')->references('Item_Id')->on('inventory_items')->cascadeOnDelete();
+            $table->unsignedInteger('product_id');
+            $table->foreign('product_id')->references('Product_Id')->on('products')->cascadeOnDelete();
             $table->string('name');
             $table->integer('quantity');
             $table->integer('completed_qty')->default(0);

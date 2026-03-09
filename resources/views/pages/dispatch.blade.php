@@ -24,8 +24,8 @@
         </div>
         <div class="flex items-center gap-3">
             <div class="flex flex-col rounded-lg border border-gray-300 overflow-hidden sm:flex-row">
-                <button class="dispatch-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white" data-status="Ready for Delivery">Ready for Delivery</button>
-                <button class="dispatch-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50" data-status="Delivered">Delivered</button>
+                <button class="dispatch-tab-btn p-2 text-[11px] sm:text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white" data-status="Ready for Delivery">Ready for Delivery</button>
+                <button class="dispatch-tab-btn p-2 text-[11px] sm:text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50" data-status="Delivered">Delivered</button>
             </div>
         </div>
     </div>
@@ -100,6 +100,14 @@
                 <tr class="dispatch-card hover:bg-gray-50 transition-colors" data-status="{{ $order['status'] }}" data-search="{{ strtolower($order['customer'] . ' ' . $order['order_id'] . ' ' . $order['items']) }}">
                     <td class="px-5 py-3">
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">{{ $order['order_id'] }}</span>
+                        @if($order['has_phases'] && $order['current_phase'])
+                        <div class="mt-1">
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061A1.125 1.125 0 013 16.811V8.69zM12.75 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061a1.125 1.125 0 01-1.683-.977V8.69z"/></svg>
+                                Phase {{ $order['current_phase']['phase_number'] }}
+                            </span>
+                        </div>
+                        @endif
                     </td>
                     <td class="px-5 py-3">
                         <p class="text-sm font-semibold text-gray-900">{{ $order['customer'] }}</p>
@@ -251,7 +259,7 @@ function openDamageModal(orderId, order) {
         row.innerHTML =
             '<td class="px-4 py-3">' +
                 '<label class="flex items-center gap-2 cursor-pointer">' +
-                    '<input type="checkbox" class="dmg-check w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500" data-index="' + index + '" data-item-id="' + item.inventory_item_id + '" data-item-name="' + item.name + '" onchange="toggleDamageRow(this)">' +
+                    '<input type="checkbox" class="dmg-check w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500" data-index="' + index + '" data-item-id="' + item.product_id + '" data-item-name="' + item.name + '" onchange="toggleDamageRow(this)">' +
                     '<span class="text-sm font-medium text-gray-900">' + item.name + '</span>' +
                 '</label>' +
                 (isCover ? '<span class="ml-6 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-800"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>DAMAGE COVER — FREE</span>' : '') +

@@ -33,7 +33,7 @@ class ReturnsController extends Controller
                 return [
                     'id'          => $c->Return_Id,
                     'return_id'   => $c->return_number,
-                    'item_id'     => $c->item_id,
+                    'item_id'     => $c->product_id,
                     'item_name'   => $c->inventoryItem->name ?? 'N/A',
                     'quantity'    => $c->quantity,
                     'reason'      => $c->reason,

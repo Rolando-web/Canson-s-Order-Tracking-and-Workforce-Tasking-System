@@ -9,13 +9,13 @@ return new class extends Migration {
             $table->increments('Phase_Item_Id');
             $table->unsignedInteger('phase_id');
             $table->foreign('phase_id')->references('Phase_Id')->on('order_phases')->cascadeOnDelete();
-            $table->unsignedInteger('inventory_item_id')->nullable();
-            $table->foreign('inventory_item_id')->references('Item_Id')->on('inventory_items')->nullOnDelete();
+            $table->unsignedInteger('product_id')->nullable();
+            $table->foreign('product_id')->references('Product_Id')->on('products')->nullOnDelete();
             $table->string('name', 255);
-            $table->unsignedInteger('base_qty')->default(0);       // qty as set by manager
-            $table->unsignedInteger('damage_carry')->default(0);   // carried over from prev phase damage
-            $table->unsignedInteger('required_qty')->default(0);   // = base_qty + damage_carry
-            $table->unsignedInteger('completed_qty')->default(0);  // updated by workers
+            $table->unsignedInteger('base_qty')->default(0);       
+            $table->unsignedInteger('damage_carry')->default(0);   
+            $table->unsignedInteger('required_qty')->default(0);  
+            $table->unsignedInteger('completed_qty')->default(0);  
             $table->timestamps();
         });
     }

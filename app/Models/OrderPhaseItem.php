@@ -9,7 +9,7 @@ class OrderPhaseItem extends Model
 
     protected $fillable = [
         'phase_id',
-        'inventory_item_id',
+        'product_id',
         'name',
         'base_qty',
         'damage_carry',
@@ -29,9 +29,9 @@ class OrderPhaseItem extends Model
         return $this->belongsTo(OrderPhase::class, 'phase_id', 'Phase_Id');
     }
 
-    public function inventoryItem()
+    public function product()
     {
-        return $this->belongsTo(InventoryItem::class, 'inventory_item_id', 'Item_Id');
+        return $this->belongsTo(Product::class, 'product_id', 'Product_Id');
     }
 
     public function getProgressPercentAttribute(): int

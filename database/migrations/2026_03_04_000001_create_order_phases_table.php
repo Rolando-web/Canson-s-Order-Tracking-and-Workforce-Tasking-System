@@ -12,8 +12,6 @@ return new class extends Migration {
             $table->unsignedTinyInteger('phase_number');
             $table->date('delivery_date');
             $table->string('status', 50)->default('Pending');
-            // damage_qty: number of items declared damaged at delivery of THIS phase
-            // → gets carried into next phase automatically
             $table->unsignedInteger('damage_qty')->default(0);
             $table->text('notes')->nullable();
             $table->timestamps();

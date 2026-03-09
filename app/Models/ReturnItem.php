@@ -14,7 +14,7 @@ class ReturnItem extends Model
 
     protected $fillable = [
         'return_number',
-        'item_id',
+        'product_id',
         'quantity',
         'reason',
         'status',
@@ -31,9 +31,14 @@ class ReturnItem extends Model
         'updated_at' => 'datetime',
     ];
 
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id', 'Product_Id');
+    }
+
     public function inventoryItem()
     {
-        return $this->belongsTo(InventoryItem::class, 'item_id', 'Item_Id');
+        return $this->belongsTo(Product::class, 'product_id', 'Product_Id');
     }
 
     public function creator()

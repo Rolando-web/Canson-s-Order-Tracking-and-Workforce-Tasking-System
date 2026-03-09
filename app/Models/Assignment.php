@@ -14,6 +14,7 @@ class Assignment extends Model
     protected $fillable = [
         'order_number',
         'order_item_id',
+        'phase_id',
         'employee_id',
         'priority',
         'status',
@@ -29,6 +30,11 @@ class Assignment extends Model
     public function orderItem()
     {
         return $this->belongsTo(OrderItem::class, 'order_item_id', 'Order_Item_Id');
+    }
+
+    public function phase()
+    {
+        return $this->belongsTo(\App\Models\OrderPhase::class, 'phase_id', 'Phase_Id');
     }
 
     public function employee()

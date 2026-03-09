@@ -26,7 +26,7 @@
             <h2 class="text-2xl font-bold text-gray-900">Analytics</h2>
             <p class="text-gray-500 mt-1">Sales performance, production metrics & insights.</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center flex-col sm:flex-row gap-2">
             {{-- Period Filter --}}
             <form method="GET" action="{{ route('analytics') }}" class="flex items-center gap-2">
                 <select name="period" onchange="this.form.submit()"
@@ -114,34 +114,40 @@
                 </div>
             </div>
         </div>
-        <div class="relative h-64">
-            {{-- Grid lines --}}
-            <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
-                @for($i = 0; $i < 5; $i++)
-                <div class="border-t border-gray-100 w-full"></div>
-                @endfor
-            </div>
-            {{-- Y-axis labels --}}
-            @php
-                $maxRevenue = max(array_values($revenueTrend ?? [0])) ?: 1;
-                $ySteps = 4;
-            @endphp
-            <div class="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-400 -ml-1">
+        @php
+            $maxRevenue = max(array_values($revenueTrend ?? [0])) ?: 1;
+            $ySteps = 4;
+        @endphp
+        {{-- Wrapper: scrollable on small, normal on md+ --}}
+        <div class="flex gap-2 md:gap-0">
+            {{-- Y-axis labels — always visible, not scrolled --}}
+            <div class="flex-shrink-0 h-64 flex flex-col justify-between text-xs text-gray-400 pr-2 pb-5">
                 @for($i = $ySteps; $i >= 0; $i--)
                     @php $val = round(($maxRevenue / $ySteps) * $i); @endphp
                     <span>₱{{ $val >= 1000 ? number_format($val / 1000) . 'K' : $val }}</span>
                 @endfor
             </div>
-            {{-- Bar chart --}}
-            <div class="ml-10 h-full flex items-end justify-between gap-2">
-                @foreach($revenueTrend ?? [] as $month => $amount)
-                <div class="flex flex-col items-center gap-2 flex-1">
-                    <div class="w-full flex items-end justify-center gap-1 h-52">
-                        <div class="w-6 bg-emerald-500 rounded-t-md transition-all duration-500" style="height: {{ $maxRevenue > 0 ? ($amount/$maxRevenue)*100 : 0 }}%"></div>
+            {{-- Scrollable area on small screens --}}
+            <div class="overflow-x-auto flex-1 -mb-1">
+                <div class="relative h-64 md:w-full" style="min-width: {{ count($revenueTrend ?? []) * 48 }}px;">
+                    {{-- Grid lines --}}
+                    <div class="absolute inset-0 flex flex-col justify-between pointer-events-none pb-5">
+                        @for($i = 0; $i < 5; $i++)
+                        <div class="border-t border-gray-100 w-full"></div>
+                        @endfor
                     </div>
-                    <span class="text-[9px] text-gray-500">{{ $month }}</span>
+                    {{-- Bar chart --}}
+                    <div class="h-full flex items-end justify-between gap-2 md:gap-0">
+                        @foreach($revenueTrend ?? [] as $month => $amount)
+                        <div class="flex flex-col items-center gap-2 flex-1" style="min-width: 40px;">
+                            <div class="w-full flex items-end justify-center gap-1 h-52">
+                                <div class="w-6 bg-emerald-500 rounded-t-md transition-all duration-500" style="height: {{ $maxRevenue > 0 ? ($amount/$maxRevenue)*100 : 0 }}%"></div>
+                            </div>
+                            <span class="text-[9px] text-gray-500">{{ $month }}</span>
+                        </div>
+                        @endforeach
+                    </div>
                 </div>
-                @endforeach
             </div>
         </div>
     </div>
@@ -293,18 +299,18 @@
         {{-- Weekly Production Output --}}
         <div class="bg-white rounded-xl border border-gray-200 p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-6">Weekly Production Output</h3>
-            <div class="flex items-end justify-between gap-3 h-64 px-2">
-                @php
-                    $maxProd = max(array_values($prodDays ?? [0])) ?: 1;
-                @endphp
-                @foreach($prodDays ?? [] as $day => $val)
-                <div class="flex flex-col items-center gap-2 flex-1">
-                    <div class="w-full flex flex-col items-center justify-end h-52">
-                        <div class="w-8 bg-emerald-500 rounded-t-md transition-all duration-500" style="height: {{ $maxProd > 0 ? ($val/$maxProd)*100 : 0 }}%"></div>
+            @php $maxProd = max(array_values($prodDays ?? [0])) ?: 1; @endphp
+            <div class="overflow-x-auto">
+                <div class="flex items-end justify-between gap-3 h-64 px-2 md:w-full" style="min-width: {{ count($prodDays ?? []) * 48 }}px;">
+                    @foreach($prodDays ?? [] as $day => $val)
+                    <div class="flex flex-col items-center gap-2 flex-1" style="min-width: 40px;">
+                        <div class="w-full flex flex-col items-center justify-end h-52">
+                            <div class="w-8 bg-emerald-500 rounded-t-md transition-all duration-500" style="height: {{ $maxProd > 0 ? ($val/$maxProd)*100 : 0 }}%"></div>
+                        </div>
+                        <span class="text-xs text-gray-500">{{ $day }}</span>
                     </div>
-                    <span class="text-xs text-gray-500">{{ $day }}</span>
+                    @endforeach
                 </div>
-                @endforeach
             </div>
         </div>
 

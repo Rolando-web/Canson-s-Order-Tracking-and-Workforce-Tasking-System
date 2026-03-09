@@ -16,11 +16,11 @@ class OrdersController extends Controller
 {
     public function index()
     {
-        $inventoryItems = InventoryItem::select('Item_Id', 'name', 'item_code', 'stock', 'unit', 'unit_price')
+        $inventoryItems = InventoryItem::select('Product_Id', 'name', 'item_code', 'stock', 'unit', 'unit_price')
             ->orderBy('name')
             ->get();
 
-        $orders = Order::with(['items', 'phases'])
+        $orders = Order::with(['items', 'phases.items'])
             ->whereNotIn('status', ['Delivered', 'Ready for Delivery'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -50,11 +50,22 @@ class OrdersController extends Controller
                     'has_phases'    => $order->phases->count() > 0,
                     'phase_count'   => $order->phases->count(),
                     'order_items'   => $order->items->map(fn($i) => [
-                        'name'     => $i->name,
-                        'qty'      => $i->quantity,
-                        'price'    => $i->unit_price,
-                        'subtotal' => $i->subtotal,
+                        'name'          => $i->name,
+                        'qty'           => $i->quantity,
+                        'price'         => $i->unit_price,
+                        'subtotal'      => $i->subtotal,
+                        'completed_qty' => $i->completed_qty ?? 0,
                     ])->toArray(),
+                    'phases'        => $order->phases->sortBy('phase_number')->map(fn($p) => [
+                        'number'        => $p->phase_number,
+                        'delivery_date' => $p->delivery_date->format('Y-m-d'),
+                        'status'        => $p->status,
+                        'items'         => $p->items->map(fn($pi) => [
+                            'name'          => $pi->name,
+                            'required_qty'  => $pi->required_qty,
+                            'completed_qty' => $pi->completed_qty,
+                        ])->toArray(),
+                    ])->values()->toArray(),
                 ];
             });
 
@@ -136,12 +147,12 @@ class OrdersController extends Controller
             foreach ($validated['items'] as $item) {
                 $inv = InventoryItem::where('name', $item['name'])->first();
                 OrderItem::create([
-                    'order_id'          => $order->Order_Id,
-                    'inventory_item_id' => $inv ? $inv->Item_Id : 0,
-                    'name'              => $item['name'],
-                    'quantity'          => $item['qty'],
-                    'unit_price'        => $item['price'],
-                    'subtotal'          => $item['qty'] * $item['price'],
+                    'order_id'   => $order->Order_Id,
+                    'product_id' => $inv ? $inv->Product_Id : null,
+                    'name'       => $item['name'],
+                    'quantity'   => $item['qty'],
+                    'unit_price' => $item['price'],
+                    'subtotal'   => $item['qty'] * $item['price'],
                 ]);
             }
 
@@ -172,15 +183,13 @@ class OrdersController extends Controller
                     foreach ($phaseData['items'] as $phaseItem) {
                         if (($phaseItem['qty'] ?? 0) <= 0) continue;
 
-                        $inv = InventoryItem::where('name', $phaseItem['name'])->first();
                         OrderPhaseItem::create([
-                            'phase_id'          => $phase->Phase_Id,
-                            'inventory_item_id' => $inv ? $inv->Item_Id : null,
-                            'name'              => $phaseItem['name'],
-                            'base_qty'          => $phaseItem['qty'],
-                            'damage_carry'      => 0,
-                            'required_qty'      => $phaseItem['qty'],
-                            'completed_qty'     => 0,
+                            'phase_id'     => $phase->Phase_Id,
+                            'name'         => $phaseItem['name'],
+                            'base_qty'     => $phaseItem['qty'],
+                            'damage_carry' => 0,
+                            'required_qty' => $phaseItem['qty'],
+                            'completed_qty'=> 0,
                         ]);
                     }
                 }

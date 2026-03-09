@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Assignment;
 use App\Models\Order;
 use App\Models\OrderPhase;
 use App\Models\OrderPhaseItem;
@@ -24,7 +25,7 @@ class DispatchController extends Controller
             ->map(function ($order) {
                 $itemNames    = $order->items->map(fn($i) => $i->quantity . ' ' . $i->name)->implode(', ');
                 $coveredClaims = ReturnItem::where('covered_by_order', $order->order_number)->get();
-                $coveredItemIds = $coveredClaims->pluck('item_id')->toArray();
+                $coveredItemIds = $coveredClaims->pluck('product_id')->toArray();
 
                 // Current deliverable phase (earliest Pending/In-Progress phase)
                 $currentPhase = $order->phases
@@ -38,11 +39,11 @@ class DispatchController extends Controller
                     'customer'        => $order->customer_name,
                     'items'           => $itemNames,
                     'item_details'    => $order->items->map(fn($i) => [
-                        'inventory_item_id' => $i->inventory_item_id,
-                        'name'              => $i->name,
-                        'quantity'          => $i->quantity,
-                        'unit_price'        => (float) $i->unit_price,
-                        'is_cover'          => in_array($i->inventory_item_id, $coveredItemIds) && (float)$i->unit_price === 0.0,
+                        'product_id'  => $i->product_id,
+                        'name'        => $i->name,
+                        'quantity'    => $i->quantity,
+                        'unit_price'  => (float) $i->unit_price,
+                        'is_cover'    => in_array($i->product_id, $coveredItemIds) && (float)$i->unit_price === 0.0,
                     ])->values(),
                     'has_cover_items' => $coveredClaims->count() > 0,
                     'address'         => $order->delivery_address,
@@ -84,11 +85,10 @@ class DispatchController extends Controller
         $validated = $request->validate([
             'order_id'            => 'required|integer|exists:orders,Order_Id',
             'damages'             => 'nullable|array',
-            'damages.*.item_id'   => 'required_with:damages|integer|exists:inventory_items,Item_Id',
+            'damages.*.item_id'   => 'required_with:damages|integer|exists:products,Product_Id',
             'damages.*.item_name' => 'required_with:damages|string|max:255',
             'damages.*.quantity'  => 'required_with:damages|integer|min:1',
             'damages.*.reason'    => 'required_with:damages|string|max:255',
-            // Phase-specific damage (when order has phases)
             'phase_id'            => 'nullable|integer|exists:order_phases,Phase_Id',
             'phase_damages'       => 'nullable|array',
             'phase_damages.*.name'       => 'required_with:phase_damages|string',
@@ -99,14 +99,12 @@ class DispatchController extends Controller
 
         DB::beginTransaction();
         try {
-            $order->update(['status' => 'Delivered']);
-
-            // ── Handle standard damage returns ──
+            // Handle non-phase damage items (return claims)
             if (!empty($validated['damages'])) {
                 foreach ($validated['damages'] as $damage) {
                     ReturnItem::create([
                         'return_number'   => ReturnItem::generateReturnId(),
-                        'item_id'         => $damage['item_id'],
+                        'product_id'      => $damage['item_id'],
                         'quantity'        => $damage['quantity'],
                         'reason'          => $damage['reason'],
                         'status'          => 'Pending',
@@ -121,7 +119,7 @@ class DispatchController extends Controller
                         $new  = max(0, $prev - $damage['quantity']);
                         $item->update(['stock' => $new]);
                         StockOut::create([
-                            'item_id'          => $item->Item_Id,
+                            'product_id'       => $item->Product_Id,
                             'quantity'         => $damage['quantity'],
                             'previous_stock'   => $prev,
                             'new_stock'        => $new,
@@ -135,39 +133,62 @@ class DispatchController extends Controller
                 }
             }
 
-            // ── Handle phase-level damage carry-forward ──
-            if (!empty($validated['phase_id']) && !empty($validated['phase_damages'])) {
+            if (!empty($validated['phase_id'])) {
                 $phase = OrderPhase::with('items')->findOrFail($validated['phase_id']);
-                $totalDamage = array_sum(array_column($validated['phase_damages'], 'damage_qty'));
+                $totalDamage = !empty($validated['phase_damages'])
+                    ? array_sum(array_column($validated['phase_damages'], 'damage_qty'))
+                    : 0;
                 $phase->update(['damage_qty' => $totalDamage, 'status' => 'Delivered']);
 
-                $nextPhase = OrderPhase::where('order_id', $order->Order_Id)
-                    ->where('phase_number', $phase->phase_number + 1)
-                    ->with('items')
-                    ->first();
+                // Close out all assignments for the delivered phase so the order
+                // is no longer counted as "assigned" and Phase 2 appears in Available Orders
+                Assignment::where('order_number', $order->order_number)
+                    ->where('phase_id', $phase->Phase_Id)
+                    ->whereNotIn('status', ['cancelled', 'completed'])
+                    ->update(['status' => 'completed']);
 
-                if ($nextPhase) {
-                    foreach ($validated['phase_damages'] as $dmg) {
-                        if ($dmg['damage_qty'] <= 0) continue;
-                        $nextItem = $nextPhase->items->firstWhere('name', $dmg['name']);
-                        if ($nextItem) {
-                            $carry   = $nextItem->damage_carry + $dmg['damage_qty'];
-                            $nextItem->update([
-                                'damage_carry' => $carry,
-                                'required_qty' => $nextItem->base_qty + $carry,
-                            ]);
-                        } else {
-                            OrderPhaseItem::create([
-                                'phase_id'      => $nextPhase->Phase_Id,
-                                'name'          => $dmg['name'],
-                                'base_qty'      => 0,
-                                'damage_carry'  => $dmg['damage_qty'],
-                                'required_qty'  => $dmg['damage_qty'],
-                                'completed_qty' => 0,
-                            ]);
+                if (!empty($validated['phase_damages'])) {
+                    $nextPhase = OrderPhase::where('order_id', $order->Order_Id)
+                        ->where('phase_number', $phase->phase_number + 1)
+                        ->with('items')
+                        ->first();
+
+                    if ($nextPhase) {
+                        foreach ($validated['phase_damages'] as $dmg) {
+                            if ($dmg['damage_qty'] <= 0) continue;
+                            $nextItem = $nextPhase->items->firstWhere('name', $dmg['name']);
+                            if ($nextItem) {
+                                $carry   = $nextItem->damage_carry + $dmg['damage_qty'];
+                                $nextItem->update([
+                                    'damage_carry' => $carry,
+                                    'required_qty' => $nextItem->base_qty + $carry,
+                                ]);
+                            } else {
+                                OrderPhaseItem::create([
+                                    'phase_id'      => $nextPhase->Phase_Id,
+                                    'name'          => $dmg['name'],
+                                    'base_qty'      => 0,
+                                    'damage_carry'  => $dmg['damage_qty'],
+                                    'required_qty'  => $dmg['damage_qty'],
+                                    'completed_qty' => 0,
+                                ]);
+                            }
                         }
                     }
                 }
+
+                // If more phases are still pending, revert order to In-Progress for Phase 2 assignment
+                $pendingPhases = OrderPhase::where('order_id', $order->Order_Id)
+                    ->whereNotIn('status', ['Delivered'])
+                    ->count();
+
+                if ($pendingPhases > 0) {
+                    $order->update(['status' => 'In-Progress']);
+                } else {
+                    $order->update(['status' => 'Delivered']);
+                }
+            } else {
+                $order->update(['status' => 'Delivered']);
             }
 
             DB::commit();
