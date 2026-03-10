@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\InventoryItem;
+use App\Models\Product;
 use App\Models\StockIn;
 use App\Models\StockOut;
 use App\Models\User;
@@ -12,7 +12,7 @@ class InventoryController extends Controller
 {
     public function index()
     {
-        $items = InventoryItem::orderBy('item_code')->get();
+        $items = Product::orderBy('item_code')->get();
         $totalItems = $items->count();
         $lowStockAlert = $items->where('stock', '<', 50)->count();
 
@@ -21,8 +21,8 @@ class InventoryController extends Controller
 
     public function stockInPage()
     {
-        $items = InventoryItem::orderBy('name')->get();
-        $transactions = StockIn::with(['inventoryItem', 'creator', 'supplier'])
+        $items = Product::orderBy('name')->get();
+        $transactions = StockIn::with(['product', 'creator', 'supplier'])
             ->orderBy('created_at', 'desc')
             ->limit(50)
             ->get();
@@ -33,8 +33,8 @@ class InventoryController extends Controller
 
     public function stockOutPage()
     {
-        $items = InventoryItem::orderBy('name')->get();
-        $transactions = StockOut::with(['inventoryItem', 'creator'])
+        $items = Product::orderBy('name')->get();
+        $transactions = StockOut::with(['product', 'creator'])
             ->orderBy('created_at', 'desc')
             ->limit(50)
             ->get();
@@ -45,18 +45,25 @@ class InventoryController extends Controller
 
     public function products()
     {
-        $items = InventoryItem::orderBy('item_code')->get();
+        $items = Product::orderBy('item_code')->get();
         $categories = $items->pluck('category')->unique()->filter()->values();
 
         return view('pages.products', compact('items', 'categories'));
     }
 
-    public function updateProduct(Request $request, InventoryItem $item)
+    public function updateProduct(Request $request, Product $item)
     {
         $validated = $request->validate([
             'name'       => 'required|string|max:255',
             'unit_price' => 'required|numeric|min:0',
+            'image'      => 'nullable|image|max:2048',
         ]);
+
+        if ($request->hasFile('image')) {
+            $validated['image_path'] = $request->file('image')->store('products', 'public');
+        }
+
+        unset($validated['image']);
 
         $item->update($validated);
 
@@ -79,7 +86,7 @@ class InventoryController extends Controller
             'image'      => 'nullable|image|max:2048',
         ]);
 
-        $lastItem = InventoryItem::orderBy('Product_Id', 'desc')->first();
+        $lastItem = Product::orderBy('Product_Id', 'desc')->first();
         $nextId = $lastItem ? intval(str_replace('INV-', '', $lastItem->item_code)) + 1 : 1;
         $validated['item_code'] = 'INV-' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
 
@@ -93,7 +100,7 @@ class InventoryController extends Controller
 
         unset($validated['image']);
 
-        $item = InventoryItem::create($validated);
+        $item = Product::create($validated);
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'item' => $item]);
@@ -102,7 +109,7 @@ class InventoryController extends Controller
         return redirect()->back()->with('success', 'Product added successfully.');
     }
 
-    public function update(Request $request, InventoryItem $item)
+    public function update(Request $request, Product $item)
     {
         $validated = $request->validate([
             'name'       => 'sometimes|string|max:255',
@@ -121,7 +128,7 @@ class InventoryController extends Controller
         return redirect()->back()->with('success', 'Item updated successfully.');
     }
 
-    public function destroy(Request $request, InventoryItem $item)
+    public function destroy(Request $request, Product $item)
     {
         $item->delete();
 
@@ -141,7 +148,7 @@ class InventoryController extends Controller
             'notes'     => 'nullable|string',
         ]);
 
-        $item = InventoryItem::findOrFail($validated['item_id']);
+        $item = Product::findOrFail($validated['item_id']);
         $previousStock = $item->stock;
         $newStock = $previousStock + $validated['quantity'];
 
@@ -177,7 +184,7 @@ class InventoryController extends Controller
             'notes'    => 'nullable|string',
         ]);
 
-        $item = InventoryItem::findOrFail($validated['item_id']);
+        $item = Product::findOrFail($validated['item_id']);
         $previousStock = $item->stock;
 
         if ($validated['quantity'] > $previousStock) {

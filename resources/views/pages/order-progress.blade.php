@@ -20,12 +20,6 @@
             <h2 class="text-2xl font-bold text-gray-900">Order Progress</h2>
             <p class="text-gray-500 mt-1">Phase-by-phase production & delivery tracking — visible to all team members</p>
         </div>
-        <div class="flex items-center gap-2 text-sm text-gray-500">
-            <div class="w-3 h-3 rounded-full bg-gray-200 inline-block"></div> Pending
-            <div class="w-3 h-3 rounded-full bg-blue-400 inline-block ml-2"></div> In Progress
-            <div class="w-3 h-3 rounded-full bg-emerald-500 inline-block ml-2"></div> Completed
-            <div class="w-3 h-3 rounded-full bg-teal-500 inline-block ml-2"></div> Delivered
-        </div>
     </div>
 
     @if($orders->isEmpty())
@@ -96,7 +90,7 @@
                         'Completed' => ['border' => 'border-emerald-300', 'bg' => 'bg-emerald-600', 'badge' => 'bg-emerald-100 text-emerald-700', 'bar' => 'bg-emerald-500'],
                         'Delivered' => ['border' => 'border-teal-300',    'bg' => 'bg-teal-600',    'badge' => 'bg-teal-100 text-teal-700',    'bar' => 'bg-teal-500'],
                         'In Progress'  => ['border' => 'border-blue-300', 'bg' => 'bg-blue-600',    'badge' => 'bg-blue-100 text-blue-700',    'bar' => 'bg-blue-500'],
-                        default        => ['border' => 'border-gray-200', 'bg' => 'bg-gray-400',    'badge' => 'bg-gray-100 text-gray-500',    'bar' => 'bg-gray-300'],
+                        default        => ['border' => 'border-gray-200', 'bg' => 'bg-indigo-600',    'badge' => 'bg-gray-100 text-gray-500',    'bar' => 'bg-blue-600'],
                     };
                     $phasePct   = $phase['pct'];
                     $hasDamage  = $phase['damage_qty'] > 0;
@@ -174,10 +168,6 @@
                                     <span id="item-pct-{{ $item['id'] }}">{{ $itemPct }}</span>% done
                                 </span>
                                 @if(!$isDone)
-                                <button onclick="openUpdateProgress({{ $item['id'] }}, '{{ addslashes($item['name']) }}', {{ $item['required_qty'] }}, {{ $item['completed_qty'] }})"
-                                    class="text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-2 py-0.5 rounded transition-colors">
-                                    + Update
-                                </button>
                                 @endif
                             </div>
                         </div>

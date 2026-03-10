@@ -60,7 +60,6 @@
             <thead>
                 <tr class="border-b border-gray-200">
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order ID</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item Name</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivery Date</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Quantity</th>
@@ -75,7 +74,6 @@
                 @foreach($orders as $order)
                 <tr class="hover:bg-gray-50 transition-colors order-row" data-status="{{ $order['status'] }}" data-search="{{ strtolower($order['id'] . ' ' . $order['items'] . ' ' . $order['customer'] . ' ' . $order['contact']) }}">
                     <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $order['id'] }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-700 max-w-[200px] truncate" title="{{ $order['items'] }}">{{ Str::limit($order['items'], 30) }}</td>
                     <td class="px-6 py-4">
                         <div>
                             <p class="text-sm font-medium text-gray-900">{{ $order['customer'] }}</p>
@@ -105,14 +103,10 @@
                         <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $order['priorityColor'] }}">{{ $order['priority'] }}</span>
                     </td>
                     <td class="px-6 py-4">
-                        @if($order['phase_count'] > 0)
-                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-600 border border-indigo-200">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25"/></svg>
-                                {{ $order['phase_count'] }} {{ Str::plural('phase', $order['phase_count']) }}
-                            </span>
-                        @else
-                            <span class="text-xs text-gray-400">—</span>
-                        @endif
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-600 border border-indigo-200">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25"/></svg>
+                            {{ $order['phase_count'] }} {{ Str::plural('phase', $order['phase_count']) }}
+                        </span>
                     </td>
                     <td class="px-6 py-4">
                         <button onclick="showOrderDetails('{{ $order['id'] }}')" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
@@ -198,18 +192,6 @@
                                 <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
                                 Order Details
                             </h4>
-                            {{-- Delivery Mode --}}
-                            <div class="flex flex-wrap gap-3 sm:gap-6 mb-3 px-1">
-                                <label class="flex items-center gap-2 cursor-pointer select-none">
-                                    <input type="radio" name="delivery_mode" value="single" id="deliveryModeSingle" checked onchange="setDeliveryMode('single')" class="accent-emerald-600 w-4 h-4">
-                                    <span class="text-sm font-medium text-gray-700">Single Delivery</span>
-                                </label>
-                                <label class="flex items-center gap-2 cursor-pointer select-none">
-                                    <input type="radio" name="delivery_mode" value="phased" id="deliveryModePhased" onchange="setDeliveryMode('phased')" class="accent-indigo-600 w-4 h-4">
-                                    <span class="text-sm font-medium text-gray-700">Phased Delivery</span>
-                                    <span class="text-xs text-gray-400 ml-1">(delivery date set by Phase 1)</span>
-                                </label>
-                            </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div id="deliveryDateWrap">
                                     <label class="block text-xs font-medium text-gray-600 mb-1.5">Delivery Date <span class="text-red-500">*</span></label>
@@ -294,7 +276,7 @@
                                 <h4 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
                                     <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
                                     Delivery Phases
-                                    <span id="phaseSectionHint" class="text-xs text-gray-400 font-normal">(optional — split order into batches)</span>
+                                    <span id="phaseSectionHint" class="text-xs text-gray-400 font-normal">(add more phases for split delivery)</span>
                                 </h4>
                                 <button type="button" onclick="addPhase()" class="text-indigo-600 hover:text-indigo-700 text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-indigo-50 border border-indigo-200 transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>

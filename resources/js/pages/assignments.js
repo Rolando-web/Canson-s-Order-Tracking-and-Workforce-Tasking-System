@@ -22,53 +22,72 @@ window.openOrderProgressModal = function(orderId) {
         let html = '';
         order.phases_progress.forEach(function(phase) {
             const statusBadge = {
-                'Completed':   'bg-green-50 text-green-600',
-                'In-Progress': 'bg-blue-50 text-blue-600',
-                'Pending':     'bg-gray-100 text-gray-500',
-                'Delivered':   'bg-emerald-50 text-emerald-600',
-            }[phase.status] || 'bg-gray-100 text-gray-500';
+                'Completed':   'bg-green-50 text-green-600 border-green-200',
+                'In-Progress': 'bg-blue-50 text-blue-600 border-blue-200',
+                'Pending':     'bg-gray-100 text-gray-500 border-gray-200',
+                'Delivered':   'bg-emerald-50 text-emerald-600 border-emerald-200',
+            }[phase.status] || 'bg-gray-100 text-gray-500 border-gray-200';
             const delivDate = new Date(phase.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            // Phase-level totals
+            let phaseTotalReq = 0, phaseTotalDone = 0;
+            phase.items.forEach(function(item) { phaseTotalReq += item.required_qty; phaseTotalDone += item.completed_qty; });
+            const phasePct = phaseTotalReq > 0 ? Math.round((phaseTotalDone / phaseTotalReq) * 100) : 0;
+            const phaseBarColor = phasePct >= 100 ? 'bg-emerald-500' : phasePct > 0 ? 'bg-blue-400' : 'bg-gray-200';
+
             const rows = phase.items.map(function(item) {
                 const pct = item.required_qty > 0 ? Math.round((item.completed_qty / item.required_qty) * 100) : 0;
                 const barColor = pct >= 100 ? 'bg-emerald-500' : pct > 0 ? 'bg-blue-400' : 'bg-gray-200';
                 return `<tr class="border-t border-gray-100">
-                    <td class="px-4 py-2.5 text-sm text-gray-800">${item.name}</td>
-                    <td class="px-4 py-2.5 text-sm text-center font-medium text-gray-700">${item.required_qty}</td>
-                    <td class="px-4 py-2.5 text-sm text-center font-medium text-gray-700">${item.completed_qty}</td>
-                    <td class="px-4 py-2.5">
+                    <td class="px-3 py-2 text-sm text-gray-800 whitespace-nowrap">${item.name}</td>
+                    <td class="px-3 py-2 text-sm text-center font-medium text-gray-700 w-20">${item.required_qty}</td>
+                    <td class="px-3 py-2 text-sm text-center font-medium text-gray-700 w-20">${item.completed_qty}</td>
+                    <td class="px-3 py-2 w-36">
                         <div class="flex items-center gap-2">
                             <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                                 <div class="${barColor} h-full rounded-full transition-all" style="width:${pct}%"></div>
                             </div>
-                            <span class="text-xs font-semibold text-gray-500 w-9 text-right">${pct}%</span>
+                            <span class="text-[10px] font-bold text-gray-500 w-8 text-right">${pct}%</span>
                         </div>
                     </td>
                 </tr>`;
             }).join('');
-            html += `<div class="mb-4">
-                <div class="flex items-center justify-between px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-t-lg">
-                    <span class="text-xs font-bold text-indigo-700 uppercase">Phase ${phase.number}</span>
+
+            html += `<div class="mb-4 rounded-lg overflow-hidden border border-indigo-200">
+                <div class="flex items-center justify-between px-4 py-2.5 bg-indigo-50">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold text-indigo-700 uppercase">Phase ${phase.number}</span>
+                        <div class="flex items-center gap-1.5 w-24">
+                            <div class="flex-1 h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+                                <div class="${phaseBarColor} h-full rounded-full" style="width:${phasePct}%"></div>
+                            </div>
+                            <span class="text-[10px] font-bold text-indigo-600">${phasePct}%</span>
+                        </div>
+                    </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500">${delivDate}</span>
-                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge}">${phase.status}</span>
+                        <button onclick="loadPhaseNotes(${phase.phase_id}, ${phase.number})" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-semibold underline">Notes</button>
+                        <span class="text-[10px] text-gray-500">${delivDate}</span>
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusBadge}">${phase.status}</span>
                     </div>
                 </div>
-                <div class="border border-t-0 border-indigo-200 rounded-b-lg overflow-hidden">
-                    <table class="w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500">Item</th>
-                                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500">Required</th>
-                                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500">Completed</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500">Progress</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase">Item</th>
+                            <th class="px-3 py-2 text-center text-[10px] font-semibold text-gray-500 uppercase w-20">Required</th>
+                            <th class="px-3 py-2 text-center text-[10px] font-semibold text-gray-500 uppercase w-20">Done</th>
+                            <th class="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase w-36">Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
             </div>`;
         });
         document.getElementById('opPhasedContent').innerHTML = html;
+        // Auto-load notes for the first phase
+        if (order.phases_progress.length > 0 && order.phases_progress[0].phase_id) {
+            loadPhaseNotes(order.phases_progress[0].phase_id, order.phases_progress[0].number);
+        }
     } else {
         phasedSection.classList.add('hidden');
         overallSection.classList.remove('hidden');
@@ -97,6 +116,72 @@ window.openOrderProgressModal = function(orderId) {
 
 window.closeOrderProgressModal = function() {
     document.getElementById('orderProgressModal').classList.add('hidden');
+    document.getElementById('opTrackingNotesSection')?.classList.add('hidden');
+}
+
+// ========== Phase Tracking Notes ==========
+window._currentTrackingPhaseId = null;
+
+window.loadPhaseNotes = function(phaseId, phaseNumber) {
+    window._currentTrackingPhaseId = phaseId;
+    const section = document.getElementById('opTrackingNotesSection');
+    const label = document.getElementById('opNotesPhaseLabel');
+    const textarea = document.getElementById('opPhaseNotesTextarea');
+
+    section.classList.remove('hidden');
+    label.textContent = 'Phase ' + phaseNumber;
+    textarea.value = '';
+    textarea.placeholder = 'Loading...';
+
+    fetch('/phases/' + phaseId + '/notes', {
+        headers: { 'Accept': 'application/json' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        textarea.value = data.notes || '';
+        textarea.placeholder = 'Add tracking notes for this phase...';
+    })
+    .catch(() => {
+        textarea.placeholder = 'Failed to load notes';
+    });
+}
+
+window.savePhaseNotes = function() {
+    if (!window._currentTrackingPhaseId) return;
+    const textarea = document.getElementById('opPhaseNotesTextarea');
+    const btn = document.getElementById('opSaveNotesBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    fetch('/phases/' + window._currentTrackingPhaseId + '/notes', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+        },
+        body: JSON.stringify({ notes: textarea.value }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            btn.textContent = 'Saved!';
+            btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            btn.classList.add('bg-green-600');
+            setTimeout(() => {
+                btn.textContent = 'Save Notes';
+                btn.classList.remove('bg-green-600');
+                btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            }, 1500);
+        } else {
+            btn.textContent = 'Save Notes';
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.textContent = 'Save Notes';
+    });
 }
 
 window.switchOrdersTab = function(tab) {
@@ -174,91 +259,48 @@ window.showWorkerAssignments = function(name, initial, color, status, activeCoun
                 'cancelled': 'bg-red-50 text-red-600 border-red-200'
             };
 
+            // Phase label
+            const phaseLabel = order.phase_number
+                ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] font-bold rounded-full">Phase ${order.phase_number}</span>`
+                : '';
+
+            // Items list
+            const itemsHtml = (order.items_list || []).map(item =>
+                `<span class="text-xs text-gray-700">${item.quantity}x ${item.name}</span>`
+            ).join('<span class="text-gray-300 mx-1">|</span>');
+
             return `
-                <div class="border-2 border-emerald-200 rounded-xl p-5 bg-emerald-50/30 hover:shadow-lg transition-all">
-                    <div class="flex items-start justify-between mb-4 pb-3 border-b border-emerald-200">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-lg bg-emerald-600 flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
-                                </svg>
+                <div class="border border-gray-200 rounded-xl p-4 bg-white hover:shadow-md transition-all">
+                    <div class="flex items-start justify-between mb-3 pb-2 border-b border-gray-100">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h4 class="text-sm font-bold text-gray-900">${order.order_id}</h4>
+                                ${phaseLabel}
                             </div>
-                            <div>
-                                <h4 class="text-lg font-bold text-gray-900">${order.order_id}</h4>
-                                ${order.assigned_item ? `<span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-semibold rounded-full"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3"/></svg>${order.assigned_item}</span>` : `<p class="text-xs text-gray-500">Assigned ${new Date(order.assigned_date).toLocaleDateString()}</p>`}
-                            </div>
+                            <p class="text-xs text-gray-500">${order.customer}</p>
                         </div>
-                        <div class="flex flex-col items-end gap-2">
-                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${priorityColors[order.priority] || priorityColors['normal']}">${order.priority.toUpperCase()}</span>
-                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[order.status]}">${order.status.replace('_', ' ').toUpperCase()}</span>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border ${priorityColors[order.priority] || priorityColors['normal']}">${order.priority.toUpperCase()}</span>
+                            <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusColors[order.status]}">${order.status.replace('_', ' ').toUpperCase()}</span>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-lg p-4 mb-3">
-                        <div class="grid grid-cols-2 gap-4 mb-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Customer</label>
-                                <p class="text-sm font-semibold text-gray-900">${order.customer}</p>
-                                <p class="text-xs text-gray-500">${order.customer_contact}</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Delivery Date</label>
-                                <div class="flex items-center gap-1 text-sm font-medium text-gray-900">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/>
-                                    </svg>
-                                    ${new Date(order.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                </div>
-                            </div>
+                    <div class="space-y-2 mb-3">
+                        <div class="flex flex-wrap items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3"/></svg>
+                            ${itemsHtml || '<span class="text-xs text-gray-400">No items</span>'}
                         </div>
-
-                        <div class="mb-3">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Delivery Address</label>
-                            <div class="flex items-start gap-1 text-sm text-gray-700">
-                                <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/>
-                                </svg>
-                                ${order.delivery_address}
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Order Items</label>
-                                <p class="text-sm font-medium text-gray-900">${order.items}</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Total Amount</label>
-                                <p class="text-sm font-bold text-emerald-600">₱${order.total_amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
-                            </div>
+                        <div class="flex items-center gap-2 text-xs text-gray-600">
+                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/></svg>
+                            Deliver by ${new Date(order.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                     </div>
 
-                    ${order.notes ? `
-                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
-                            <div class="flex items-start gap-2">
-                                <svg class="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
-                                </svg>
-                                <div>
-                                    <p class="text-xs font-semibold text-amber-800 uppercase mb-0.5">Important Notes</p>
-                                    <p class="text-sm text-amber-900">${order.notes}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-200">
-                        <p class="text-xs text-gray-500">Assigned by: <span class="font-medium text-gray-700">${order.assigned_by}</span></p>
-                        <div class="flex gap-2">
-                            <button onclick="viewAssignmentDetails(${JSON.stringify(order).replace(/"/g, '&quot;')})" class="px-3 py-1.5 text-xs font-medium text-emerald-600 bg-white border border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
-                                View Full Details
-                            </button>
-                            <button onclick="openUpdateStatusModal(${JSON.stringify(order).replace(/"/g, '&quot;')})" class="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">
-                                Update Status
-                            </button>
-                        </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                        <p class="text-xs text-gray-500">Assigned: <span class="font-medium text-gray-700">${new Date(order.assigned_date).toLocaleDateString()}</span></p>
+                        <button onclick="openOrderProgressModal('${order.order_id}')" class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+                            View Progress
+                        </button>
                     </div>
                 </div>
             `;
@@ -341,73 +383,72 @@ window.updateOrderPreview = function() {
     const phaseTabs = document.getElementById('phaseTabs');
 
     if (phases.length > 0) {
-        // --- Phase-tabbed mode ---
+        // --- Phased order: all phases assigned to same employee(s) ---
         phaseTabsWrapper.classList.remove('hidden');
         window._currentPhases = phases;
         window._activePhaseIndex = 0;
 
-        // pre-init selectedEmployeesPerItem for all items across all phases
-        phases.forEach(phase => {
-            phase.items.forEach(item => {
-                if (!window.selectedEmployeesPerItem[item.id]) {
-                    window.selectedEmployeesPerItem[item.id] = [];
-                    if (prefillEmployeeId) {
-                        const emp = workersData.find(w => w.id === prefillEmployeeId);
-                        if (emp) window.selectedEmployeesPerItem[item.id] = [{ id: emp.id, name: emp.name }];
-                    }
-                }
-            });
+        // Use Phase 1 items for employee assignment (backend replicates to all phases)
+        const firstPhase = phases[0];
+        (firstPhase.items || []).forEach(item => {
+            window.selectedEmployeesPerItem[item.id] = [];
+            if (prefillEmployeeId) {
+                const emp = workersData.find(w => w.id === prefillEmployeeId);
+                if (emp) window.selectedEmployeesPerItem[item.id] = [{ id: emp.id, name: emp.name }];
+            }
         });
 
-        function renderPhaseTabs() {
-            phaseTabs.innerHTML = phases.map((phase, i) => {
-                const date = new Date(phase.delivery_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                const isActive = i === window._activePhaseIndex;
-                return `<button type="button" onclick="window._activePhaseIndex=${i}; renderPhaseItems();"
-                    class="px-4 py-2 rounded-lg text-xs font-semibold border transition-colors ${isActive
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400 hover:text-indigo-600'}">
-                    Phase ${phase.number} <span class="opacity-70 ml-1">${date}</span>
-                </button>`;
-            }).join('');
-        }
+        // Show read-only phase summary badges (not selectable, all assigned together)
+        const allPhases = order.all_phases_status || [];
+        phaseTabs.innerHTML =
+            '<div class="flex items-center gap-2 flex-wrap">' +
+            '<span class="text-xs font-medium text-gray-500 mr-1">All phases assigned together:</span>' +
+            allPhases.map(phaseInfo => {
+                const date = new Date(phaseInfo.delivery_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return `<span class="px-3 py-1.5 rounded-lg text-xs font-semibold border bg-indigo-50 text-indigo-600 border-indigo-200">
+                    Phase ${phaseInfo.number} <span class="opacity-70 ml-1">${date}</span>
+                </span>`;
+            }).join('') +
+            '</div>';
 
-        window.renderPhaseItems = function() {
-            renderPhaseTabs();
-            const phase = phases[window._activePhaseIndex];
-            const rowsHtml = (phase.items || []).map(item => {
-                return `
-                <tr class="item-assign-row" data-item-id="${item.id}">
-                    <td class="px-4 py-3 align-top">
-                        <p class="text-sm font-semibold text-gray-900">${item.name}</p>
-                        <p class="text-xs text-gray-400">₱${item.price.toLocaleString('en-US', {minimumFractionDigits: 2})} / unit</p>
-                    </td>
-                    <td class="px-4 py-3 text-center align-top">
-                        <span class="text-sm font-bold text-gray-900">${item.required_qty}</span>
-                    </td>
-                    <td class="px-4 py-3 align-top">
-                        <div class="flex flex-wrap gap-1.5 mb-2 emp-tags-container" id="tags-${item.id}"></div>
-                        <div class="flex gap-2">
-                            <select class="item-emp-add-select flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                    data-item-id="${item.id}">
-                                <option value="">+ Add employee</option>
-                                ${employeeOptions}
-                            </select>
-                            <button type="button" onclick="addEmployeeToItem(${item.id})"
-                                class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
-                                Add
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
-            }).join('');
-            document.getElementById('itemAssignmentRows').innerHTML = rowsHtml;
-            (phase.items || []).forEach(item => renderItemTags(item.id));
-            checkAllAssigned();
-        };
+        // Show Phase 1 items with total qty across all phases
+        const rowsHtml = (firstPhase.items || []).map(item => {
+            // Sum qty across all phases for this item
+            let totalQty = 0;
+            phases.forEach(p => {
+                const pi = (p.items || []).find(i => i.name === item.name);
+                if (pi) totalQty += pi.required_qty;
+            });
 
-        renderPhaseTabs();
-        window.renderPhaseItems();
+            return `
+            <tr class="item-assign-row" data-item-id="${item.id}">
+                <td class="px-4 py-3 align-top">
+                    <p class="text-sm font-semibold text-gray-900">${item.name}</p>
+                    <p class="text-xs text-gray-400">\u20B1${item.price.toLocaleString('en-US', {minimumFractionDigits: 2})} / unit</p>
+                </td>
+                <td class="px-4 py-3 text-center align-top">
+                    <span class="text-sm font-bold text-gray-900">${totalQty}</span>
+                    <p class="text-[10px] text-gray-400">${phases.length} phases</p>
+                </td>
+                <td class="px-4 py-3 align-top">
+                    <div class="flex flex-wrap gap-1.5 mb-2 emp-tags-container" id="tags-${item.id}"></div>
+                    <div class="flex gap-2">
+                        <select class="item-emp-add-select flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                data-item-id="${item.id}">
+                            <option value="">+ Add employee</option>
+                            ${employeeOptions}
+                        </select>
+                        <button type="button" onclick="addEmployeeToItem(${item.id})"
+                            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap">
+                            Add
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+        document.getElementById('itemAssignmentRows').innerHTML = rowsHtml;
+        (firstPhase.items || []).forEach(item => renderItemTags(item.id));
+        checkAllAssigned();
 
     } else {
         // --- No phases: flat items mode ---
@@ -500,9 +541,9 @@ window.checkAllAssigned = function() {
 
     let itemIds = [];
     if (window._currentPhases && window._currentPhases.length > 0) {
-        // Only check items in the currently active phase
-        const phase = window._currentPhases[window._activePhaseIndex || 0];
-        (phase.items || []).forEach(item => {
+        // Check items from Phase 1 (all phases get same employees)
+        const firstPhase = window._currentPhases[0];
+        (firstPhase.items || []).forEach(item => {
             if (!itemIds.includes(item.id)) itemIds.push(item.id);
         });
     } else {
@@ -534,16 +575,16 @@ window.assignOrderToEmployee = function() {
     const selectedOrderId = document.getElementById('orderSelect').value;
     if (!selectedOrderId) return;
 
-    // Build flat item_assignments array (one entry per employee per item, for active phase only)
+    // Build flat item_assignments array (Phase 1 items + employees; backend replicates to all phases)
     const itemAssignments = [];
     if (window._currentPhases && window._currentPhases.length > 0) {
-        // Phase mode: only create assignments for the currently active/selected phase
-        const phase = window._currentPhases[window._activePhaseIndex || 0];
-        (phase.items || []).forEach(item => {
+        // Phased order: send Phase 1 item-employee mapping (backend auto-assigns all phases)
+        const firstPhase = window._currentPhases[0];
+        (firstPhase.items || []).forEach(item => {
             (window.selectedEmployeesPerItem[item.id] || []).forEach(emp => {
                 itemAssignments.push({
                     order_item_id: item.id,
-                    phase_id:      phase.phase_id,
+                    phase_id:      firstPhase.phase_id,
                     employee_id:   emp.id,
                 });
             });

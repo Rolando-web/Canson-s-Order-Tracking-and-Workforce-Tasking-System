@@ -59,7 +59,7 @@
             @endauth
         </nav>
 
-        <main class=" sm:px-[120px] p-6">
+        <main class=" sm:px-[120px] p-6 lg:px-[150px]">
             @yield('content')
         </main>
 

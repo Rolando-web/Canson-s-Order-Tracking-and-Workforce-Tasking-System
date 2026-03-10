@@ -8,10 +8,28 @@ window.closeAddProductModal = function() {
 };
 
 // Edit Product Modal
-window.openEditProductModal = function(id, name, price) {
+window.openEditProductModal = function(id, name, price, imageUrl) {
     document.getElementById('editProductId').value = id;
     document.getElementById('editProductName').value = name;
     document.getElementById('editProductPrice').value = price;
+
+    const preview = document.getElementById('editProductImagePreview');
+    const previewImg = document.getElementById('editProductImagePreviewImg');
+    const placeholder = document.getElementById('editProductImagePlaceholder');
+    const fileInput = document.getElementById('editProductImage');
+
+    // Reset file input
+    if (fileInput) fileInput.value = '';
+
+    if (imageUrl) {
+        previewImg.src = imageUrl;
+        preview?.classList.remove('hidden');
+        placeholder?.classList.add('hidden');
+    } else {
+        preview?.classList.add('hidden');
+        placeholder?.classList.remove('hidden');
+    }
+
     document.getElementById('editProductModal')?.classList.remove('hidden');
 };
 
@@ -19,24 +37,46 @@ window.closeEditProductModal = function() {
     document.getElementById('editProductModal')?.classList.add('hidden');
 };
 
+window.previewEditProductImage = function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('editProductImagePreview');
+            const previewImg = document.getElementById('editProductImagePreviewImg');
+            const placeholder = document.getElementById('editProductImagePlaceholder');
+            previewImg.src = e.target.result;
+            preview?.classList.remove('hidden');
+            placeholder?.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
 window.submitEditProduct = function() {
     const id = document.getElementById('editProductId')?.value;
     const name = document.getElementById('editProductName')?.value;
     const price = document.getElementById('editProductPrice')?.value;
+    const image = document.getElementById('editProductImage')?.files[0];
 
     if (!name || price === '' || price === null) {
         alert('Please fill in all required fields.');
         return;
     }
 
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('unit_price', price);
+    formData.append('_method', 'PUT');
+    if (image) formData.append('image', image);
+
     fetch(`/products/${id}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
             'Accept': 'application/json'
         },
-        body: JSON.stringify({ name, unit_price: price })
+        body: formData
     })
     .then(response => response.json())
     .then(data => {

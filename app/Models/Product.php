@@ -16,6 +16,7 @@ class Product extends Model
         'item_code',
         'category',
         'stock',
+        'unit',
         'unit_price',
         'status',
         'is_best_seller',

@@ -28,9 +28,9 @@ class StockOut extends Model
         'created_at' => 'datetime',
     ];
 
-    public function inventoryItem()
+    public function product()
     {
-        return $this->belongsTo(InventoryItem::class, 'product_id', 'Product_Id');
+        return $this->belongsTo(Product::class, 'product_id', 'Product_Id');
     }
 
     public function order()

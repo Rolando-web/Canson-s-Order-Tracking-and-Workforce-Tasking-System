@@ -9,7 +9,7 @@ class ReturnsController extends Controller
 {
     public function index()
     {
-        $claims = ReturnItem::with(['inventoryItem', 'creator'])
+        $claims = ReturnItem::with(['product', 'creator'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -34,7 +34,7 @@ class ReturnsController extends Controller
                     'id'          => $c->Return_Id,
                     'return_id'   => $c->return_number,
                     'item_id'     => $c->product_id,
-                    'item_name'   => $c->inventoryItem->name ?? 'N/A',
+                    'item_name'   => $c->product->name ?? 'N/A',
                     'quantity'    => $c->quantity,
                     'reason'      => $c->reason,
                     'order_ref'   => $c->order_reference,

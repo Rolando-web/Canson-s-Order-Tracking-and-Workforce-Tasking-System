@@ -1,4 +1,4 @@
-{{-- Edit Product Modal (Name & Price only) --}}
+{{-- Edit Product Modal --}}
 <div id="editProductModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
     {{-- Backdrop --}}
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeEditProductModal()"></div>
@@ -15,7 +15,7 @@
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-white">Edit Product</h3>
-                    <p class="text-emerald-100 text-xs">Update name and price only</p>
+                    <p class="text-emerald-100 text-xs">Update product details</p>
                 </div>
             </div>
             <button onclick="closeEditProductModal()" class="text-white/70 hover:text-white transition-colors">
@@ -45,6 +45,24 @@
                     <input type="number" id="editProductPrice" required min="0" step="0.01"
                         class="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                         placeholder="0.00">
+                </div>
+            </div>
+
+            {{-- Product Image --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Product Image <span class="text-gray-400 font-normal">(optional)</span></label>
+                <div id="editProductImageDrop" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-emerald-400 transition-colors cursor-pointer" onclick="document.getElementById('editProductImage').click()">
+                    <div id="editProductImagePreview" class="hidden mb-3">
+                        <img id="editProductImagePreviewImg" src="" alt="Preview" class="w-20 h-20 rounded-lg object-cover mx-auto border border-gray-200">
+                    </div>
+                    <div id="editProductImagePlaceholder">
+                        <svg class="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M18 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75z"/>
+                        </svg>
+                        <p class="text-sm text-gray-500">Click to upload a new image</p>
+                        <p class="text-xs text-gray-400 mt-1">JPG, PNG up to 2MB</p>
+                    </div>
+                    <input type="file" id="editProductImage" accept="image/*" class="hidden" onchange="previewEditProductImage(event)">
                 </div>
             </div>
 

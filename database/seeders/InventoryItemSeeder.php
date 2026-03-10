@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\InventoryItem;
+use App\Models\Product;
 
 class InventoryItemSeeder extends Seeder
 {
@@ -29,7 +29,7 @@ class InventoryItemSeeder extends Seeder
         ];
 
         foreach ($items as $item) {
-            InventoryItem::firstOrCreate(
+            Product::firstOrCreate(
                 ['item_code' => $item['item_code']],
                 collect($item)->except('item_code')->toArray()
             );

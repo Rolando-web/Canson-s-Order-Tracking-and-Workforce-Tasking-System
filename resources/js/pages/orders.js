@@ -172,49 +172,13 @@ window.openAddOrderModal = function() {
     if (dateInput) {
         dateInput.min = `${yyyy}-${mm}-${dd}`;
     }
-    // Reset delivery mode to single
-    setDeliveryMode('single');
+    // Reset delivery mode — phases always visible
     document.getElementById('addOrderModal').classList.remove('hidden');
 };
 
 window.closeAddOrderModal = function() {
     document.getElementById('addOrderModal').classList.add('hidden');
     if (typeof window.resetPhases === 'function') window.resetPhases();
-};
-
-window.setDeliveryMode = function(mode) {
-    const singleRadio = document.getElementById('deliveryModeSingle');
-    const phasedRadio = document.getElementById('deliveryModePhased');
-    const dateInput   = document.getElementById('deliveryDateInput');
-    const hint        = document.getElementById('phaseSectionHint');
-    const phasesSection = document.getElementById('phasesSection');
-
-    if (mode === 'phased') {
-        if (singleRadio) singleRadio.checked = false;
-        if (phasedRadio) phasedRadio.checked = true;
-        if (dateInput) {
-            dateInput.disabled = true;
-            dateInput.removeAttribute('required');
-            dateInput.value = '';
-            dateInput.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
-            dateInput.classList.remove('focus:ring-emerald-500');
-        }
-        if (hint) hint.textContent = '(required — at least one phase)';
-        if (phasesSection) phasesSection.classList.remove('hidden');
-    } else {
-        if (singleRadio) singleRadio.checked = true;
-        if (phasedRadio) phasedRadio.checked = false;
-        if (dateInput) {
-            dateInput.disabled = false;
-            dateInput.setAttribute('required', '');
-            dateInput.classList.remove('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
-            dateInput.classList.add('focus:ring-emerald-500');
-        }
-        if (hint) hint.textContent = '(optional — split order into batches)';
-        if (phasesSection) phasesSection.classList.add('hidden');
-        // Clear any existing phases
-        if (typeof window.resetPhases === 'function') window.resetPhases();
-    }
 };
 
 window.createOrderItemRow = function(index) {
@@ -345,8 +309,6 @@ window.submitAddOrder = function(event) {
     const form = document.getElementById('addOrderForm');
     const formData = new FormData(form);
 
-    const deliveryMode = document.querySelector('input[name="delivery_mode"]:checked')?.value || 'single';
-
     const orderData = {
         customer_name:    formData.get('customer_name'),
         contact_number:   formData.get('contact_number'),
@@ -380,22 +342,8 @@ window.submitAddOrder = function(event) {
         return;
     }
 
-    // Phased mode: require at least one phase and use Phase 1 date as order delivery date
+    // Collect phases if any exist; otherwise backend auto-creates Phase 1
     const phaseCards = document.querySelectorAll('.phase-card');
-    if (deliveryMode === 'phased') {
-        if (phaseCards.length === 0) {
-            alert('Phased Delivery requires at least one phase. Please add a phase.');
-            return;
-        }
-        const phase1Date = phaseCards[0].querySelector('input[type="date"]')?.value;
-        if (!phase1Date) {
-            alert('Please set a delivery date for Phase 1.');
-            return;
-        }
-        orderData.delivery_date = phase1Date;
-    }
-
-    // Collect phases if any
     if (phaseCards.length > 0) {
         orderData.phases = [];
         phaseCards.forEach((card, ci) => {
@@ -410,6 +358,12 @@ window.submitAddOrder = function(event) {
             });
             orderData.phases.push({ delivery_date: deliveryDate, items: phaseItems });
         });
+
+        // Use Phase 1 date as order delivery date if phases exist
+        const phase1Date = phaseCards[0].querySelector('input[type="date"]')?.value;
+        if (phase1Date) {
+            orderData.delivery_date = phase1Date;
+        }
     }
 
     // Validate stock availability (skip cover items — they use price=0)

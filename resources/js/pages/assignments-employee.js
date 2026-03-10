@@ -1,5 +1,24 @@
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
+window.switchAssignmentTab = function(tab) {
+    const activeContainer = document.getElementById('activeAssignments');
+    const completedContainer = document.getElementById('completedAssignments');
+    const activeBtn = document.getElementById('tabActiveBtn');
+    const completedBtn = document.getElementById('tabCompletedBtn');
+
+    if (tab === 'active') {
+        activeContainer.classList.remove('hidden');
+        completedContainer.classList.add('hidden');
+        activeBtn.className = 'px-4 py-1.5 rounded-md text-xs font-semibold transition-all bg-emerald-600 text-white shadow-sm';
+        completedBtn.className = 'px-4 py-1.5 rounded-md text-xs font-semibold transition-all text-gray-600 hover:bg-gray-200';
+    } else {
+        activeContainer.classList.add('hidden');
+        completedContainer.classList.remove('hidden');
+        completedBtn.className = 'px-4 py-1.5 rounded-md text-xs font-semibold transition-all bg-emerald-600 text-white shadow-sm';
+        activeBtn.className = 'px-4 py-1.5 rounded-md text-xs font-semibold transition-all text-gray-600 hover:bg-gray-200';
+    }
+}
+
 window.updateMyAssignment = function(assignmentId, newStatus, btn) {
     const originalText = btn.innerHTML;
     btn.disabled = true;

@@ -96,13 +96,13 @@
             <tbody class="divide-y divide-gray-100">
                 @forelse($claims as $claim)
                 <tr class="claim-row hover:bg-gray-50 transition-colors"
-                    data-search="{{ strtolower($claim->return_id . ' ' . $claim->customer_name . ' ' . ($claim->inventoryItem->name ?? '')) }}"
+                    data-search="{{ strtolower($claim->return_id . ' ' . $claim->customer_name . ' ' . ($claim->product->name ?? '')) }}"
                     data-status="{{ $claim->status }}">
                     <td class="px-5 py-3">
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200">{{ $claim->return_id }}</span>
                     </td>
                     <td class="px-5 py-3 text-sm font-semibold text-gray-900">{{ $claim->customer_name }}</td>
-                    <td class="px-5 py-3 text-sm text-gray-700">{{ $claim->inventoryItem->name ?? 'N/A' }}</td>
+                    <td class="px-5 py-3 text-sm text-gray-700">{{ $claim->product->name ?? 'N/A' }}</td>
                     <td class="px-5 py-3 text-sm font-semibold text-gray-900">{{ $claim->quantity }}</td>
                     <td class="px-5 py-3 text-sm text-gray-600 max-w-[180px] truncate" title="{{ $claim->reason }}">{{ Str::limit($claim->reason, 30) }}</td>
                     <td class="px-5 py-3 text-sm text-gray-500">{{ $claim->order_reference ?? '—' }}</td>

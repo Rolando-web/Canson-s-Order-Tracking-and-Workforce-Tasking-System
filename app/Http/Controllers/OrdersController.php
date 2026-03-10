@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\InventoryItem;
+use App\Models\Product;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderPhase;
@@ -16,7 +16,7 @@ class OrdersController extends Controller
 {
     public function index()
     {
-        $inventoryItems = InventoryItem::select('Product_Id', 'name', 'item_code', 'stock', 'unit', 'unit_price')
+        $inventoryItems = Product::select('Product_Id', 'name', 'item_code', 'stock', 'unit', 'unit_price')
             ->orderBy('name')
             ->get();
 
@@ -47,7 +47,6 @@ class OrdersController extends Controller
                     'priority'      => $order->priority,
                     'priorityColor' => $priorityColors[$order->priority] ?? $priorityColors['Normal'],
                     'notes'         => $order->notes,
-                    'has_phases'    => $order->phases->count() > 0,
                     'phase_count'   => $order->phases->count(),
                     'order_items'   => $order->items->map(fn($i) => [
                         'name'          => $i->name,
@@ -122,7 +121,7 @@ class OrdersController extends Controller
             }
 
             foreach ($validated['items'] as $item) {
-                $inv = InventoryItem::where('name', $item['name'])->first();
+                $inv = Product::where('name', $item['name'])->first();
                 if ($inv && $item['qty'] > $inv->stock) {
                     return response()->json([
                         'success' => false,
@@ -145,7 +144,7 @@ class OrdersController extends Controller
             ]);
 
             foreach ($validated['items'] as $item) {
-                $inv = InventoryItem::where('name', $item['name'])->first();
+                $inv = Product::where('name', $item['name'])->first();
                 OrderItem::create([
                     'order_id'   => $order->Order_Id,
                     'product_id' => $inv ? $inv->Product_Id : null,
@@ -166,32 +165,41 @@ class OrdersController extends Controller
                     ]);
             }
 
-            // Create phases if provided
-            if (!empty($validated['phases'])) {
-                foreach ($validated['phases'] as $phaseIndex => $phaseData) {
-                    $phaseNumber = $phaseIndex + 1;
+            // Always create phases — if none provided, auto-create Phase 1 with all items
+            $phasesData = !empty($validated['phases']) ? $validated['phases'] : [
+                [
+                    'delivery_date' => $validated['delivery_date'],
+                    'notes'         => null,
+                    'items'         => array_map(fn($item) => [
+                        'name' => $item['name'],
+                        'qty'  => $item['qty'],
+                    ], $validated['items']),
+                ],
+            ];
 
-                    $phase = OrderPhase::create([
-                        'order_id'      => $order->Order_Id,
-                        'phase_number'  => $phaseNumber,
-                        'delivery_date' => $phaseData['delivery_date'],
-                        'status'        => 'Pending',
-                        'damage_qty'    => 0,
-                        'notes'         => $phaseData['notes'] ?? null,
+            foreach ($phasesData as $phaseIndex => $phaseData) {
+                $phaseNumber = $phaseIndex + 1;
+
+                $phase = OrderPhase::create([
+                    'order_id'      => $order->Order_Id,
+                    'phase_number'  => $phaseNumber,
+                    'delivery_date' => $phaseData['delivery_date'],
+                    'status'        => 'Pending',
+                    'damage_qty'    => 0,
+                    'notes'         => $phaseData['notes'] ?? null,
+                ]);
+
+                foreach ($phaseData['items'] as $phaseItem) {
+                    if (($phaseItem['qty'] ?? 0) <= 0) continue;
+
+                    OrderPhaseItem::create([
+                        'phase_id'     => $phase->Phase_Id,
+                        'name'         => $phaseItem['name'],
+                        'base_qty'     => $phaseItem['qty'],
+                        'damage_carry' => 0,
+                        'required_qty' => $phaseItem['qty'],
+                        'completed_qty'=> 0,
                     ]);
-
-                    foreach ($phaseData['items'] as $phaseItem) {
-                        if (($phaseItem['qty'] ?? 0) <= 0) continue;
-
-                        OrderPhaseItem::create([
-                            'phase_id'     => $phase->Phase_Id,
-                            'name'         => $phaseItem['name'],
-                            'base_qty'     => $phaseItem['qty'],
-                            'damage_carry' => 0,
-                            'required_qty' => $phaseItem['qty'],
-                            'completed_qty'=> 0,
-                        ]);
-                    }
                 }
             }
 

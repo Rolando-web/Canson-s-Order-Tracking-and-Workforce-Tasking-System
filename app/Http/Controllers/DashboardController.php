@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\InventoryItem;
+use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 

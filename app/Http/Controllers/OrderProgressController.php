@@ -17,7 +17,7 @@ class OrderProgressController extends Controller
     public function index()
     {
         $orders = Order::with(['phases.items', 'items'])
-            ->whereHas('phases') // only phased orders
+            ->whereNotIn('status', ['Ready for Delivery', 'Delivered', 'Cancelled'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($order) {

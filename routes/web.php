@@ -62,6 +62,10 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/notifications/read-all', [NotificationsController::class, 'markAllAsRead'])->name('notifications.readAll');
     Route::get('/notifications/unread-count', [NotificationsController::class, 'unreadCount'])->name('notifications.unreadCount');
     Route::put('/notifications/{notification}/read', [NotificationsController::class, 'markAsRead'])->name('notifications.read');
+
+    // Phase Tracking Notes (using existing notes column on order_phases)
+    Route::get('/phases/{phase}/notes', [AssignmentsController::class, 'getPhaseNotes'])->name('phases.notes');
+    Route::put('/phases/{phase}/notes', [AssignmentsController::class, 'updatePhaseNotes'])->name('phases.notes.update');
 });
 
 

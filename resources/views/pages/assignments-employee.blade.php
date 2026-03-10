@@ -49,13 +49,33 @@
     </div>
 
     <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div class="flex items-center gap-2 mb-1">
-            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
-            </svg>
-            <h3 class="text-lg font-bold text-gray-900">Assigned Work</h3>
+        <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+                </svg>
+                <h3 class="text-lg font-bold text-gray-900">Assigned Work</h3>
+            </div>
         </div>
-        <p class="text-sm text-gray-500 mb-6">Your assigned orders to work on. Update status as you progress.</p>
+        <p class="text-sm text-gray-500 mb-4">Your assigned orders to work on. Update status as you progress.</p>
+
+        {{-- Tabs --}}
+        <div class="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
+            <button id="tabActive" onclick="switchAssignmentTab('active')"
+                    class="px-4 py-2 rounded-md text-sm font-semibold transition-colors bg-emerald-600 text-white">
+                Active Work
+                @if($pending + $inProgress > 0)
+                <span class="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold bg-white/20">{{ $pending + $inProgress }}</span>
+                @endif
+            </button>
+            <button id="tabCompleted" onclick="switchAssignmentTab('completed')"
+                    class="px-4 py-2 rounded-md text-sm font-semibold transition-colors text-gray-600 hover:bg-gray-200">
+                Completed
+                @if($completedWork > 0)
+                <span class="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold bg-gray-300/50 text-gray-600">{{ $completedWork }}</span>
+                @endif
+            </button>
+        </div>
 
         @if(count($myAssignments) === 0)
             <div class="flex flex-col items-center justify-center py-12 text-center">
@@ -66,8 +86,12 @@
                 <p class="text-sm text-gray-400 mt-1">Your manager will assign work orders to you.</p>
             </div>
         @else
-            <div class="space-y-4">
+            {{-- Active assignments (pending / in_progress) --}}
+            <div id="activeAssignments" class="space-y-4">
+                @php $hasActive = false; @endphp
                 @foreach($myAssignments as $assignment)
+                    @if(in_array($assignment['status'], ['pending', 'in_progress']))
+                    @php $hasActive = true; @endphp
                 @php
                     $statusConfig = match($assignment['status']) {
                         'pending' => ['label' => 'Pending', 'color' => 'bg-amber-100 text-amber-700 border-amber-200', 'bg' => 'border-l-amber-400'],
@@ -146,24 +170,38 @@
                         <form onsubmit="submitProgress(event, {{ $assignment['id'] }})" id="progressForm-{{ $assignment['id'] }}">
                             <div class="space-y-3">
                                 @foreach($assignment['order_items'] as $item)
-                                <div class="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-100">
-                                    <div class="flex-1">
-                                        <p class="text-sm font-medium text-gray-900">{{ $item['name'] }}</p>
-                                        <p class="text-xs text-gray-500">Required: {{ $item['quantity'] }} pcs</p>
-                                        <p class="text-xs font-semibold {{ $item['completed_qty'] >= $item['quantity'] ? 'text-emerald-600' : 'text-blue-600' }}">Completed so far: {{ $item['completed_qty'] }} / {{ $item['quantity'] }} pcs</p>
-                                    </div>
-                                    <div class="flex flex-col items-end gap-1">
-                                        <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $item['id'] }}">
-                                        <div class="flex items-center flex-col gap-2">
+                                @php
+                                    $itemPct = $item['quantity'] > 0 ? round(($item['completed_qty'] / $item['quantity']) * 100) : 0;
+                                    $itemBarColor = $itemPct >= 100 ? 'bg-emerald-500' : ($itemPct > 0 ? 'bg-blue-500' : 'bg-gray-200');
+                                    $itemPctColor = $itemPct >= 100 ? 'text-emerald-600' : ($itemPct > 0 ? 'text-blue-600' : 'text-gray-400');
+                                @endphp
+                                <div class="bg-white rounded-lg p-3 border border-gray-100">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-gray-900">{{ $item['name'] }}</p>
+                                            <div class="flex items-center gap-3 mt-1">
+                                                <span class="text-xs text-gray-500">Required: <strong>{{ $item['quantity'] }}</strong></span>
+                                                <span class="text-xs font-semibold {{ $itemPct >= 100 ? 'text-emerald-600' : 'text-blue-600' }}">Done: {{ $item['completed_qty'] }} / {{ $item['quantity'] }}</span>
+                                                <span class="text-[10px] text-gray-400">({{ $item['quantity'] - $item['completed_qty'] }} remaining)</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 ml-3">
+                                            <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $item['id'] }}">
                                             <span class="text-xs text-gray-400">+</span>
-                                            <input type="number" name="items[{{ $loop->index }}][add_qty]" 
-                                                   value="0" 
-                                                   min="0" max="{{ $item['quantity'] - $item['completed_qty'] }}" 
+                                            <input type="number" name="items[{{ $loop->index }}][add_qty]"
+                                                   value="0"
+                                                   min="0" max="{{ $item['quantity'] - $item['completed_qty'] }}"
                                                    placeholder="0"
-                                                   class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                   class="w-16 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <span class="text-xs text-gray-500">pcs</span>
                                         </div>
-                                        <span class="text-[10px] text-gray-400">{{ $item['quantity'] - $item['completed_qty'] }} remaining</span>
+                                    </div>
+                                    {{-- Per-item progress bar (compact) --}}
+                                    <div class="flex items-center gap-2 max-w-xs">
+                                        <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="{{ $itemBarColor }} h-full rounded-full transition-all" style="width: {{ $itemPct }}%"></div>
+                                        </div>
+                                        <span class="text-[10px] font-bold {{ $itemPctColor }} w-8 text-right">{{ $itemPct }}%</span>
                                     </div>
                                 </div>
                                 @endforeach
@@ -224,9 +262,17 @@
                         <h5 class="text-xs font-bold text-emerald-700 uppercase mb-3">All Items Completed{{ $assignment['phase_number'] ? ' — Phase ' . $assignment['phase_number'] : '' }}</h5>
                         <div class="space-y-2">
                             @foreach($assignment['order_items'] as $item)
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-emerald-800">{{ $item['name'] }}</span>
-                                <span class="font-semibold text-emerald-700">{{ $item['completed_qty'] }} / {{ $item['quantity'] }}</span>
+                            <div class="bg-white rounded-lg p-3 border border-emerald-100">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="text-sm font-semibold text-emerald-800">{{ $item['name'] }}</span>
+                                    <span class="text-xs font-bold text-emerald-700">{{ $item['completed_qty'] }} / {{ $item['quantity'] }}</span>
+                                </div>
+                                <div class="flex items-center gap-2 max-w-xs">
+                                    <div class="flex-1 h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-500 h-full rounded-full" style="width: 100%"></div>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-emerald-600 w-8 text-right">100%</span>
+                                </div>
                             </div>
                             @endforeach
                         </div>
@@ -274,18 +320,102 @@
                     </div>
                     @endif
 
-                    @if($assignment['status'] === 'completed')
-                    <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
-                        <div class="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Completed &mdash; Ready for delivery
+                </div>
+                    @endif
+                @endforeach
+
+                @if(!$hasActive)
+                <div class="flex flex-col items-center justify-center py-10 text-center">
+                    <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <h3 class="text-sm font-bold text-gray-400">No Active Work</h3>
+                    <p class="text-xs text-gray-400 mt-1">All your tasks are completed. Great job!</p>
+                </div>
+                @endif
+            </div>
+
+            {{-- Completed assignments --}}
+            <div id="completedAssignments" class="space-y-4 hidden">
+                @php $hasCompleted = false; @endphp
+                @foreach($myAssignments as $assignment)
+                    @if(in_array($assignment['status'], ['completed', 'cancelled']))
+                    @php $hasCompleted = true; @endphp
+                    @php
+                        $completedBorderColor = match($assignment['status']) {
+                            'completed' => 'border-l-emerald-400',
+                            'cancelled' => 'border-l-gray-400',
+                            default => 'border-l-gray-300',
+                        };
+                    @endphp
+                    <div class="border border-gray-200 rounded-xl p-2 sm:p-5 border-l-4 {{ $completedBorderColor }} bg-white shadow-sm">
+                        {{-- Header --}}
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <h4 class="text-sm font-bold text-gray-800">
+                                        Order #{{ $assignment['order_id'] }}
+                                        @if($assignment['phase_number'])
+                                            <span class="text-gray-400 font-normal">&bull; Phase {{ $assignment['phase_number'] }}</span>
+                                        @endif
+                                    </h4>
+                                    @php
+                                        $completedStatusConfig = [
+                                            'completed' => ['badge' => 'bg-emerald-100 text-emerald-700', 'label' => 'Completed'],
+                                            'cancelled' => ['badge' => 'bg-red-100 text-red-700', 'label' => 'Cancelled'],
+                                        ];
+                                        $sc = $completedStatusConfig[$assignment['status']] ?? ['badge' => 'bg-gray-100 text-gray-700', 'label' => ucfirst($assignment['status'])];
+                                    @endphp
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider {{ $sc['badge'] }}">
+                                        {{ $sc['label'] }}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-0.5">{{ $assignment['customer'] }}</p>
+                            </div>
+                        </div>
+
+                        {{-- Completed items summary --}}
+                        @if(!empty($assignment['order_items']))
+                        <div class="space-y-2 mb-3">
+                            @foreach($assignment['order_items'] as $item)
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="text-xs font-medium text-gray-700 truncate">{{ $item['name'] }}</span>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span class="text-[10px] font-bold text-emerald-600">{{ $item['completed_qty'] }}/{{ $item['quantity'] }} pcs</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-1.5">
+                                        @php $pct = $item['quantity'] > 0 ? round(($item['completed_qty'] / $item['quantity']) * 100) : 0; @endphp
+                                        <div class="bg-emerald-500 h-1.5 rounded-full" style="width: {{ min($pct, 100) }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
+
+                        {{-- Completed footer --}}
+                        <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
+                            <div class="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                {{ $assignment['status'] === 'completed' ? 'Completed — Ready for delivery' : 'Cancelled' }}
+                            </div>
                         </div>
                     </div>
                     @endif
-                </div>
                 @endforeach
+
+                @if(!$hasCompleted)
+                <div class="flex flex-col items-center justify-center py-10 text-center">
+                    <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+                    </svg>
+                    <h3 class="text-sm font-bold text-gray-400">No Completed Work Yet</h3>
+                    <p class="text-xs text-gray-400 mt-1">Your completed assignments will appear here.</p>
+                </div>
+                @endif
             </div>
         @endif
     </div>

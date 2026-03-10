@@ -66,6 +66,7 @@
     {{-- Search --}}
     <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
         <div class="relative max-w-md">
+            <label for="dispatchSearch" class="sr-only">Search orders</label>
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
             <input id="dispatchSearch" type="text" placeholder="Search orders..." oninput="filterDispatch()" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
         </div>
@@ -97,17 +98,15 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @foreach($orders as $order)
-                <tr class="dispatch-card hover:bg-gray-50 transition-colors cursor-pointer" data-status="{{ $order['status'] }}" data-search="{{ strtolower($order['customer'] . ' ' . $order['order_id'] . ' ' . $order['items']) }}" data-order-id="{{ $order['id'] }}" onclick="openDetailModal({{ $order['id'] }})">
+                <tr class="dispatch-card hover:bg-gray-50 transition-colors cursor-pointer" data-status="{{ $order['status'] }}" data-search="{{ strtolower($order['customer'] . ' ' . $order['order_id'] . ' ' . $order['items']) }}" data-order-id="{{ $order['dispatch_key'] }}" onclick="openDetailModal('{{ $order['dispatch_key'] }}')">
                     <td class="px-5 py-3">
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">{{ $order['order_id'] }}</span>
-                        @if($order['has_phases'] && $order['current_phase'])
                         <div class="mt-1">
                             <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061A1.125 1.125 0 013 16.811V8.69zM12.75 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061a1.125 1.125 0 01-1.683-.977V8.69z"/></svg>
-                                Phase {{ $order['current_phase']['phase_number'] }}
+                                Phase {{ $order['phase_number'] }} of {{ $order['total_phases'] }}
                             </span>
                         </div>
-                        @endif
                     </td>
                     <td class="px-5 py-3">
                         <p class="text-sm font-semibold text-gray-900">{{ $order['customer'] }}</p>
@@ -136,12 +135,15 @@
                     </td>
                     <td class="px-5 py-3">
                         @if($order['status'] === 'Ready for Delivery')
-                        <button onclick="event.stopPropagation();deliverOrder({{ $order['id'] }}, this)" class="deliver-btn flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors">
+                        <button onclick="event.stopPropagation();deliverOrder('{{ $order['dispatch_key'] }}', this)" class="deliver-btn flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             Deliver
                         </button>
                         @else
-                        <span class="text-xs text-gray-400">&mdash;</span>
+                        <button onclick="event.stopPropagation();printInvoice('{{ $order['dispatch_key'] }}')" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-xs font-medium transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18.75 7.125H5.25"/></svg>
+                            Print
+                        </button>
                         @endif
                     </td>
                 </tr>
@@ -228,8 +230,9 @@ window.allOrders = @json($orders);
         'Delivered' => 'bg-green-50 text-green-600 border-green-200',
         default => 'bg-gray-50 text-gray-500 border-gray-200',
     };
+    $phaseLabel = ' — Phase ' . $order['phase_number'] . ' of ' . $order['total_phases'];
 @endphp
-<div id="dispatchDetailModal-{{ $order['id'] }}" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center p-4" style="display:none;" onclick="if(event.target===this)closeDetailModal({{ $order['id'] }})">
+<div id="dispatchDetailModal-{{ $order['dispatch_key'] }}" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center p-4" style="display:none;" onclick="if(event.target===this)closeDetailModal('{{ $order['dispatch_key'] }}')">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         {{-- Header --}}
         <div class="sticky top-0 bg-emerald-600 rounded-t-2xl px-6 py-4 flex items-center justify-between z-10">
@@ -240,17 +243,19 @@ window.allOrders = @json($orders);
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-white">Order Details</h3>
-                    <p class="text-emerald-100 text-xs">{{ $order['order_id'] }}</p>
+                    <h3 class="text-lg font-bold text-white">Phase {{ $order['phase_number'] }} Details</h3>
+                    <p class="text-emerald-100 text-xs">{{ $order['order_id'] }}{{ $phaseLabel }}</p>
                 </div>
             </div>
-            <button onclick="closeDetailModal({{ $order['id'] }})" class="text-white/70 hover:text-white transition-colors">
+            <button onclick="closeDetailModal('{{ $order['dispatch_key'] }}')" class="text-white/70 hover:text-white transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
             </button>
         </div>
 
+        {{-- Printable Invoice Area --}}
+        <div id="invoiceArea-{{ $order['dispatch_key'] }}">
         {{-- Body --}}
         <div class="p-6 space-y-5">
             {{-- Customer Info --}}
@@ -280,14 +285,16 @@ window.allOrders = @json($orders);
                     <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $detailStatusConfig }}">{{ $order['status'] }}</span>
                 </div>
                 <div class="flex-1 min-w-[120px]">
-                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Total Amount</p>
-                    <p class="text-lg font-bold text-emerald-600">₱{{ number_format((float)$order['total_amount'], 2) }}</p>
+                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Phase Amount</p>
+                    <p class="text-lg font-bold text-emerald-600">&#8369;{{ number_format((float)$order['total_amount'], 2) }}</p>
                 </div>
             </div>
 
-            {{-- Items Table --}}
+            {{-- Items Table (phase-specific for phased orders) --}}
             <div>
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Order Items</p>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    Phase {{ $order['phase_number'] }} Items
+                </p>
                 <div class="border border-gray-200 rounded-lg overflow-hidden">
                     <div class="overflow-x-auto">
                     <table class="w-full min-w-[400px]">
@@ -300,7 +307,9 @@ window.allOrders = @json($orders);
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
+                            @php $grandTotal = 0; @endphp
                             @foreach($order['item_details'] as $item)
+                            @php $lineTotal = $item['quantity'] * (float)$item['unit_price']; $grandTotal += $lineTotal; @endphp
                             <tr>
                                 <td class="px-4 py-2.5 text-sm text-gray-900">
                                     {{ $item['name'] }}
@@ -309,31 +318,43 @@ window.allOrders = @json($orders);
                                     @endif
                                 </td>
                                 <td class="px-4 py-2.5 text-sm text-gray-600 text-center">{{ $item['quantity'] }}</td>
-                                <td class="px-4 py-2.5 text-sm text-gray-600 text-right">₱{{ number_format((float)$item['unit_price'], 2) }}</td>
-                                <td class="px-4 py-2.5 text-sm font-semibold text-gray-900 text-right">₱{{ number_format($item['quantity'] * (float)$item['unit_price'], 2) }}</td>
+                                <td class="px-4 py-2.5 text-sm text-gray-600 text-right">&#8369;{{ number_format((float)$item['unit_price'], 2) }}</td>
+                                <td class="px-4 py-2.5 text-sm font-semibold text-gray-900 text-right">&#8369;{{ number_format($lineTotal, 2) }}</td>
                             </tr>
                             @endforeach
                         </tbody>
+                        <tfoot class="bg-gray-50 border-t border-gray-200">
+                            <tr>
+                                <td colspan="3" class="px-4 py-2.5 text-sm font-bold text-gray-700 text-right">Total</td>
+                                <td class="px-4 py-2.5 text-sm font-bold text-emerald-600 text-right">&#8369;{{ number_format($grandTotal, 2) }}</td>
+                            </tr>
+                        </tfoot>
                     </table>
                     </div>
                 </div>
             </div>
 
-            {{-- Phases Section --}}
-            @if($order['has_phases'] && count($order['phases']) > 0)
+            {{-- All Phases Overview --}}
+            @if(count($order['phases']) > 0)
             <div>
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Delivery Phases</p>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">All Delivery Phases</p>
                 <div class="space-y-2">
                     @foreach($order['phases'] as $phase)
                     @php
-                        $phaseStatusClass = $phase['status'] === 'Delivered'
-                            ? 'bg-green-50 text-green-600 border-green-200'
-                            : 'bg-indigo-50 text-indigo-600 border-indigo-200';
+                        $phaseStatusClass = match($phase['status']) {
+                            'Delivered' => 'bg-green-50 text-green-600 border-green-200',
+                            'Completed' => 'bg-amber-50 text-amber-600 border-amber-200',
+                            default     => 'bg-indigo-50 text-indigo-600 border-indigo-200',
+                        };
+                        $isThisPhase = $order['phase_number'] == $phase['phase_number'];
                     @endphp
-                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white">
+                    <div class="flex items-center justify-between p-3 border {{ $isThisPhase ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200 bg-white' }} rounded-lg">
                         <div class="flex items-center gap-3">
-                            <span class="text-xs font-bold text-indigo-700 uppercase">Phase {{ $phase['phase_number'] }}</span>
+                            <span class="text-xs font-bold {{ $isThisPhase ? 'text-emerald-700' : 'text-indigo-700' }} uppercase">Phase {{ $phase['phase_number'] }}</span>
                             <span class="text-xs text-gray-500">{{ $phase['delivery_date'] }}</span>
+                            @if($isThisPhase)
+                            <span class="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">CURRENT</span>
+                            @endif
                         </div>
                         <div class="flex items-center gap-2">
                             @if(($phase['damage_qty'] ?? 0) > 0)
@@ -355,10 +376,11 @@ window.allOrders = @json($orders);
             </div>
             @endif
         </div>
+        </div>{{-- /invoiceArea --}}
 
         {{-- Footer --}}
         <div class="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-            <button type="button" onclick="closeDetailModal({{ $order['id'] }})" class="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+            <button type="button" onclick="closeDetailModal('{{ $order['dispatch_key'] }}')" class="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
                 Close
             </button>
         </div>

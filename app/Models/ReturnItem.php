@@ -36,11 +36,6 @@ class ReturnItem extends Model
         return $this->belongsTo(Product::class, 'product_id', 'Product_Id');
     }
 
-    public function inventoryItem()
-    {
-        return $this->belongsTo(Product::class, 'product_id', 'Product_Id');
-    }
-
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by', 'User_Id');
@@ -48,7 +43,7 @@ class ReturnItem extends Model
 
     public static function pendingForCustomer(string $customerName)
     {
-        return static::with('inventoryItem')
+        return static::with('product')
             ->where('status', 'Pending')
             ->whereRaw('LOWER(customer_name) = ?', [strtolower($customerName)])
             ->get();

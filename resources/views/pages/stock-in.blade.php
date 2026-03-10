@@ -145,7 +145,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($transactions as $txn)
-                    <tr class="stockin-history-row hover:bg-gray-50 transition-colors" data-name="{{ strtolower($txn->inventoryItem->name ?? '') }}">
+                    <tr class="stockin-history-row hover:bg-gray-50 transition-colors" data-name="{{ strtolower($txn->product->name ?? '') }}">
                         <td class="px-6 py-4 text-sm text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/></svg>
@@ -156,9 +156,9 @@
                             <span class="inline-flex px-2 py-0.5 rounded text-xs font-mono bg-gray-50 border border-gray-200">{{ $txn->reference_number }}</span>
                         </td>
                         <td class="px-6 py-4">
-                        <p class="text-sm font-semibold text-gray-900">{{ $txn->inventoryItem->name ?? 'N/A' }}</p>
-                        @if($txn->inventoryItem)
-                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $txn->inventoryItem->item_code }}</span>
+                        <p class="text-sm font-semibold text-gray-900">{{ $txn->product->name ?? 'N/A' }}</p>
+                        @if($txn->product)
+                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-xs font-mono font-semibold bg-gray-100 text-gray-700 border border-gray-200">{{ $txn->product->item_code }}</span>
                         @endif
                     </td>
                         <td class="px-6 py-4">

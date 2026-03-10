@@ -155,6 +155,24 @@
                             <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
                             <span class="truncate" title="{{ $order['delivery_address'] }}">{{ Str::limit($order['delivery_address'], 35) }}</span>
                         </div>
+                        @if(!empty($order['all_phases_status']))
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            @foreach($order['all_phases_status'] as $phaseInfo)
+                                @php
+                                    $badgeClass = match($phaseInfo['status_label']) {
+                                        'Pending'   => 'bg-amber-50 text-amber-600 border-amber-200',
+                                        'Assigned'  => 'bg-blue-50 text-blue-600 border-blue-200',
+                                        'Completed' => 'bg-green-50 text-green-600 border-green-200',
+                                        'Delivered' => 'bg-emerald-50 text-emerald-600 border-emerald-200',
+                                        default     => 'bg-gray-100 text-gray-500 border-gray-200',
+                                    };
+                                @endphp
+                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold border {{ $badgeClass }}">
+                                    P{{ $phaseInfo['number'] }}: {{ $phaseInfo['status_label'] }}
+                                </span>
+                            @endforeach
+                        </div>
+                        @endif
                     </div>
                     <div class="flex items-center justify-between pt-3 border-t border-gray-100">
                         <p class="text-sm font-bold text-emerald-600">₱{{ number_format((float)$order['total_amount'], 2) }}</p>
@@ -210,11 +228,42 @@
                         </div>
                         <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border {{ $statusColor }}">{{ strtoupper($order['status']) }}</span>
                     </div>
+
+                    {{-- Per-phase progress summary --}}
+                    @if(count($order['phases_progress'] ?? []) > 0)
+                    <div class="space-y-2 mb-3">
+                        @foreach($order['phases_progress'] as $phase)
+                        @php
+                            $totalReq = collect($phase['items'])->sum('required_qty');
+                            $totalDone = collect($phase['items'])->sum('completed_qty');
+                            $phasePct = $totalReq > 0 ? round(($totalDone / $totalReq) * 100) : 0;
+                            $phaseColor = match($phase['status']) {
+                                'Completed' => 'text-green-600 bg-green-50 border-green-200',
+                                'Delivered' => 'text-emerald-600 bg-emerald-50 border-emerald-200',
+                                default     => 'text-blue-600 bg-blue-50 border-blue-200',
+                            };
+                            $barColor = $phasePct >= 100 ? 'bg-emerald-500' : ($phasePct > 0 ? 'bg-blue-400' : 'bg-gray-200');
+                        @endphp
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-indigo-600 w-8 flex-shrink-0">P{{ $phase['number'] }}</span>
+                            <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="{{ $barColor }} h-full rounded-full" style="width:{{ $phasePct }}%"></div>
+                            </div>
+                            <span class="text-[10px] font-semibold text-gray-500 w-8 text-right">{{ $phasePct }}%</span>
+                            <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-semibold border {{ $phaseColor }}">{{ $phase['status'] }}</span>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
                     <div class="space-y-2 mb-3">
                         <div class="flex items-center gap-2 text-xs text-gray-600">
                             <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
                             <span class="truncate" title="{{ $order['items'] }}">{{ Str::limit($order['items'], 40) }}</span>
                         </div>
+                    </div>
+                    @endif
+
+                    <div class="space-y-2 mb-3">
                         <div class="flex items-center gap-2 text-xs text-gray-600">
                             <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/></svg>
                             Deliver by {{ \Carbon\Carbon::parse($order['delivery_date'])->format('M d, Y') }}
@@ -225,15 +274,9 @@
                             <span class="truncate">{{ implode(', ', $order['assigned_to']) }}</span>
                         </div>
                         @endif
-                        @if($order['phase_count'] > 0)
-                        <div class="flex items-center gap-2 text-xs text-indigo-600">
-                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25"/></svg>
-                            {{ $order['phase_count'] }} {{ Str::plural('phase', $order['phase_count']) }}
-                        </div>
-                        @endif
                     </div>
                     <div class="flex items-center flex-col sm:flex-row  justify-between pt-3 border-t border-gray-100">
-                        <p class="text-sm font-bold text-emerald-600">₱{{ number_format((float)$order['total_amount'], 2) }}</p>
+                        <p class="text-sm font-bold text-emerald-600">&peso;{{ number_format((float)$order['total_amount'], 2) }}</p>
                         <div class="flex items-center mt-3 gap-2">
                             <button onclick="openOrderProgressModal('{{ $order['order_id'] }}')" class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -290,6 +333,23 @@
                 {{-- Phased: per-phase accordion --}}
                 <div id="opPhasedSection" class="hidden">
                     <div id="opPhasedContent" class="space-y-4"></div>
+                    {{-- Phase Tracking Notes --}}
+                    <div id="opTrackingNotesSection" class="hidden mt-4 border-t border-gray-200 pt-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold text-gray-700">Phase Notes</h4>
+                            <span id="opNotesPhaseLabel" class="text-xs text-indigo-600 font-semibold"></span>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                            <textarea id="opPhaseNotesTextarea" rows="3" placeholder="Add tracking notes for this phase..."
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                            <div class="flex justify-end mt-2">
+                                <button onclick="savePhaseNotes()" id="opSaveNotesBtn"
+                                    class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors">
+                                    Save Notes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             {{-- Footer --}}

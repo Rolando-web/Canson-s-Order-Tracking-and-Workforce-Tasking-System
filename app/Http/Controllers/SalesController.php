@@ -121,8 +121,8 @@ class SalesController extends Controller
 
         $topCategory = OrderItem::select('product_id', DB::raw('SUM(subtotal) as total'))
             ->groupBy('product_id')->orderByDesc('total')->first();
-        $topCategoryName = $topCategory && $topCategory->inventoryItem
-            ? $topCategory->inventoryItem->category : 'N/A';
+        $topCategoryName = $topCategory && $topCategory->product
+            ? $topCategory->product->category : 'N/A';
 
         $todaySalesAmount = Order::whereDate('created_at', today())->sum('total_amount');
 

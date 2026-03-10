@@ -31,9 +31,9 @@ class OrderPhase extends Model
         return $this->hasMany(OrderPhaseItem::class, 'phase_id', 'Phase_Id');
     }
 
-    public function dispatches()
+    public function getRouteKeyName()
     {
-        return $this->hasMany(Dispatch::class, 'phase_id', 'Phase_Id');
+        return 'Phase_Id';
     }
 
     /** Overall completion percentage for this phase */

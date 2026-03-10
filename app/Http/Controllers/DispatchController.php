@@ -9,7 +9,7 @@ use App\Models\OrderPhaseItem;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\ReturnItem;
-use App\Models\InventoryItem;
+use App\Models\Product;
 use App\Models\StockOut;
 use Illuminate\Support\Facades\DB;
 
@@ -17,62 +17,96 @@ class DispatchController extends Controller
 {
     public function index()
     {
-        $orders = Order::with(['items', 'phases.items'])
-            ->whereIn('status', ['Ready for Delivery', 'Delivered'])
-            ->orderByRaw("FIELD(status, 'Ready for Delivery', 'Delivered')")
+        $rawOrders = Order::with(['items', 'phases.items'])
+            ->where(function ($query) {
+                $query->whereIn('status', ['Ready for Delivery', 'Delivered'])
+                      ->orWhere(function ($q) {
+                          // In-Progress orders with at least one Completed or Delivered phase
+                          $q->where('status', 'In-Progress')
+                            ->whereHas('phases', fn($ph) => $ph->whereIn('status', ['Completed', 'Delivered']));
+                      });
+            })
             ->orderBy('delivery_date', 'asc')
-            ->get()
-            ->map(function ($order) {
-                $itemNames    = $order->items->map(fn($i) => $i->quantity . ' ' . $i->name)->implode(', ');
-                $coveredClaims = ReturnItem::where('covered_by_order', $order->order_number)->get();
-                $coveredItemIds = $coveredClaims->pluck('product_id')->toArray();
+            ->get();
 
-                // Current deliverable phase (earliest Pending/In-Progress phase)
-                $currentPhase = $order->phases
-                    ->whereNotIn('status', ['Delivered'])
-                    ->sortBy('phase_number')
-                    ->first();
+        $orders = collect();
 
-                return [
-                    'id'              => $order->Order_Id,
-                    'order_id'        => $order->order_number,
-                    'customer'        => $order->customer_name,
-                    'items'           => $itemNames,
-                    'item_details'    => $order->items->map(fn($i) => [
-                        'product_id'  => $i->product_id,
-                        'name'        => $i->name,
-                        'quantity'    => $i->quantity,
-                        'unit_price'  => (float) $i->unit_price,
-                        'is_cover'    => in_array($i->product_id, $coveredItemIds) && (float)$i->unit_price === 0.0,
-                    ])->values(),
-                    'has_cover_items' => $coveredClaims->count() > 0,
-                    'address'         => $order->delivery_address,
-                    'contact'         => $order->contact_number,
-                    'total_amount'    => $order->total_amount,
-                    'status'          => $order->status,
-                    'delivery_date'   => $order->delivery_date->format('Y-m-d'),
-                    'delivered_at'    => $order->updated_at->format('M d, Y h:i A'),
-                    'assigned'        => $order->assigned,
-                    'has_phases'      => $order->phases->count() > 0,
-                    'current_phase'   => $currentPhase ? [
-                        'id'           => $currentPhase->Phase_Id,
-                        'phase_number' => $currentPhase->phase_number,
-                        'delivery_date'=> $currentPhase->delivery_date->format('M d, Y'),
-                        'items'        => $currentPhase->items->map(fn($i) => [
-                            'id'           => $i->Phase_Item_Id,
-                            'name'         => $i->name,
-                            'required_qty' => $i->required_qty,
-                        ])->toArray(),
-                    ] : null,
-                    'phases'          => $order->phases->map(fn($p) => [
-                        'id'            => $p->Phase_Id,
-                        'phase_number'  => $p->phase_number,
-                        'delivery_date' => $p->delivery_date->format('M d, Y'),
-                        'status'        => $p->status,
-                        'damage_qty'    => $p->damage_qty,
-                    ])->toArray(),
-                ];
-            });
+        foreach ($rawOrders as $order) {
+            $coveredClaims  = ReturnItem::where('covered_by_order', $order->order_number)->get();
+            $coveredItemIds = $coveredClaims->pluck('product_id')->toArray();
+            $hasPhases      = $order->phases->count() > 0;
+
+            if ($hasPhases) {
+                // For phased orders, create a separate entry per phase that is Completed or Delivered
+                foreach ($order->phases->sortBy('phase_number') as $phase) {
+                    if (!in_array($phase->status, ['Completed', 'Delivered'])) {
+                        continue;
+                    }
+
+                    $phaseItemNames = $phase->items->map(fn($i) => $i->required_qty . ' ' . $i->name)->implode(', ');
+
+                    // Calculate phase subtotal from matching order items
+                    $phaseSubtotal = 0;
+                    $phaseItemDetails = $phase->items->map(function ($pi) use ($order, $coveredItemIds, &$phaseSubtotal) {
+                        $orderItem = $order->items->firstWhere('name', $pi->name);
+                        $unitPrice = $orderItem ? (float) $orderItem->unit_price : 0;
+                        $isCover   = $orderItem && in_array($orderItem->product_id, $coveredItemIds) && $unitPrice === 0.0;
+                        $phaseSubtotal += $pi->required_qty * $unitPrice;
+                        return [
+                            'product_id' => $orderItem->product_id ?? null,
+                            'name'       => $pi->name,
+                            'quantity'   => $pi->required_qty,
+                            'unit_price' => $unitPrice,
+                            'is_cover'   => $isCover,
+                        ];
+                    })->values();
+
+                    $displayStatus = $phase->status === 'Delivered' ? 'Delivered' : 'Ready for Delivery';
+
+                    $orders->push([
+                        'id'              => $order->Order_Id,
+                        'order_id'        => $order->order_number,
+                        'customer'        => $order->customer_name,
+                        'items'           => $phaseItemNames,
+                        'item_details'    => $phaseItemDetails,
+                        'has_cover_items' => $coveredClaims->count() > 0,
+                        'address'         => $order->delivery_address,
+                        'contact'         => $order->contact_number,
+                        'total_amount'    => $phaseSubtotal,
+                        'status'          => $displayStatus,
+                        'delivery_date'   => $phase->delivery_date->format('Y-m-d'),
+                        'delivered_at'    => $phase->updated_at->format('M d, Y h:i A'),
+                        'assigned'        => $order->assigned,
+                        'phase_number'    => $phase->phase_number,
+                        'total_phases'    => $order->phases->count(),
+                        'current_phase'   => $displayStatus === 'Ready for Delivery' ? [
+                            'id'            => $phase->Phase_Id,
+                            'phase_number'  => $phase->phase_number,
+                            'delivery_date' => $phase->delivery_date->format('M d, Y'),
+                            'items'         => $phase->items->map(fn($i) => [
+                                'id'           => $i->Phase_Item_Id,
+                                'name'         => $i->name,
+                                'required_qty' => $i->required_qty,
+                            ])->toArray(),
+                        ] : null,
+                        'phases'          => $order->phases->sortBy('phase_number')->map(fn($p) => [
+                            'id'            => $p->Phase_Id,
+                            'phase_number'  => $p->phase_number,
+                            'delivery_date' => $p->delivery_date->format('M d, Y'),
+                            'status'        => $p->status,
+                            'damage_qty'    => $p->damage_qty,
+                        ])->values()->toArray(),
+                        // Unique key for modal IDs (order_id + phase)
+                        'dispatch_key'    => $order->Order_Id . '-p' . $phase->phase_number,
+                    ]);
+                }
+            }
+        }
+
+        // Sort: Ready for Delivery first, then Delivered
+        $orders = $orders->sortBy(function ($o) {
+            return $o['status'] === 'Ready for Delivery' ? 0 : 1;
+        })->values();
 
         $readyCount     = $orders->where('status', 'Ready for Delivery')->count();
         $deliveredCount = $orders->where('status', 'Delivered')->count();
@@ -89,7 +123,7 @@ class DispatchController extends Controller
             'damages.*.item_name' => 'required_with:damages|string|max:255',
             'damages.*.quantity'  => 'required_with:damages|integer|min:1',
             'damages.*.reason'    => 'required_with:damages|string|max:255',
-            'phase_id'            => 'nullable|integer|exists:order_phases,Phase_Id',
+            'phase_id'            => 'required|integer|exists:order_phases,Phase_Id',
             'phase_damages'       => 'nullable|array',
             'phase_damages.*.name'       => 'required_with:phase_damages|string',
             'phase_damages.*.damage_qty' => 'required_with:phase_damages|integer|min:0',
@@ -113,7 +147,7 @@ class DispatchController extends Controller
                         'created_by'      => auth()->id(),
                     ]);
 
-                    $item = InventoryItem::find($damage['item_id']);
+                    $item = Product::find($damage['item_id']);
                     if ($item) {
                         $prev = $item->stock;
                         $new  = max(0, $prev - $damage['quantity']);
@@ -133,8 +167,11 @@ class DispatchController extends Controller
                 }
             }
 
-            if (!empty($validated['phase_id'])) {
-                $phase = OrderPhase::with('items')->findOrFail($validated['phase_id']);
+            if (empty($validated['phase_id'])) {
+                return response()->json(['success' => false, 'message' => 'Phase ID is required'], 422);
+            }
+
+            $phase = OrderPhase::with('items')->findOrFail($validated['phase_id']);
                 $totalDamage = !empty($validated['phase_damages'])
                     ? array_sum(array_column($validated['phase_damages'], 'damage_qty'))
                     : 0;
@@ -187,9 +224,6 @@ class DispatchController extends Controller
                 } else {
                     $order->update(['status' => 'Delivered']);
                 }
-            } else {
-                $order->update(['status' => 'Delivered']);
-            }
 
             DB::commit();
 
