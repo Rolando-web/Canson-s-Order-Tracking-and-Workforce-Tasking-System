@@ -18,6 +18,7 @@ export default defineConfig({
                 'resources/css/pages/sales.css',
                 'resources/css/pages/settings.css',
                 'resources/css/pages/employees.css',
+                'resources/css/pages/login.css',
                 'resources/js/pages/dashboard.js',
                 'resources/js/pages/schedule.js',
                 'resources/js/pages/orders.js',
