@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\StockIn;
 use App\Models\StockOut;
+use App\Models\Supplier;
 use App\Models\User;
 
 class InventoryController extends Controller
@@ -27,8 +28,9 @@ class InventoryController extends Controller
             ->limit(50)
             ->get();
         $todayCount = StockIn::whereDate('created_at', today())->count();
+        $suppliers = Supplier::active()->orderBy('name')->get();
 
-        return view('pages.stock-in', compact('items', 'transactions', 'todayCount'));
+        return view('pages.stock-in', compact('items', 'transactions', 'todayCount', 'suppliers'));
     }
 
     public function stockOutPage()
@@ -142,10 +144,10 @@ class InventoryController extends Controller
     public function stockIn(Request $request)
     {
         $validated = $request->validate([
-            'item_id'   => 'required|exists:products,Product_Id',
-            'quantity'  => 'required|integer|min:1',
-            'supplier'  => 'nullable|string|max:255',
-            'notes'     => 'nullable|string',
+            'item_id'     => 'required|exists:products,Product_Id',
+            'quantity'    => 'required|integer|min:1',
+            'supplier_id' => 'nullable|exists:suppliers,Supplier_Id',
+            'notes'       => 'nullable|string',
         ]);
 
         $item = Product::findOrFail($validated['item_id']);
@@ -162,7 +164,8 @@ class InventoryController extends Controller
             'quantity'         => $validated['quantity'],
             'previous_stock'   => $previousStock,
             'new_stock'        => $newStock,
-            'reference_number' => 'SI-' . now()->format('YmdHis'),
+            'reference_number' => 'SI-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)),
+            'supplier_id'      => $validated['supplier_id'] ?? null,
             'notes'            => $validated['notes'] ?? null,
             'created_by'       => auth()->id(),
             'created_at'       => now(),
@@ -206,7 +209,7 @@ class InventoryController extends Controller
             'quantity'         => $validated['quantity'],
             'previous_stock'   => $previousStock,
             'new_stock'        => $newStock,
-            'reference_number' => 'SO-' . now()->format('YmdHis'),
+            'reference_number' => 'SO-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)),
             'reason'           => $validated['reason'] ?? null,
             'notes'            => $validated['notes'] ?? null,
             'created_by'       => auth()->id(),
@@ -218,5 +221,54 @@ class InventoryController extends Controller
         }
 
         return redirect()->back()->with('success', 'Stock removed successfully.');
+    }
+
+    // ========== Supplier CRUD ==========
+
+    public function storeSupplier(Request $request)
+    {
+        $validated = $request->validate([
+            'name'    => 'required|string|max:50',
+            'address' => 'required|string',
+            'email'   => 'required|email|max:50',
+            'phone'   => 'required|string|max:11',
+        ]);
+
+        $supplier = Supplier::create($validated);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'supplier' => $supplier]);
+        }
+
+        return redirect()->back()->with('success', 'Supplier added successfully.');
+    }
+
+    public function updateSupplier(Request $request, Supplier $supplier)
+    {
+        $validated = $request->validate([
+            'name'    => 'required|string|max:50',
+            'address' => 'required|string',
+            'email'   => 'required|email|max:50',
+            'phone'   => 'required|string|max:11',
+        ]);
+
+        $supplier->update($validated);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'supplier' => $supplier]);
+        }
+
+        return redirect()->back()->with('success', 'Supplier updated successfully.');
+    }
+
+    public function destroySupplier(Request $request, Supplier $supplier)
+    {
+        $supplier->update(['archived' => true]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->back()->with('success', 'Supplier removed successfully.');
     }
 }

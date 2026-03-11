@@ -29,9 +29,9 @@ class Product extends Model
         'unit_price'     => 'decimal:2',
     ];
 
-    public function orderItems()
+    public function phaseItems()
     {
-        return $this->hasMany(OrderItem::class, 'product_id', 'Product_Id');
+        return $this->hasMany(OrderPhaseItem::class, 'product_id', 'Product_Id');
     }
 
     public function stockIns()
@@ -47,10 +47,5 @@ class Product extends Model
     public function returns()
     {
         return $this->hasMany(ReturnItem::class, 'product_id', 'Product_Id');
-    }
-
-    public function phaseItems()
-    {
-        return $this->hasMany(OrderPhaseItem::class, 'product_id', 'Product_Id');
     }
 }

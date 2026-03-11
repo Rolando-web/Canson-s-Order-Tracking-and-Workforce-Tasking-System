@@ -8,16 +8,6 @@
     @vite('resources/js/pages/orders.js')
 @endpush
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">AD</div>
-        </div>
-    </div>
-@endsection
-
 @section('content')
 <div class="orders-page">
     {{-- Header --}}
@@ -195,7 +185,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div id="deliveryDateWrap">
                                     <label class="block text-xs font-medium text-gray-600 mb-1.5">Delivery Date <span class="text-red-500">*</span></label>
-                                    <input type="date" name="delivery_date" id="deliveryDateInput" required min="{{ date('Y-m-d') }}" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                    <input type="date" name="delivery_date" id="deliveryDateInput" required min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d', strtotime('+7 days')) }}" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1.5">Priority <span class="text-red-500">*</span></label>

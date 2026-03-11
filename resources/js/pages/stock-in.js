@@ -1,23 +1,33 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Tab switching
     const tabs = document.querySelectorAll('.stockin-tab-btn');
-    const formTab = document.getElementById('tab-stock-in-form');
-    const historyTab = document.getElementById('tab-stock-in-history');
+    const tabPanels = {
+        'stock-in-form': document.getElementById('tab-stock-in-form'),
+        'stock-in-history': document.getElementById('tab-stock-in-history'),
+        'suppliers': document.getElementById('tab-suppliers'),
+    };
+
+    function activateTab(tabKey) {
+        tabs.forEach(t => { t.className = 'stockin-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50'; });
+        Object.values(tabPanels).forEach(p => { if (p) p.classList.add('hidden'); });
+
+        const btn = [...tabs].find(t => t.dataset.tab === tabKey);
+        const panel = tabPanels[tabKey];
+        if (btn) btn.className = 'stockin-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white';
+        if (panel) panel.classList.remove('hidden');
+
+        localStorage.setItem('stockin-active-tab', tabKey);
+    }
 
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => { t.className = 'stockin-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50'; });
-            tab.className = 'stockin-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white';
-
-            if (tab.dataset.tab === 'stock-in-form') {
-                formTab.classList.remove('hidden');
-                historyTab.classList.add('hidden');
-            } else {
-                formTab.classList.add('hidden');
-                historyTab.classList.remove('hidden');
-            }
-        });
+        tab.addEventListener('click', () => activateTab(tab.dataset.tab));
     });
+
+    // Restore last active tab on page load
+    const saved = localStorage.getItem('stockin-active-tab');
+    if (saved && tabPanels[saved]) {
+        activateTab(saved);
+    }
 
     document.getElementById('stockInQty')?.addEventListener('input', updateStockInPreview);
 });
@@ -40,9 +50,10 @@ window.filterStockInHistory = function() {
 
 // ========== Stock In Modal ==========
 function generateRef(prefix) {
-    const year = new Date().getFullYear();
-    const rand = String(Math.floor(1000 + Math.random() * 9000));
-    return `${prefix}-${year}-${rand}`;
+    const chars = '0123456789ABCDEF';
+    let code = '';
+    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return `${prefix}-${code}`;
 }
 
 let _stockInCurrent = 0;
@@ -110,10 +121,10 @@ window.submitStockIn = function () {
             'Accept': 'application/json',
         },
         body: JSON.stringify({
-            item_id:  _stockInItemId,
-            quantity: qty,
-            supplier: document.getElementById('stockInSupplier').value,
-            notes:    document.getElementById('stockInNotes').value,
+            item_id:     _stockInItemId,
+            quantity:    qty,
+            supplier_id: document.getElementById('stockInSupplier').value || null,
+            notes:       document.getElementById('stockInNotes').value,
         }),
     })
     .then(r => r.json())
@@ -141,3 +152,104 @@ function showToast(message, color = 'green') {
     document.body.appendChild(toast);
     setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s ease'; setTimeout(() => toast.remove(), 300); }, 3000);
 }
+
+// ========== Supplier CRUD ==========
+
+window.filterSuppliers = function() {
+    const search = document.getElementById('supplierSearch')?.value.toLowerCase() ?? '';
+    document.querySelectorAll('.supplier-row').forEach(row => {
+        row.style.display = !search || row.dataset.name.includes(search) ? '' : 'none';
+    });
+};
+
+window.openAddSupplierModal = function() {
+    document.getElementById('supplierEditId').value = '';
+    document.getElementById('supplierName').value = '';
+    document.getElementById('supplierAddress').value = '';
+    document.getElementById('supplierEmail').value = '';
+    document.getElementById('supplierPhone').value = '';
+    document.getElementById('supplierModalTitle').textContent = 'Add Supplier';
+    document.getElementById('supplierSubmitText').textContent = 'Save Supplier';
+    document.getElementById('supplierModal').classList.remove('hidden');
+};
+
+window.openEditSupplierModal = function(supplier) {
+    document.getElementById('supplierEditId').value = supplier.id;
+    document.getElementById('supplierName').value = supplier.name;
+    document.getElementById('supplierAddress').value = supplier.address;
+    document.getElementById('supplierEmail').value = supplier.email;
+    document.getElementById('supplierPhone').value = supplier.phone;
+    document.getElementById('supplierModalTitle').textContent = 'Edit Supplier';
+    document.getElementById('supplierSubmitText').textContent = 'Update Supplier';
+    document.getElementById('supplierModal').classList.remove('hidden');
+};
+
+window.closeSupplierModal = function() {
+    document.getElementById('supplierModal').classList.add('hidden');
+};
+
+window.submitSupplier = function() {
+    const id      = document.getElementById('supplierEditId').value;
+    const name    = document.getElementById('supplierName').value.trim();
+    const address = document.getElementById('supplierAddress').value.trim();
+    const email   = document.getElementById('supplierEmail').value.trim();
+    const phone   = document.getElementById('supplierPhone').value.trim();
+
+    if (!name || !address || !email || !phone) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+
+    const url    = id ? `/suppliers/${id}` : '/suppliers';
+    const method = id ? 'PUT' : 'POST';
+
+    const btn = document.getElementById('supplierSubmitBtn');
+    if (btn) { btn.disabled = true; }
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({ name, address, email, phone }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            closeSupplierModal();
+            showToast(id ? 'Supplier updated successfully!' : 'Supplier added successfully!');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            alert('Failed to save supplier.');
+            if (btn) btn.disabled = false;
+        }
+    })
+    .catch(() => {
+        alert('An error occurred. Please try again.');
+        if (btn) btn.disabled = false;
+    });
+};
+
+window.deleteSupplier = function(id, name) {
+    if (!confirm(`Are you sure you want to remove "${name}" from your suppliers?`)) return;
+
+    fetch(`/suppliers/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Supplier removed successfully!');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            alert('Failed to remove supplier.');
+        }
+    })
+    .catch(() => alert('An error occurred. Please try again.'));
+};

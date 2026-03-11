@@ -8,21 +8,6 @@
     @vite('resources/js/pages/dashboard.js')
 @endpush
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">
-            @if(auth()->user()->isEmployee())
-                Worker Dashboard
-            @else
-                Manager
-            @endif
-        </span></h1>
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ auth()->user()->initial }}</div>
-        </div>
-    </div>
-@endsection
-
 @section('content')
 <div class="dashboard-page">
     {{-- Header --}}
@@ -209,7 +194,7 @@
         </div>
     </div>
 
-    {{-- All Orders Board (sticky-note style) --}}
+    {{-- All Orders Table --}}
     @php
         $myAssignedOrderNumbers = \App\Models\Assignment::where('employee_id', $empUser->id)
             ->whereNotIn('status', ['cancelled'])
@@ -235,12 +220,7 @@
                     'status'        => $order->status,
                     'overall_pct'   => $overallPct,
                     'is_assigned'   => $isAssigned,
-                    'items'         => $order->items->map(fn($i) => [
-                        'name'      => $i->name,
-                        'qty'       => $i->quantity,
-                        'completed' => $i->completed_qty ?? 0,
-                        'pct'       => $i->quantity > 0 ? min(100, round((($i->completed_qty ?? 0) / $i->quantity) * 100)) : 0,
-                    ])->toArray(),
+                    'total_items'   => $order->items->count(),
                 ];
             });
     @endphp
@@ -249,7 +229,7 @@
         <div class="flex items-center justify-between mb-4">
             <div>
                 <h3 class="text-lg font-bold text-gray-900">All Orders</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Live progress board for all active orders</p>
+                <p class="text-xs text-gray-400 mt-0.5">Active orders overview</p>
             </div>
             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
                 {{ $allOrders->count() }} {{ Str::plural('order', $allOrders->count()) }}
@@ -266,114 +246,71 @@
             <p class="text-sm font-medium text-gray-500">No active orders right now</p>
         </div>
         @else
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            @foreach($allOrders as $mo)
-            @php
-                $orderStatus = $mo['status'];
-                $statusConfig = match(true) {
-                    $orderStatus === 'In-Progress'        => ['label' => 'In Progress',        'dot' => 'bg-blue-500',    'badge' => 'bg-blue-100 text-blue-700',    'border' => 'border-blue-200',    'ring' => '#3b82f6'],
-                    $orderStatus === 'Ready for Delivery' => ['label' => 'Ready for Delivery', 'dot' => 'bg-indigo-500',  'badge' => 'bg-indigo-100 text-indigo-700','border' => 'border-indigo-200',  'ring' => '#6366f1'],
-                    $orderStatus === 'Completed'          => ['label' => 'Completed',          'dot' => 'bg-emerald-500', 'badge' => 'bg-emerald-100 text-emerald-700','border'=> 'border-emerald-200', 'ring' => '#10b981'],
-                    default                               => ['label' => 'Pending',            'dot' => 'bg-amber-400',   'badge' => 'bg-amber-100 text-amber-700',  'border' => 'border-amber-200',   'ring' => '#f59e0b'],
-                };
-                $dueDate  = \Carbon\Carbon::parse($mo['delivery_date']);
-                $daysLeft = now()->startOfDay()->diffInDays($dueDate->startOfDay(), false);
-                $dueBadge = $daysLeft < 0
-                    ? ['text' => 'Overdue',              'class' => 'text-red-600 bg-red-50 border-red-200']
-                    : ($daysLeft === 0
-                        ? ['text' => 'Due today',        'class' => 'text-orange-600 bg-orange-50 border-orange-200']
-                        : ($daysLeft <= 3
-                            ? ['text' => "Due in {$daysLeft}d", 'class' => 'text-amber-600 bg-amber-50 border-amber-200']
-                            : ['text' => $mo['delivery_date'],  'class' => 'text-gray-500 bg-gray-50 border-gray-200']));
-                $pct  = $mo['overall_pct'];
-                $r    = 20; $circ = round(2 * M_PI * $r, 2);
-                $dash = round($circ * $pct / 100, 2);
-            @endphp
-            <div class="bg-white rounded-2xl border {{ $statusConfig['border'] }} shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                {{-- Sticky-note colour strip --}}
-                <div class="h-1.5 rounded-t-2xl {{ $statusConfig['dot'] }}"></div>
-
-                <div class="p-4 flex flex-col flex-1 gap-3">
-                    {{-- Header: order id + customer + ring --}}
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-1.5 flex-wrap">
-                                <span class="text-xs font-bold text-gray-700">{{ $mo['order_number'] }}</span>
-                                @if($mo['is_assigned'])
-                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[0.6rem] font-semibold bg-emerald-100 text-emerald-700">
-                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
-                                    Assigned to you
-                                </span>
-                                @endif
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+            <table class="w-full min-w-[600px]">
+                <thead>
+                    <tr class="border-b border-gray-200 bg-gray-50">
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Due Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Items</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Progress</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach($allOrders as $mo)
+                    @php
+                        $statusConfig = match(true) {
+                            $mo['status'] === 'In-Progress'        => ['label' => 'In Progress',        'dot' => 'bg-blue-500',    'badge' => 'bg-blue-100 text-blue-700',     'bar' => 'bg-blue-500'],
+                            $mo['status'] === 'Ready for Delivery' => ['label' => 'Ready for Delivery', 'dot' => 'bg-indigo-500',  'badge' => 'bg-indigo-100 text-indigo-700', 'bar' => 'bg-indigo-500'],
+                            $mo['status'] === 'Completed'          => ['label' => 'Completed',          'dot' => 'bg-emerald-500', 'badge' => 'bg-emerald-100 text-emerald-700','bar' => 'bg-emerald-500'],
+                            default                                => ['label' => 'Pending',            'dot' => 'bg-amber-400',   'badge' => 'bg-amber-100 text-amber-700',   'bar' => 'bg-amber-400'],
+                        };
+                        $dueDate  = \Carbon\Carbon::parse($mo['delivery_date']);
+                        $daysLeft = now()->startOfDay()->diffInDays($dueDate->startOfDay(), false);
+                        $dueClass = $daysLeft < 0 ? 'text-red-600' : ($daysLeft === 0 ? 'text-orange-600' : ($daysLeft <= 3 ? 'text-amber-600' : 'text-gray-600'));
+                        $dueLabel = $daysLeft < 0 ? 'Overdue' : ($daysLeft === 0 ? 'Due today' : ($daysLeft <= 3 ? "Due in {$daysLeft}d" : ''));
+                    @endphp
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-bold text-gray-800">{{ $mo['order_number'] }}</span>
+                            @if($mo['is_assigned'])
+                                <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[0.6rem] font-semibold bg-emerald-100 text-emerald-700">Assigned</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700 font-medium">{{ $mo['customer'] }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {{ $statusConfig['badge'] }}">
+                                <span class="w-1.5 h-1.5 rounded-full {{ $statusConfig['dot'] }}"></span>
+                                {{ $statusConfig['label'] }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm {{ $dueClass }}">{{ $mo['delivery_date'] }}</span>
+                            @if($dueLabel)
+                                <p class="text-[0.65rem] font-medium {{ $dueClass }}">{{ $dueLabel }}</p>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ $mo['total_items'] }} {{ Str::plural('item', $mo['total_items']) }}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden w-20">
+                                    <div class="h-full rounded-full {{ $statusConfig['bar'] }}" style="width:{{ $mo['overall_pct'] }}%"></div>
+                                </div>
+                                <span class="text-xs font-bold text-gray-700 w-8 text-right">{{ $mo['overall_pct'] }}%</span>
                             </div>
-                            <p class="text-sm font-semibold text-gray-900 mt-0.5 truncate">{{ $mo['customer'] }}</p>
-                        </div>
-                        {{-- Progress ring --}}
-                        <div class="flex-shrink-0 relative w-14 h-14">
-                            <svg class="w-14 h-14 -rotate-90" viewBox="0 0 48 48">
-                                <circle cx="24" cy="24" r="{{ $r }}" fill="none" stroke="#e5e7eb" stroke-width="4"/>
-                                <circle cx="24" cy="24" r="{{ $r }}" fill="none" stroke="{{ $statusConfig['ring'] }}" stroke-width="4"
-                                    stroke-dasharray="{{ $dash }} {{ $circ }}" stroke-linecap="round"/>
-                            </svg>
-                            <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-800">{{ $pct }}%</span>
-                        </div>
-                    </div>
-
-                    {{-- Status + due date badges --}}
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {{ $statusConfig['badge'] }}">
-                            <span class="w-1.5 h-1.5 rounded-full {{ $statusConfig['dot'] }}"></span>
-                            {{ $statusConfig['label'] }}
-                        </span>
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border {{ $dueBadge['class'] }}">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5A2.25 2.25 0 015.25 5.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5"/></svg>
-                            {{ $dueBadge['text'] }}
-                        </span>
-                    </div>
-
-                    {{-- Items table: Item Name + Qty + mini progress bar --}}
-                    <div class="rounded-lg border border-gray-100 overflow-hidden">
-                        <table class="w-full text-xs">
-                            <thead>
-                                <tr class="bg-gray-50 border-b border-gray-100">
-                                    <th class="px-3 py-1.5 text-left font-semibold text-gray-500">Item Name</th>
-                                    <th class="px-3 py-1.5 text-right font-semibold text-gray-500 w-12">Qty</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50">
-                                @foreach($mo['items'] as $it)
-                                <tr>
-                                    <td class="px-3 py-2">
-                                        <span class="text-gray-800 font-medium">{{ $it['name'] }}</span>
-                                        <div class="mt-1 flex items-center gap-1.5">
-                                            <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                                                <div class="h-full rounded-full {{ $it['pct'] >= 100 ? 'bg-emerald-500' : ($it['pct'] > 0 ? 'bg-blue-400' : 'bg-gray-200') }}"
-                                                    style="width:{{ $it['pct'] }}%"></div>
-                                            </div>
-                                            <span class="text-[0.6rem] font-medium whitespace-nowrap {{ $it['pct'] >= 100 ? 'text-emerald-600' : ($it['pct'] > 0 ? 'text-blue-500' : 'text-gray-400') }}">
-                                                {{ $it['completed'] }}/{{ $it['qty'] }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="px-3 py-2 text-right text-gray-700 font-semibold">{{ $it['qty'] }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- Footer --}}
-                    @if($mo['is_assigned'])
-                    <div class="mt-auto pt-2 border-t border-gray-100">
-                        <a href="{{ route('assignments') }}" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-                            Go to My Assignments
-                        </a>
-                    </div>
-                    @endif
-                </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <a href="{{ route('progress') }}" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 whitespace-nowrap">View Details →</a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
             </div>
-            @endforeach
         </div>
         @endif
     </div>
@@ -642,7 +579,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach($recentSales as $sale)
-                    <tr class="hover:bg-gray-50 transition-colors">
+                    <tr class="hover:bg-gray-100 transition-colors">
                         <td class="px-6 py-3.5">
                             <div>
                                 <p class="text-sm font-semibold text-gray-900">{{ $sale['id'] }}</p>

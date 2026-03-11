@@ -14,8 +14,6 @@ return new class extends Migration
             $table->foreign('assignment_id')->references('Assignment_Id')->on('assignments')->nullOnDelete();
             $table->unsignedInteger('phase_item_id')->nullable();
             $table->foreign('phase_item_id')->references('Phase_Item_Id')->on('order_phase_items')->nullOnDelete();
-            $table->unsignedInteger('order_item_id')->nullable();
-            $table->foreign('order_item_id')->references('Order_Item_Id')->on('order_items')->nullOnDelete();
             $table->unsignedInteger('employee_id');
             $table->foreign('employee_id')->references('User_Id')->on('users')->cascadeOnDelete();
             $table->unsignedInteger('qty_added');

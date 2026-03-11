@@ -2,9 +2,10 @@
 
 // ========== Inventory Filter ==========
 function generateRef(prefix) {
-    const year = new Date().getFullYear();
-    const rand = String(Math.floor(1000 + Math.random() * 9000));
-    return `${prefix}-${year}-${rand}`;
+    const chars = '0123456789ABCDEF';
+    let code = '';
+    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return `${prefix}-${code}`;
 }
 
 window.filterInventory = function () {

@@ -1,26 +1,5 @@
 @extends('partials.app', ['title' => 'Notifications - Canson', 'activePage' => 'notifications'])
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Notifications</span></h1>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="flex items-center gap-2">
-                @if(auth()->user()->isEmployee())
-                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-700">Worker</span>
-                @elseif(auth()->user()->isAdmin())
-                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">Manager</span>
-                @elseif(auth()->user()->isSuperAdmin())
-                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-700">Boss</span>
-                @endif
-                <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">
-                    {{ auth()->user()->initial }}
-                </div>
-            </div>
-        </div>
-    </div>
-@endsection
-
 @section('content')
 <div class="max-w-4xl mx-auto">
 

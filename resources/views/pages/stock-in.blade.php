@@ -27,7 +27,8 @@
         <div class="flex items-center gap-3">
             <div class="flex flex-col rounded-lg border border-gray-300 overflow-hidden sm:flex-row">
                 <button class="stockin-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white" data-tab="stock-in-form">Stock In</button>
-                <button class="stockin-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50" data-tab="stock-in-history">Movement History</button>
+                <button class="stockin-tab-btn p-2 border-x border-gray-300 text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50" data-tab="stock-in-history">Movement History</button>
+                <button class="stockin-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50" data-tab="suppliers">Suppliers</button>
             </div>
         </div>
     </div>
@@ -66,7 +67,7 @@
         <div class="bg-white rounded-xl border border-gray-200 p-4 mb-0">
             <div class="relative">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                <input id="stockInSearch" type="text" placeholder="Search items to stock in..." oninput="filterStockInItems()" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                <input id="stockInSearch" type="text" placeholder="Search items to stock in..." oninput="filterStockInItems()" class="w-full sm:w-md pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
             </div>
         </div>
 
@@ -125,7 +126,7 @@
         <div class="bg-white rounded-xl border border-gray-200 p-4 mb-0">
             <div class="relative">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                <input id="stockInHistorySearch" type="text" placeholder="Search history..." oninput="filterStockInHistory()" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                <input id="stockInHistorySearch" type="text" placeholder="Search history..." oninput="filterStockInHistory()" class="w-full sm:w-md pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
             </div>
         </div>
 
@@ -183,10 +184,82 @@
             </div>
         </div>
     </div>
+
+    {{-- Suppliers Tab --}}
+    <div id="tab-suppliers" class="hidden">
+      <div class="mb-6 flex justify-end">
+         <button onclick="openAddSupplierModal()" class="ml-3 inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                Add Supplier
+        </button>
+      </div>
+        <div class="flex items-center justify-between mb-4">
+            <div class="bg-white rounded-xl border border-gray-200 p-4 flex-1">
+                <div class="relative">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                    <input id="supplierSearch" type="text" placeholder="Search suppliers..." oninput="filterSuppliers()" class="w-full sm:w-md pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+            <table class="w-full min-w-[600px]">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Supplier Name</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Address</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($suppliers as $supplier)
+                    <tr class="supplier-row hover:bg-gray-50 transition-colors" data-name="{{ strtolower($supplier->name) }}">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-sm font-bold text-emerald-600">{{ strtoupper(substr($supplier->name, 0, 1)) }}</span>
+                                </div>
+                                <span class="text-sm font-semibold text-gray-900">{{ $supplier->name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ $supplier->address }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ $supplier->email }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ $supplier->phone }}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <button onclick="openEditSupplierModal({{ json_encode(['id' => $supplier->Supplier_Id, 'name' => $supplier->name, 'address' => $supplier->address, 'email' => $supplier->email, 'phone' => $supplier->phone]) }})"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>
+                                    Edit
+                                </button>
+                                <button onclick="deleteSupplier({{ $supplier->Supplier_Id }}, '{{ addslashes($supplier->name) }}')"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                                    Remove
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-400">No suppliers added yet. Click "Add Supplier" to get started.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Stock In Modal --}}
 @include('pages.Modals.stockInModal')
+
+{{-- Add/Edit Supplier Modal --}}
+@include('pages.Modals.supplierModal')
 
 @endsection
 

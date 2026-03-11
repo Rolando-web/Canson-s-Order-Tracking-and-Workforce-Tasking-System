@@ -8,15 +8,6 @@
     @vite('resources/js/pages/assignments.js')
 @endpush
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">AD</div>
-        </div>
-    </div>
-@endsection
 
 @section('content')
 <div class="assignments-page">
@@ -176,7 +167,7 @@
                     </div>
                     <div class="flex items-center justify-between pt-3 border-t border-gray-100">
                         <p class="text-sm font-bold text-emerald-600">₱{{ number_format((float)$order['total_amount'], 2) }}</p>
-                        <button onclick="quickAssignOrder('{{ $order['order_id'] }}')" class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors opacity-0 group-hover:opacity-100">
+                        <button onclick="quickAssignOrder('{{ $order['order_id'] }}')" class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                             Assign
                         </button>
@@ -276,7 +267,7 @@
                         @endif
                     </div>
                     <div class="flex items-center flex-col sm:flex-row  justify-between pt-3 border-t border-gray-100">
-                        <p class="text-sm font-bold text-emerald-600">&peso;{{ number_format((float)$order['total_amount'], 2) }}</p>
+                        <p class="text-sm font-bold text-emerald-600">₱{{ number_format((float)$order['total_amount'], 2) }}</p>
                         <div class="flex items-center mt-3 gap-2">
                             <button onclick="openOrderProgressModal('{{ $order['order_id'] }}')" class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>

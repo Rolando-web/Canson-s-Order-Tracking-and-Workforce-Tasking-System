@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Order;
-use App\Models\OrderItem;
+use App\Models\OrderPhaseItem;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -45,10 +45,9 @@ class DashboardController extends Controller
         $prodDays = [];
         foreach ($dayNames as $i => $dayName) {
             $date = $startOfWeek->copy()->addDays($i);
-            $prodDays[$dayName] = (int) Order::whereDate('created_at', $date)
-                ->withSum('items', 'quantity')
-                ->get()
-                ->sum('items_sum_quantity');
+            $prodDays[$dayName] = (int) OrderPhaseItem::whereHas('phase.order', function ($q) use ($date) {
+                $q->whereDate('created_at', $date);
+            })->sum('base_qty');
         }
 
         $recentSales = Order::orderBy('created_at', 'desc')
@@ -69,13 +68,13 @@ class DashboardController extends Controller
                 ];
             })->toArray();
 
-        $maxSold = (int) (OrderItem::select(DB::raw('SUM(quantity) as total'))
+        $maxSold = (int) (OrderPhaseItem::select(DB::raw('SUM(base_qty) as total'))
             ->groupBy('name')
             ->orderByDesc('total')
             ->limit(1)
             ->value('total') ?? 1);
 
-        $topProducts = OrderItem::select('name', DB::raw('SUM(quantity) as total_sold'), DB::raw('SUM(subtotal) as total_revenue'))
+        $topProducts = OrderPhaseItem::select('name', DB::raw('SUM(base_qty) as total_sold'), DB::raw('SUM(subtotal) as total_revenue'))
             ->groupBy('name')
             ->orderByDesc('total_revenue')
             ->limit(5)

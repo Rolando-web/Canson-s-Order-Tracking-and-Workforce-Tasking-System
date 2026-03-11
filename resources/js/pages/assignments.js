@@ -583,7 +583,7 @@ window.assignOrderToEmployee = function() {
         (firstPhase.items || []).forEach(item => {
             (window.selectedEmployeesPerItem[item.id] || []).forEach(emp => {
                 itemAssignments.push({
-                    order_item_id: item.id,
+                    phase_item_id: item.id,
                     phase_id:      firstPhase.phase_id,
                     employee_id:   emp.id,
                 });
@@ -594,7 +594,7 @@ window.assignOrderToEmployee = function() {
             const itemId = parseInt(row.dataset.itemId);
             (window.selectedEmployeesPerItem[itemId] || []).forEach(emp => {
                 itemAssignments.push({
-                    order_item_id: itemId,
+                    phase_item_id: itemId,
                     employee_id: emp.id,
                 });
             });
@@ -617,7 +617,7 @@ window.assignOrderToEmployee = function() {
     const totalItems = allItemIds.length;
 
     // Ensure every item has at least one employee
-    const coveredItems = new Set(itemAssignments.map(ia => ia.order_item_id));
+    const coveredItems = new Set(itemAssignments.map(ia => ia.phase_item_id));
     if (coveredItems.size < totalItems) {
         const msg = document.getElementById('assignValidationMsg');
         msg && msg.classList.remove('hidden');

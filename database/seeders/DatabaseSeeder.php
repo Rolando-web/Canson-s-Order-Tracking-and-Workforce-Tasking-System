@@ -48,8 +48,15 @@ class DatabaseSeeder extends Seeder
             ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE]
         );
 
+            User::firstOrCreate(
+            ['name' => 'employee5'],
+            ['password' => bcrypt('password'), 'role' => User::ROLE_EMPLOYEE]
+        );
+
+
         $this->call([
             InventoryItemSeeder::class,
+            SupplierSeeder::class,
         ]);
     }
 }

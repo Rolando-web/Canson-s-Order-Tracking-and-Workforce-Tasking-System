@@ -11,8 +11,10 @@ return new class extends Migration
         Schema::create('assignments', function (Blueprint $table) {
             $table->increments('Assignment_Id');
             $table->string('order_number', 20);
-            $table->unsignedInteger('order_item_id')->nullable();
-            $table->foreign('order_item_id')->references('Order_Item_Id')->on('order_items')->nullOnDelete();
+            $table->unsignedInteger('phase_item_id')->nullable();
+            $table->foreign('phase_item_id')->references('Phase_Item_Id')->on('order_phase_items')->nullOnDelete();
+            $table->unsignedInteger('phase_id')->nullable();
+            $table->foreign('phase_id')->references('Phase_Id')->on('order_phases')->nullOnDelete();
             $table->unsignedInteger('employee_id');
             $table->foreign('employee_id')->references('User_Id')->on('users')->cascadeOnDelete();
             $table->enum('priority', ['normal', 'high', 'urgent'])->default('normal');

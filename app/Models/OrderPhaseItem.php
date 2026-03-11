@@ -15,6 +15,8 @@ class OrderPhaseItem extends Model
         'damage_carry',
         'required_qty',
         'completed_qty',
+        'unit_price',
+        'subtotal',
     ];
 
     protected $casts = [
@@ -22,6 +24,8 @@ class OrderPhaseItem extends Model
         'damage_carry'  => 'integer',
         'required_qty'  => 'integer',
         'completed_qty' => 'integer',
+        'unit_price'    => 'decimal:2',
+        'subtotal'      => 'decimal:2',
     ];
 
     public function phase()

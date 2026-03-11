@@ -16,6 +16,8 @@ return new class extends Migration {
             $table->unsignedInteger('damage_carry')->default(0);   
             $table->unsignedInteger('required_qty')->default(0);  
             $table->unsignedInteger('completed_qty')->default(0);  
+            $table->decimal('unit_price', 10, 2)->default(0.00);
+            $table->decimal('subtotal', 10, 2)->default(0.00);
             $table->timestamps();
         });
     }

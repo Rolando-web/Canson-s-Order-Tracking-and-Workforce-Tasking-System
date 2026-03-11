@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Assignment;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\OrderPhaseItem;
 use App\Models\OrderPhase;
 use App\Models\ProgressLog;
@@ -30,7 +29,7 @@ class AssignmentsController extends Controller
 
     private function employeeView($user)
     {
-        $rawAssignments = Assignment::with(['order.items', 'orderItem', 'phase.items'])
+        $rawAssignments = Assignment::with(['order', 'phaseItem', 'phase.items'])
             ->where('employee_id', $user->User_Id)
             ->orderByRaw("FIELD(status, 'in_progress', 'pending', 'completed', 'cancelled')")
             ->orderBy('assigned_date', 'desc')
@@ -77,28 +76,19 @@ class AssignmentsController extends Controller
                 $grouped[$key]['status'] = $a->status;
             }
 
-            // Build order item entry
-            if ($a->order_item_id && $a->orderItem) {
-                $assignedItem = $a->orderItem;
-                $displayQty = $assignedItem->quantity;
-                $phaseCompleted = $assignedItem->completed_qty ?? 0;
-                if ($a->phase_id && $a->phase) {
-                    $phaseItem = $a->phase->items->firstWhere('name', $assignedItem->name);
-                    if ($phaseItem) {
-                        $displayQty = $phaseItem->required_qty;
-                        $phaseCompleted = $phaseItem->completed_qty;
-                    }
-                }
+            // Build order item entry from phase item
+            if ($a->phase_item_id && $a->phaseItem) {
+                $phaseItem = $a->phaseItem;
 
                 // Avoid duplicates (same item in same group)
-                $exists = collect($grouped[$key]['order_items'])->firstWhere('id', $assignedItem->Order_Item_Id);
+                $exists = collect($grouped[$key]['order_items'])->firstWhere('id', $phaseItem->Phase_Item_Id);
                 if (!$exists) {
                     $grouped[$key]['order_items'][] = [
-                        'id'            => $assignedItem->Order_Item_Id,
-                        'name'          => $assignedItem->name,
-                        'quantity'      => $displayQty,
-                        'completed_qty' => $phaseCompleted,
-                        'remaining'     => $displayQty - $phaseCompleted,
+                        'id'            => $phaseItem->Phase_Item_Id,
+                        'name'          => $phaseItem->name,
+                        'quantity'      => $phaseItem->required_qty,
+                        'completed_qty' => $phaseItem->completed_qty,
+                        'remaining'     => $phaseItem->required_qty - $phaseItem->completed_qty,
                     ];
                 }
             }
@@ -167,19 +157,16 @@ class AssignmentsController extends Controller
 
     private function loadProgressHistory($assignment): array
     {
-        if ($assignment->phase_id && $assignment->phase && $assignment->orderItem) {
-            $phaseItem = $assignment->phase->items->firstWhere('name', $assignment->orderItem->name);
-            if ($phaseItem) {
-                return ProgressLog::where('phase_item_id', $phaseItem->Phase_Item_Id)
-                    ->with('employee:User_Id,name')
-                    ->orderBy('created_at', 'asc')
-                    ->get()
-                    ->map(fn($log) => [
-                        'employee'  => $log->employee ? $log->employee->name : 'Unknown',
-                        'qty_added' => $log->qty_added,
-                        'time'      => $log->created_at->format('M d, Y h:i A'),
-                    ])->toArray();
-            }
+        if ($assignment->phase_item_id && $assignment->phaseItem) {
+            return ProgressLog::where('phase_item_id', $assignment->phaseItem->Phase_Item_Id)
+                ->with('employee:User_Id,name')
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->map(fn($log) => [
+                    'employee'  => $log->employee ? $log->employee->name : 'Unknown',
+                    'qty_added' => $log->qty_added,
+                    'time'      => $log->created_at->format('M d, Y h:i A'),
+                ])->toArray();
         }
 
         return [];
@@ -216,7 +203,7 @@ class AssignmentsController extends Controller
 
         $assignmentsData = [];
         foreach ($employees as $emp) {
-            $empAssignments = Assignment::with(['order.items', 'orderItem', 'phase.items'])
+            $empAssignments = Assignment::with(['order', 'phaseItem', 'phase.items'])
                 ->where('employee_id', $emp->User_Id)
                 ->whereNotIn('status', ['completed', 'cancelled'])
                 ->orderBy('assigned_date', 'desc')
@@ -250,11 +237,10 @@ class AssignmentsController extends Controller
                     ];
                 }
                 // Collect assigned items for this group
-                if ($a->orderItem) {
-                    $phaseItem = $a->phase ? $a->phase->items->firstWhere('name', $a->orderItem->name) : null;
+                if ($a->phaseItem) {
                     $grouped[$key]['items_list'][] = [
-                        'name'     => $a->orderItem->name,
-                        'quantity' => $phaseItem ? $phaseItem->required_qty : $a->orderItem->quantity,
+                        'name'     => $a->phaseItem->name,
+                        'quantity' => $a->phaseItem->required_qty,
                     ];
                 }
             }
@@ -277,7 +263,7 @@ class AssignmentsController extends Controller
             ->toArray();
 
         $availableOrders = Order::whereNotIn('status', ['Delivered'])
-            ->with(['items', 'phases.items'])
+            ->with(['phases.items'])
             ->get()
             ->filter(function ($order) use ($fullyAssignedPhasedOrders) {
                 // Hide if any phase is assigned (all phases assigned together)
@@ -318,22 +304,26 @@ class AssignmentsController extends Controller
                     ];
                 })->values()->toArray();
 
+                // Collect all phase items for display
+                $allPhaseItems = $order->phases->flatMap->items;
+                $uniqueItemNames = $allPhaseItems->pluck('name')->unique();
+
                 return [
                     'order_id'          => $order->order_number,
                     'customer'          => $order->customer_name,
                     'customer_contact'  => $order->contact_number,
                     'priority'          => strtolower($order->priority ?? 'normal'),
-                    'items'             => $order->items->map(fn($i) => $i->quantity . 'x ' . $i->name)->implode(', '),
+                    'items'             => $allPhaseItems->map(fn($i) => $i->base_qty . 'x ' . $i->name)->implode(', '),
                     'delivery_address'  => $order->delivery_address,
                     'delivery_date'     => $order->delivery_date->format('Y-m-d'),
                     'total_amount'      => (float) $order->total_amount,
                     'notes'             => $order->notes,
-                    'order_items'       => $order->items->map(fn($i) => [
-                        'id'       => $i->Order_Item_Id,
+                    'order_items'       => $order->phases->first()?->items->map(fn($i) => [
+                        'id'       => $i->Phase_Item_Id,
                         'name'     => $i->name,
-                        'quantity' => $i->quantity,
+                        'quantity' => $i->base_qty,
                         'price'    => (float) $i->unit_price,
-                    ])->toArray(),
+                    ])->toArray() ?? [],
                     'all_phases_status' => $allPhasesStatus,
                     // All unfinished phases for the assignment modal (all assigned together)
                     'phases'            => $order->phases->sortBy('phase_number')
@@ -343,15 +333,12 @@ class AssignmentsController extends Controller
                             'number'        => $p->phase_number,
                             'delivery_date' => $p->delivery_date->format('Y-m-d'),
                             'status'        => $p->status,
-                            'items'         => $p->items->map(function ($pi) use ($order) {
-                                $orderItem = $order->items->firstWhere('name', $pi->name);
-                                return [
-                                    'id'           => $orderItem ? $orderItem->Order_Item_Id : null,
-                                    'name'         => $pi->name,
-                                    'required_qty' => $pi->required_qty,
-                                    'price'        => $orderItem ? (float) $orderItem->unit_price : 0,
-                                ];
-                            })->filter(fn($pi) => $pi['id'] !== null)->values()->toArray(),
+                            'items'         => $p->items->map(fn($pi) => [
+                                'id'           => $pi->Phase_Item_Id,
+                                'name'         => $pi->name,
+                                'required_qty' => $pi->required_qty,
+                                'price'        => (float) $pi->unit_price,
+                            ])->values()->toArray(),
                         ])->values()->toArray(),
                 ];
             })
@@ -359,7 +346,7 @@ class AssignmentsController extends Controller
             ->toArray();
 
         $activeOrders = Order::whereIn('status', ['In-Progress', 'Pending'])
-            ->with(['items', 'phases.items'])
+            ->with(['phases.items'])
             ->orderBy('delivery_date', 'asc')
             ->get()
             ->map(function ($order) {
@@ -372,21 +359,24 @@ class AssignmentsController extends Controller
                     ->unique()
                     ->values()
                     ->toArray();
+
+                $allPhaseItems = $order->phases->flatMap->items;
+
                 return [
                     'order_id'         => $order->order_number,
                     'customer'         => $order->customer_name,
                     'customer_contact' => $order->contact_number,
                     'status'           => $order->status,
                     'priority'         => strtolower($order->priority ?? 'normal'),
-                    'items'            => $order->items->map(fn($i) => $i->quantity . 'x ' . $i->name)->implode(', '),
+                    'items'            => $allPhaseItems->map(fn($i) => $i->base_qty . 'x ' . $i->name)->implode(', '),
                     'delivery_address' => $order->delivery_address,
                     'delivery_date'    => $order->delivery_date->format('Y-m-d'),
                     'total_amount'     => (float) $order->total_amount,
                     'assigned_to'      => $assignedEmployees,
                     'phase_count'      => $order->phases->count(),
-                    'progress_items'   => $order->items->map(fn($i) => [
+                    'progress_items'   => $allPhaseItems->map(fn($i) => [
                         'name'          => $i->name,
-                        'required_qty'  => $i->quantity,
+                        'required_qty'  => $i->required_qty,
                         'completed_qty' => $i->completed_qty ?? 0,
                     ])->values()->toArray(),
                     'phases_progress'  => $order->phases->sortBy('phase_number')->map(fn($p) => [
@@ -411,13 +401,13 @@ class AssignmentsController extends Controller
         // ── Per-item assignment (multiple products → multiple employees) ──
         if ($request->has('item_assignments')) {
             $validated = $request->validate([
-                'order_id'                         => 'required|string|exists:orders,order_number',
-                'priority'                         => 'required|in:normal,high,urgent',
-                'notes'                            => 'nullable|string',
-                'item_assignments'                 => 'required|array|min:1',
-                'item_assignments.*.order_item_id' => 'required|exists:order_items,Order_Item_Id',
-                'item_assignments.*.employee_id'   => 'required|exists:users,User_Id',
-                'item_assignments.*.phase_id'      => 'nullable|exists:order_phases,Phase_Id',
+                'order_id'                          => 'required|string|exists:orders,order_number',
+                'priority'                          => 'required|in:normal,high,urgent',
+                'notes'                             => 'nullable|string',
+                'item_assignments'                  => 'required|array|min:1',
+                'item_assignments.*.phase_item_id'  => 'required|exists:order_phase_items,Phase_Item_Id',
+                'item_assignments.*.employee_id'    => 'required|exists:users,User_Id',
+                'item_assignments.*.phase_id'       => 'nullable|exists:order_phases,Phase_Id',
             ]);
 
             $order = Order::where('order_number', $validated['order_id'])->first();
@@ -426,45 +416,42 @@ class AssignmentsController extends Controller
             try {
                 $employeesById = [];
                 $createdAssignments = [];
-                $stockedOutItemIds = []; // track order_item_ids already stocked out
+                $stockedOutItemNames = []; // track item names already stocked out
 
-                // Collect all phases that need assignment (for phased orders, auto-assign all phases to same employees)
+                // Collect all phases that need assignment
                 $allPhases = $order->phases()
                     ->whereNotIn('status', ['Completed', 'Delivered'])
                     ->whereNotIn('Phase_Id', Assignment::whereIn('status', ['pending', 'in_progress'])->whereNotNull('phase_id')->pluck('phase_id')->toArray())
                     ->orderBy('phase_number')
                     ->get();
 
-                // Build the employee-item mapping from the submitted assignments (based on item NAME, not ID)
+                // Build the employee-item mapping from the submitted assignments (based on item NAME)
                 $itemEmployeeMap = [];
                 foreach ($validated['item_assignments'] as $ia) {
-                    $orderItem = OrderItem::find($ia['order_item_id']);
-                    if (!$orderItem) continue;
-                    $itemEmployeeMap[$orderItem->name][] = $ia['employee_id'];
+                    $phaseItem = OrderPhaseItem::find($ia['phase_item_id']);
+                    if (!$phaseItem) continue;
+                    $itemEmployeeMap[$phaseItem->name][] = $ia['employee_id'];
                 }
 
                 // Create assignments for ALL remaining phases using the same employee mapping
                 if ($allPhases->isNotEmpty()) {
                     foreach ($allPhases as $phase) {
                         foreach ($phase->items as $phaseItem) {
-                            $orderItem = $order->items->firstWhere('name', $phaseItem->name);
-                            if (!$orderItem) continue;
-
                             $empIds = $itemEmployeeMap[$phaseItem->name] ?? [];
                             foreach ($empIds as $empId) {
                                 $employee = User::find($empId);
                                 if (!$employee) continue;
 
                                 $assignment = Assignment::create([
-                                    'order_number'  => $validated['order_id'],
-                                    'order_item_id' => $orderItem->Order_Item_Id,
-                                    'phase_id'      => $phase->Phase_Id,
-                                    'employee_id'   => $empId,
-                                    'priority'      => $validated['priority'],
-                                    'status'        => 'pending',
-                                    'notes'         => $validated['notes'] ?? null,
-                                    'assigned_by'   => auth()->id(),
-                                    'assigned_date' => now()->toDateString(),
+                                    'order_number'   => $validated['order_id'],
+                                    'phase_item_id'  => $phaseItem->Phase_Item_Id,
+                                    'phase_id'       => $phase->Phase_Id,
+                                    'employee_id'    => $empId,
+                                    'priority'       => $validated['priority'],
+                                    'status'         => 'pending',
+                                    'notes'          => $validated['notes'] ?? null,
+                                    'assigned_by'    => auth()->id(),
+                                    'assigned_date'  => now()->toDateString(),
                                 ]);
 
                                 $createdAssignments[] = $assignment;
@@ -474,15 +461,20 @@ class AssignmentsController extends Controller
                     }
                 }
 
-                // Stock out (once per order item, not per phase)
+                // Stock out (once per item name, not per phase)
                 foreach ($validated['item_assignments'] as $ia) {
-                    $orderItem = OrderItem::find($ia['order_item_id']);
-                    if ($orderItem && !in_array($orderItem->Order_Item_Id, $stockedOutItemIds)) {
+                    $phaseItem = OrderPhaseItem::find($ia['phase_item_id']);
+                    if ($phaseItem && !in_array($phaseItem->name, $stockedOutItemNames)) {
                         $employee = User::find($ia['employee_id']);
-                        $inventoryItem = Product::find($orderItem->product_id);
+                        $inventoryItem = Product::find($phaseItem->product_id);
                         if ($inventoryItem) {
+                            // Sum total qty across all phases for this item
+                            $totalQty = $order->phases->flatMap->items
+                                ->where('name', $phaseItem->name)
+                                ->sum('base_qty');
+
                             $previousStock = $inventoryItem->stock;
-                            $newStock      = max(0, $previousStock - $orderItem->quantity);
+                            $newStock      = max(0, $previousStock - $totalQty);
 
                             $inventoryItem->update([
                                 'stock'  => $newStock,
@@ -491,17 +483,17 @@ class AssignmentsController extends Controller
 
                             StockOut::create([
                                 'product_id'       => $inventoryItem->Product_Id,
-                                'quantity'         => $orderItem->quantity,
+                                'quantity'         => $totalQty,
                                 'previous_stock'   => $previousStock,
                                 'new_stock'        => $newStock,
-                                'reference_number' => 'SO-' . now()->format('YmdHis') . rand(10, 99),
+                                'reference_number' => 'SO-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)),
                                 'reason'           => 'Order Assignment',
-                                'notes'            => "Auto stock out for order {$validated['order_id']} – {$orderItem->name}" . ($employee ? " assigned to {$employee->name}" : ''),
+                                'notes'            => "Auto stock out for order {$validated['order_id']} – {$phaseItem->name}" . ($employee ? " assigned to {$employee->name}" : ''),
                                 'created_by'       => auth()->id(),
                                 'created_at'       => now(),
                             ]);
 
-                            $stockedOutItemIds[] = $orderItem->Order_Item_Id;
+                            $stockedOutItemNames[] = $phaseItem->name;
                         }
                     }
                 }
@@ -520,8 +512,9 @@ class AssignmentsController extends Controller
                 foreach ($employeesById as $empId => $employee) {
                     $empItemNames = collect($validated['item_assignments'])
                         ->where('employee_id', $empId)
-                        ->map(fn($ia) => OrderItem::find($ia['order_item_id'])?->name)
+                        ->map(fn($ia) => OrderPhaseItem::find($ia['phase_item_id'])?->name)
                         ->filter()
+                        ->unique()
                         ->implode(', ');
 
                     Notification::send(
@@ -605,7 +598,7 @@ class AssignmentsController extends Controller
         $validated = $request->validate([
             'assignment_id'   => 'required|exists:assignments,Assignment_Id',
             'items'           => 'required|array',
-            'items.*.id'      => 'required|exists:order_items,Order_Item_Id',
+            'items.*.id'      => 'required|exists:order_phase_items,Phase_Item_Id',
             'items.*.add_qty' => 'required|integer|min:1',
         ]);
 
@@ -620,82 +613,75 @@ class AssignmentsController extends Controller
             return response()->json(['success' => false, 'message' => 'Order not found'], 404);
         }
 
-        // Phase-specific assignment: update OrderPhaseItem.completed_qty, not OrderItem
-        if ($assignment->phase_id) {
-            foreach ($validated['items'] as $itemData) {
-                $orderItem = OrderItem::where('Order_Item_Id', $itemData['id'])
-                    ->where('order_id', $order->Order_Id)
-                    ->first();
-                if (!$orderItem) continue;
-
-                $phaseItem = OrderPhaseItem::where('phase_id', $assignment->phase_id)
-                    ->where('name', $orderItem->name)
-                    ->first();
-                if ($phaseItem) {
-                    $prevCompleted = $phaseItem->completed_qty;
-                    $newTotal      = min($prevCompleted + $itemData['add_qty'], $phaseItem->required_qty);
-                    $actualAdd     = $newTotal - $prevCompleted;
-                    if ($actualAdd > 0) {
-                        $phaseItem->update(['completed_qty' => $newTotal]);
-                        ProgressLog::create([
-                            'assignment_id' => $assignment->Assignment_Id,
-                            'phase_item_id' => $phaseItem->Phase_Item_Id,
-                            'employee_id'   => $user->User_Id,
-                            'qty_added'     => $actualAdd,
-                        ]);
-                    }
-                }
-            }
-
-            $phase   = $assignment->phase()->with('items')->first();
-            $allDone = $phase && $phase->items->every(fn($i) => $i->fresh()->completed_qty >= $i->required_qty);
-
-            if ($allDone) {
-                // Complete ALL assignments for this phase (multiple employees may be assigned)
-                Assignment::where('order_number', $order->order_number)
-                    ->where('phase_id', $assignment->phase_id)
-                    ->whereNotIn('status', ['cancelled'])
-                    ->update(['status' => 'completed']);
-
-                if ($phase->status !== 'Completed') {
-                    $phase->update(['status' => 'Completed']);
-                }
-
-                // Check if ALL phases of this order are now Completed or Delivered
-                $remainingPendingPhases = OrderPhase::where('order_id', $order->Order_Id)
-                    ->whereNotIn('status', ['Completed', 'Delivered'])
-                    ->count();
-
-                if ($remainingPendingPhases === 0) {
-                    $order->update(['status' => 'Ready for Delivery']);
-                } else {
-                    // Other phases still need work/assignment -- keep order In-Progress
-                    if ($order->status !== 'In-Progress') {
-                        $order->update(['status' => 'In-Progress']);
-                    }
-                }
-
-                $managerIds = User::where('role', 'admin')->orWhere('role', 'super_admin')->pluck('User_Id')->toArray();
-                Notification::sendToMany(
-                    $managerIds,
-                    'phase_completed',
-                    'Phase Ready for Delivery',
-                    "Phase {$phase->phase_number} of order {$order->order_number} is complete and ready for delivery."
-                        . ($remainingPendingPhases > 0 ? " {$remainingPendingPhases} phase(s) still pending." : " All phases complete!"),
-                    ['order_id' => $order->order_number]
-                );
-            } else {
-                $assignment->update(['status' => 'in_progress']);
-            }
-
-            return response()->json([
-                'success'       => true,
-                'all_completed' => $allDone,
-                'order_status'  => $order->fresh()->status,
-            ]);
+        if (!$assignment->phase_id) {
+            return response()->json(['success' => false, 'message' => 'No phase found for this assignment'], 422);
         }
 
-        return response()->json(['success' => false, 'message' => 'No phase found for this assignment'], 422);
+        foreach ($validated['items'] as $itemData) {
+            $phaseItem = OrderPhaseItem::where('Phase_Item_Id', $itemData['id'])
+                ->where('phase_id', $assignment->phase_id)
+                ->first();
+            if (!$phaseItem) continue;
+
+            $prevCompleted = $phaseItem->completed_qty;
+            $newTotal      = min($prevCompleted + $itemData['add_qty'], $phaseItem->required_qty);
+            $actualAdd     = $newTotal - $prevCompleted;
+            if ($actualAdd > 0) {
+                $phaseItem->update(['completed_qty' => $newTotal]);
+                ProgressLog::create([
+                    'assignment_id' => $assignment->Assignment_Id,
+                    'phase_item_id' => $phaseItem->Phase_Item_Id,
+                    'employee_id'   => $user->User_Id,
+                    'qty_added'     => $actualAdd,
+                ]);
+            }
+        }
+
+        $phase   = $assignment->phase()->with('items')->first();
+        $allDone = $phase && $phase->items->every(fn($i) => $i->fresh()->completed_qty >= $i->required_qty);
+
+        if ($allDone) {
+            // Complete ALL assignments for this phase (multiple employees may be assigned)
+            Assignment::where('order_number', $order->order_number)
+                ->where('phase_id', $assignment->phase_id)
+                ->whereNotIn('status', ['cancelled'])
+                ->update(['status' => 'completed']);
+
+            if ($phase->status !== 'Completed') {
+                $phase->update(['status' => 'Completed']);
+            }
+
+            // Check if ALL phases of this order are now Completed or Delivered
+            $remainingPendingPhases = OrderPhase::where('order_id', $order->Order_Id)
+                ->whereNotIn('status', ['Completed', 'Delivered'])
+                ->count();
+
+            if ($remainingPendingPhases === 0) {
+                $order->update(['status' => 'Ready for Delivery']);
+            } else {
+                if ($order->status !== 'In-Progress') {
+                    $order->update(['status' => 'In-Progress']);
+                }
+            }
+
+            $managerIds = User::where('role', 'admin')->orWhere('role', 'super_admin')->pluck('User_Id')->toArray();
+            Notification::sendToMany(
+                $managerIds,
+                'phase_completed',
+                'Phase Ready for Delivery',
+                "Phase {$phase->phase_number} of order {$order->order_number} is complete and ready for delivery."
+                    . ($remainingPendingPhases > 0 ? " {$remainingPendingPhases} phase(s) still pending." : " All phases complete!"),
+                ['order_id' => $order->order_number]
+            );
+        } else {
+            $assignment->update(['status' => 'in_progress']);
+        }
+
+        return response()->json([
+            'success'       => true,
+            'all_completed' => $allDone,
+            'order_status'  => $order->fresh()->status,
+        ]);
     }
 
     public function getPhaseNotes(OrderPhase $phase)

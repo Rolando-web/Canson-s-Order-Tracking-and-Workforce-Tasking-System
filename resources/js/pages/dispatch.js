@@ -153,7 +153,13 @@ window.openDamageModal = function(dispatchKey, order) {
                 '<input type="number" aria-label="Damage quantity for ' + item.name + '" class="dmg-qty w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-center focus:outline-none focus:ring-1 focus:ring-red-500 disabled:bg-gray-50 disabled:text-gray-300" disabled min="1" max="' + item.quantity + '" value="1">' +
             '</td>' +
             '<td class="px-4 py-3">' +
-                '<input type="text" aria-label="Damage reason for ' + item.name + '" class="dmg-reason w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-red-500 disabled:bg-gray-50 disabled:text-gray-300" disabled placeholder="e.g. Crushed in transit">' +
+                '<select aria-label="Damage reason for ' + item.name + '" class="dmg-reason w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-red-500 disabled:bg-gray-50 disabled:text-gray-400 bg-white" disabled onchange="toggleOtherReason(this)">' +
+                    '<option value="">— Select reason —</option>' +
+                    '<option value="Crushed in Transit">Crushed in Transit</option>' +
+                    '<option value="Damaged during Unloading">Damaged during Unloading</option>' +
+                    '<option value="Other">Other — specify below</option>' +
+                '</select>' +
+                '<input type="text" class="dmg-reason-other hidden w-full mt-1.5 px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="Describe the damage...">' +
             '</td>';
         body.appendChild(row);
     });
@@ -166,19 +172,31 @@ window.openDamageModal = function(dispatchKey, order) {
 window.toggleDamageRow = function(checkbox) {
     var row = checkbox.closest('tr');
     var qtyInput = row.querySelector('.dmg-qty');
-    var reasonInput = row.querySelector('.dmg-reason');
+    var reasonSelect = row.querySelector('.dmg-reason');
+    var reasonOther = row.querySelector('.dmg-reason-other');
     if (checkbox.checked) {
         qtyInput.disabled = false;
-        reasonInput.disabled = false;
-        reasonInput.required = true;
+        reasonSelect.disabled = false;
         row.classList.add('bg-red-50');
     } else {
         qtyInput.disabled = true;
-        reasonInput.disabled = true;
-        reasonInput.required = false;
+        reasonSelect.disabled = true;
         qtyInput.value = 1;
-        reasonInput.value = '';
+        reasonSelect.value = '';
+        reasonOther.value = '';
+        reasonOther.classList.add('hidden');
         row.classList.remove('bg-red-50');
+    }
+}
+
+window.toggleOtherReason = function(select) {
+    var otherInput = select.closest('td').querySelector('.dmg-reason-other');
+    if (select.value === 'Other') {
+        otherInput.classList.remove('hidden');
+        otherInput.focus();
+    } else {
+        otherInput.classList.add('hidden');
+        otherInput.value = '';
     }
 }
 
@@ -203,14 +221,20 @@ window.submitDamageReport = function() {
         var check = row.querySelector('.dmg-check');
         if (check.checked) {
             var qty = parseInt(row.querySelector('.dmg-qty').value);
-            var reason = row.querySelector('.dmg-reason').value.trim();
+            var reasonSelect = row.querySelector('.dmg-reason');
+            var reasonOther = row.querySelector('.dmg-reason-other');
+            var reason = reasonSelect.value === 'Other'
+                ? reasonOther.value.trim()
+                : reasonSelect.value.trim();
 
+            var invalidField = reasonSelect.value === 'Other' ? reasonOther : reasonSelect;
             if (!reason) {
-                row.querySelector('.dmg-reason').classList.add('border-red-400');
+                invalidField.classList.add('border-red-400');
                 valid = false;
                 return;
             }
-            row.querySelector('.dmg-reason').classList.remove('border-red-400');
+            reasonSelect.classList.remove('border-red-400');
+            reasonOther.classList.remove('border-red-400');
 
             damages.push({
                 item_id:   parseInt(check.getAttribute('data-item-id')),
@@ -247,6 +271,13 @@ window.submitDelivery = function(dispatchKey, damages, btn, originalText) {
 
     var payload = { order_id: order.id, damages: damages };
     if (phaseId) payload.phase_id = phaseId;
+
+    // Build phase_damages from damages so the backend can carry damage forward to the next phase
+    if (damages.length > 0) {
+        payload.phase_damages = damages.map(function(d) {
+            return { name: d.item_name, damage_qty: d.quantity };
+        });
+    }
 
     fetch('/dispatch/deliver', {
         method: 'POST',

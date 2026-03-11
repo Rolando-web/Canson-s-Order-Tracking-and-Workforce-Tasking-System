@@ -90,6 +90,11 @@ Route::middleware(['auth', 'admin_or_above'])->group(function () {
     Route::post('/inventory/stock-out', [InventoryController::class, 'stockOut'])->name('inventory.stock-out');
     Route::get('/stock-in', [InventoryController::class, 'stockInPage'])->name('stock-in');
     Route::get('/stock-out', [InventoryController::class, 'stockOutPage'])->name('stock-out');
+
+    // Suppliers
+    Route::post('/suppliers', [InventoryController::class, 'storeSupplier'])->name('suppliers.store');
+    Route::put('/suppliers/{supplier}', [InventoryController::class, 'updateSupplier'])->name('suppliers.update');
+    Route::delete('/suppliers/{supplier}', [InventoryController::class, 'destroySupplier'])->name('suppliers.destroy');
     
     Route::get('/products', [InventoryController::class, 'products'])->name('products');
     Route::post('/products', [InventoryController::class, 'store'])->name('products.store');

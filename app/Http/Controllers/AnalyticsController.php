@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Order;
-use App\Models\OrderItem;
+use App\Models\OrderPhaseItem;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -35,12 +35,13 @@ class AnalyticsController extends Controller
             $revenueTrend[$monthLabel] = (float)$monthRevenue;
         }
 
-        $salesByCategory = OrderItem::select(
+        $salesByCategory = OrderPhaseItem::select(
                 'products.category',
-                DB::raw('SUM(order_items.subtotal) as total')
+                DB::raw('SUM(order_phase_items.subtotal) as total')
             )
-            ->join('products', 'order_items.product_id', '=', 'products.Product_Id')
-            ->join('orders', 'order_items.order_id', '=', 'orders.Order_Id')
+            ->join('products', 'order_phase_items.product_id', '=', 'products.Product_Id')
+            ->join('order_phases', 'order_phase_items.phase_id', '=', 'order_phases.Phase_Id')
+            ->join('orders', 'order_phases.order_id', '=', 'orders.Order_Id')
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->groupBy('products.category')
             ->orderByDesc('total')
@@ -48,14 +49,15 @@ class AnalyticsController extends Controller
             ->map(fn($row) => ['category' => $row->category, 'total' => (float)$row->total])
             ->toArray();
 
-        $topProducts = OrderItem::select(
-                'order_items.name',
-                DB::raw('SUM(order_items.quantity) as total_sold'),
-                DB::raw('SUM(order_items.subtotal) as total_revenue')
+        $topProducts = OrderPhaseItem::select(
+                'order_phase_items.name',
+                DB::raw('SUM(order_phase_items.base_qty) as total_sold'),
+                DB::raw('SUM(order_phase_items.subtotal) as total_revenue')
             )
-            ->join('orders', 'order_items.order_id', '=', 'orders.Order_Id')
+            ->join('order_phases', 'order_phase_items.phase_id', '=', 'order_phases.Phase_Id')
+            ->join('orders', 'order_phases.order_id', '=', 'orders.Order_Id')
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->groupBy('order_items.name')
+            ->groupBy('order_phase_items.name')
             ->orderByDesc('total_revenue')
             ->limit(10)
             ->get()
@@ -87,8 +89,9 @@ class AnalyticsController extends Controller
         $startOfWeek = now()->startOfWeek();
         foreach ($dayNames as $i => $dayName) {
             $date = $startOfWeek->copy()->addDays($i);
-            $prodDays[$dayName] = Order::whereDate('created_at', $date)
-                ->withSum('items', 'quantity')->get()->sum('items_sum_quantity') ?? 0;
+            $prodDays[$dayName] = (int) OrderPhaseItem::whereHas('phase.order', function ($q) use ($date) {
+                $q->whereDate('created_at', $date);
+            })->sum('base_qty');
         }
 
         $orderStatusCounts = [

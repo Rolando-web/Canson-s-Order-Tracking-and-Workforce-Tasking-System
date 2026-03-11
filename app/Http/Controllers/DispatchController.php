@@ -17,7 +17,7 @@ class DispatchController extends Controller
 {
     public function index()
     {
-        $rawOrders = Order::with(['items', 'phases.items'])
+        $rawOrders = Order::with(['phases.items'])
             ->where(function ($query) {
                 $query->whereIn('status', ['Ready for Delivery', 'Delivered'])
                       ->orWhere(function ($q) {
@@ -47,13 +47,12 @@ class DispatchController extends Controller
 
                     // Calculate phase subtotal from matching order items
                     $phaseSubtotal = 0;
-                    $phaseItemDetails = $phase->items->map(function ($pi) use ($order, $coveredItemIds, &$phaseSubtotal) {
-                        $orderItem = $order->items->firstWhere('name', $pi->name);
-                        $unitPrice = $orderItem ? (float) $orderItem->unit_price : 0;
-                        $isCover   = $orderItem && in_array($orderItem->product_id, $coveredItemIds) && $unitPrice === 0.0;
+                    $phaseItemDetails = $phase->items->map(function ($pi) use ($coveredItemIds, &$phaseSubtotal) {
+                        $unitPrice = (float) $pi->unit_price;
+                        $isCover   = $pi->product_id && in_array($pi->product_id, $coveredItemIds) && $unitPrice === 0.0;
                         $phaseSubtotal += $pi->required_qty * $unitPrice;
                         return [
-                            'product_id' => $orderItem->product_id ?? null,
+                            'product_id' => $pi->product_id ?? null,
                             'name'       => $pi->name,
                             'quantity'   => $pi->required_qty,
                             'unit_price' => $unitPrice,
@@ -157,7 +156,7 @@ class DispatchController extends Controller
                             'quantity'         => $damage['quantity'],
                             'previous_stock'   => $prev,
                             'new_stock'        => $new,
-                            'reference_number' => 'SO-' . now()->format('YmdHis') . rand(10, 99),
+                            'reference_number' => 'SO-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)),
                             'reason'           => 'Delivery Damage',
                             'notes'            => $damage['reason'],
                             'created_by'       => auth()->id(),

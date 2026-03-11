@@ -9,7 +9,6 @@ class ProgressLog extends Model
     protected $fillable = [
         'assignment_id',
         'phase_item_id',
-        'order_item_id',
         'employee_id',
         'qty_added',
     ];
@@ -27,10 +26,5 @@ class ProgressLog extends Model
     public function phaseItem()
     {
         return $this->belongsTo(OrderPhaseItem::class, 'phase_item_id', 'Phase_Item_Id');
-    }
-
-    public function orderItem()
-    {
-        return $this->belongsTo(OrderItem::class, 'order_item_id', 'Order_Item_Id');
     }
 }

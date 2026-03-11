@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\OrderPhase;
 use App\Models\OrderPhaseItem;
 use App\Models\ReturnItem;
@@ -20,7 +19,7 @@ class OrdersController extends Controller
             ->orderBy('name')
             ->get();
 
-        $orders = Order::with(['items', 'phases.items'])
+        $orders = Order::with(['phases.items'])
             ->whereNotIn('status', ['Delivered', 'Ready for Delivery'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -31,14 +30,19 @@ class OrdersController extends Controller
                     'Urgent' => 'bg-red-50 text-red-600 border-red-200',
                 ];
 
+                // Collect all phase items (deduplicated by name for display)
+                $allPhaseItems = $order->phases->flatMap->items;
+                $uniqueItemNames = $allPhaseItems->pluck('name')->unique();
+                $totalQty = $allPhaseItems->sum('base_qty');
+
                 return [
                     'id'            => $order->order_number,
                     'db_id'         => $order->Order_Id,
                     'customer'      => $order->customer_name,
                     'contact'       => $order->contact_number,
                     'address'       => $order->delivery_address,
-                    'items'         => $order->items->map(fn($i) => $i->name)->implode(', '),
-                    'total_qty'     => $order->items->sum('quantity'),
+                    'items'         => $uniqueItemNames->implode(', '),
+                    'total_qty'     => $totalQty,
                     'delivery_date' => $order->delivery_date->format('Y-m-d'),
                     'total'         => $order->total_amount,
                     'status'        => $order->status,
@@ -48,13 +52,13 @@ class OrdersController extends Controller
                     'priorityColor' => $priorityColors[$order->priority] ?? $priorityColors['Normal'],
                     'notes'         => $order->notes,
                     'phase_count'   => $order->phases->count(),
-                    'order_items'   => $order->items->map(fn($i) => [
+                    'order_items'   => $order->phases->first()?->items->map(fn($i) => [
                         'name'          => $i->name,
-                        'qty'           => $i->quantity,
+                        'qty'           => $i->base_qty,
                         'price'         => $i->unit_price,
                         'subtotal'      => $i->subtotal,
                         'completed_qty' => $i->completed_qty ?? 0,
-                    ])->toArray(),
+                    ])->toArray() ?? [],
                     'phases'        => $order->phases->sortBy('phase_number')->map(fn($p) => [
                         'number'        => $p->phase_number,
                         'delivery_date' => $p->delivery_date->format('Y-m-d'),
@@ -143,16 +147,10 @@ class OrdersController extends Controller
                 'created_by'       => auth()->id(),
             ]);
 
+            // Build a price lookup from the submitted items
+            $itemPrices = [];
             foreach ($validated['items'] as $item) {
-                $inv = Product::where('name', $item['name'])->first();
-                OrderItem::create([
-                    'order_id'   => $order->Order_Id,
-                    'product_id' => $inv ? $inv->Product_Id : null,
-                    'name'       => $item['name'],
-                    'quantity'   => $item['qty'],
-                    'unit_price' => $item['price'],
-                    'subtotal'   => $item['qty'] * $item['price'],
-                ]);
+                $itemPrices[$item['name']] = $item['price'];
             }
 
             // Cover damage claims
@@ -165,17 +163,46 @@ class OrdersController extends Controller
                     ]);
             }
 
-            // Always create phases — if none provided, auto-create Phase 1 with all items
-            $phasesData = !empty($validated['phases']) ? $validated['phases'] : [
-                [
-                    'delivery_date' => $validated['delivery_date'],
-                    'notes'         => null,
-                    'items'         => array_map(fn($item) => [
-                        'name' => $item['name'],
-                        'qty'  => $item['qty'],
-                    ], $validated['items']),
-                ],
-            ];
+            // Always create phases — if none provided, auto-create phases
+            // If any item has qty > 1000, auto-split into Phase 1 + Phase 2 (1 week apart)
+            if (!empty($validated['phases'])) {
+                $phasesData = $validated['phases'];
+            } else {
+                $hasLargeQty = collect($validated['items'])->contains(fn($item) => $item['qty'] >= 1000);
+
+                if ($hasLargeQty) {
+                    // Split each item: Phase 1 gets half (ceil), Phase 2 gets the rest
+                    $phase1Items = [];
+                    $phase2Items = [];
+                    foreach ($validated['items'] as $item) {
+                        $phase1Qty = (int) ceil($item['qty'] / 2);
+                        $phase2Qty = $item['qty'] - $phase1Qty;
+                        $phase1Items[] = ['name' => $item['name'], 'qty' => $phase1Qty];
+                        if ($phase2Qty > 0) {
+                            $phase2Items[] = ['name' => $item['name'], 'qty' => $phase2Qty];
+                        }
+                    }
+
+                    $phase1Date = $validated['delivery_date'];
+                    $phase2Date = \Carbon\Carbon::parse($validated['delivery_date'])->addWeek()->format('Y-m-d');
+
+                    $phasesData = [
+                        ['delivery_date' => $phase1Date, 'notes' => null, 'items' => $phase1Items],
+                        ['delivery_date' => $phase2Date, 'notes' => null, 'items' => $phase2Items],
+                    ];
+                } else {
+                    $phasesData = [
+                        [
+                            'delivery_date' => $validated['delivery_date'],
+                            'notes'         => null,
+                            'items'         => array_map(fn($item) => [
+                                'name' => $item['name'],
+                                'qty'  => $item['qty'],
+                            ], $validated['items']),
+                        ],
+                    ];
+                }
+            }
 
             foreach ($phasesData as $phaseIndex => $phaseData) {
                 $phaseNumber = $phaseIndex + 1;
@@ -192,13 +219,19 @@ class OrdersController extends Controller
                 foreach ($phaseData['items'] as $phaseItem) {
                     if (($phaseItem['qty'] ?? 0) <= 0) continue;
 
+                    $inv = Product::where('name', $phaseItem['name'])->first();
+                    $price = $itemPrices[$phaseItem['name']] ?? 0;
+
                     OrderPhaseItem::create([
                         'phase_id'     => $phase->Phase_Id,
+                        'product_id'   => $inv ? $inv->Product_Id : null,
                         'name'         => $phaseItem['name'],
                         'base_qty'     => $phaseItem['qty'],
                         'damage_carry' => 0,
                         'required_qty' => $phaseItem['qty'],
                         'completed_qty'=> 0,
+                        'unit_price'   => $price,
+                        'subtotal'     => $phaseItem['qty'] * $price,
                     ]);
                 }
             }
@@ -214,7 +247,7 @@ class OrdersController extends Controller
                 ['order_id' => $order->order_number]
             );
 
-            return response()->json(['success' => true, 'order' => $order->load('items')]);
+            return response()->json(['success' => true, 'order' => $order->load('phases.items')]);
 
         } catch (\Exception $e) {
             DB::rollBack();

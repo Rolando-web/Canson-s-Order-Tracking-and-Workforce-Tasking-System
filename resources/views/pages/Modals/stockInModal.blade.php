@@ -79,8 +79,13 @@
                 {{-- Supplier / Source --}}
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">Supplier / Source</label>
-                    <input type="text" id="stockInSupplier" placeholder="e.g. ABC Supplies Co."
-                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <select id="stockInSupplier"
+                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white">
+                        <option value="">— Select Supplier —</option>
+                        @foreach($suppliers as $supplier)
+                            <option value="{{ $supplier->Supplier_Id }}">{{ $supplier->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 {{-- Date Received --}}

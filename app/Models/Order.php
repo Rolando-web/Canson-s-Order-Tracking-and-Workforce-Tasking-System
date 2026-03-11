@@ -4,6 +4,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\OrderPhaseItem;
+
 class Order extends Model
 {
     use HasFactory;
@@ -29,9 +31,19 @@ class Order extends Model
         'total_amount'  => 'decimal:2',
     ];
 
+    /**
+     * All phase items across all phases (replaces old order_items relationship).
+     */
     public function items()
     {
-        return $this->hasMany(OrderItem::class, 'order_id', 'Order_Id');
+        return $this->hasManyThrough(
+            OrderPhaseItem::class,
+            OrderPhase::class,
+            'order_id',   // FK on order_phases
+            'phase_id',   // FK on order_phase_items
+            'Order_Id',   // Local key on orders
+            'Phase_Id'    // Local key on order_phases
+        );
     }
 
     public function phases()

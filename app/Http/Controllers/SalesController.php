@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Order;
-use App\Models\OrderItem;
+use App\Models\OrderPhaseItem;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -63,7 +63,7 @@ class SalesController extends Controller
             }
         }
 
-        $query = Order::with('items')->orderBy('created_at', 'desc');
+        $query = Order::with('phases.items')->orderBy('created_at', 'desc');
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -81,14 +81,17 @@ class SalesController extends Controller
         $salesPaginated = $query->paginate(10)->withQueryString();
 
         $sales = $salesPaginated->getCollection()->map(function ($order) {
+            $allItems = $order->phases->flatMap->items;
+            $uniqueNames = $allItems->pluck('name')->unique()->implode(', ') ?: 'N/A';
+
             return [
                 'id'          => $order->order_number,
                 'db_id'       => $order->Order_Id,
                 'customer'    => $order->customer_name,
                 'contact'     => $order->contact_number,
                 'address'     => $order->delivery_address,
-                'items'       => $order->items->map(fn($i) => $i->name)->implode(', ') ?: 'N/A',
-                'qty'         => $order->items->sum('quantity'),
+                'items'       => $uniqueNames,
+                'qty'         => $allItems->sum('base_qty'),
                 'amount'      => $order->total_amount,
                 'status'      => $order->status,
                 'statusColor' => match($order->status) {
@@ -108,18 +111,18 @@ class SalesController extends Controller
                 'date'        => $order->created_at->format('M d, Y'),
                 'notes'       => $order->notes,
                 'priority'    => $order->priority,
-                'order_items' => $order->items->map(fn($i) => [
+                'order_items' => $order->phases->first()?->items->map(fn($i) => [
                     'name'     => $i->name,
-                    'qty'      => $i->quantity,
+                    'qty'      => $i->base_qty,
                     'price'    => $i->unit_price,
                     'subtotal' => $i->subtotal,
-                ])->toArray(),
+                ])->toArray() ?? [],
             ];
         });
 
         $salesPaginated->setCollection($sales);
 
-        $topCategory = OrderItem::select('product_id', DB::raw('SUM(subtotal) as total'))
+        $topCategory = OrderPhaseItem::select('product_id', DB::raw('SUM(subtotal) as total'))
             ->groupBy('product_id')->orderByDesc('total')->first();
         $topCategoryName = $topCategory && $topCategory->product
             ? $topCategory->product->category : 'N/A';
@@ -136,7 +139,7 @@ class SalesController extends Controller
 
     public function exportCsv(Request $request)
     {
-        $query = Order::with('items')->orderBy('created_at', 'desc');
+        $query = Order::with('phases.items')->orderBy('created_at', 'desc');
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -161,12 +164,13 @@ class SalesController extends Controller
             fputcsv($handle, ['Transaction ID', 'Customer', 'Contact', 'Items', 'Qty', 'Amount (PHP)', 'Status', 'Date']);
 
             foreach ($orders as $order) {
+                $allItems = $order->phases->flatMap->items;
                 fputcsv($handle, [
                     $order->order_number,
                     $order->customer_name,
                     $order->contact_number,
-                    $order->items->map(fn($i) => $i->name)->implode('; '),
-                    $order->items->sum('quantity'),
+                    $allItems->pluck('name')->unique()->implode('; '),
+                    $allItems->sum('base_qty'),
                     number_format($order->total_amount, 2),
                     $order->status,
                     $order->created_at->format('Y-m-d'),
@@ -199,13 +203,13 @@ class SalesController extends Controller
             'Completed'          => Order::where('status', 'Completed')->count(),
         ];
 
-        $topProducts = OrderItem::select('name', DB::raw('SUM(quantity) as total_sold'), DB::raw('SUM(subtotal) as total_revenue'))
+        $topProducts = OrderPhaseItem::select('name', DB::raw('SUM(base_qty) as total_sold'), DB::raw('SUM(subtotal) as total_revenue'))
             ->groupBy('name')->orderByDesc('total_revenue')->limit(5)->get();
 
-        $recentOrders = Order::with('items')->orderBy('created_at', 'desc')->limit(10)->get()->map(fn($o) => [
+        $recentOrders = Order::with('phases.items')->orderBy('created_at', 'desc')->limit(10)->get()->map(fn($o) => [
             'id'       => $o->order_number,
             'customer' => $o->customer_name,
-            'items'    => $o->items->map(fn($i) => $i->name)->implode(', ') ?: 'N/A',
+            'items'    => $o->phases->flatMap->items->pluck('name')->unique()->implode(', ') ?: 'N/A',
             'amount'   => $o->total_amount,
             'status'   => $o->status,
             'date'     => $o->created_at->format('M d, Y'),
@@ -219,7 +223,7 @@ class SalesController extends Controller
 
     public function printReport(Request $request)
     {
-        $query = Order::with('items')->orderBy('created_at', 'desc');
+        $query = Order::with('phases.items')->orderBy('created_at', 'desc');
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -236,8 +240,8 @@ class SalesController extends Controller
             'id'       => $o->order_number,
             'customer' => $o->customer_name,
             'contact'  => $o->contact_number,
-            'items'    => $o->items->map(fn($i) => $i->name)->implode(', ') ?: 'N/A',
-            'qty'      => $o->items->sum('quantity'),
+            'items'    => $o->phases->flatMap->items->pluck('name')->unique()->implode(', ') ?: 'N/A',
+            'qty'      => $o->phases->flatMap->items->sum('base_qty'),
             'amount'   => $o->total_amount,
             'status'   => $o->status,
             'date'     => $o->created_at->format('M d, Y'),

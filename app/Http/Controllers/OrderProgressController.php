@@ -16,7 +16,7 @@ class OrderProgressController extends Controller
      */
     public function index()
     {
-        $orders = Order::with(['phases.items', 'items'])
+        $orders = Order::with(['phases.items'])
             ->whereNotIn('status', ['Ready for Delivery', 'Delivered', 'Cancelled'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -32,7 +32,7 @@ class OrderProgressController extends Controller
      */
     public function show(Order $order)
     {
-        $order->load(['phases.items', 'items']);
+        $order->load(['phases.items']);
         $formatted = $this->formatOrder($order);
         return response()->json(['order' => $formatted]);
     }
