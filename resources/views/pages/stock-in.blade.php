@@ -4,25 +4,13 @@
     @vite('resources/css/pages/inventory.css')
 @endpush
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">
-                {{ auth()->user()->initial ?? 'AD' }}
-            </div>
-        </div>
-    </div>
-@endsection
-
 @section('content')
 <div class="inventory-page">
     {{-- Header --}}
     <div class="flex items-start justify-between mb-6">
         <div>
-            <h2 class="text-2xl font-bold text-gray-900">Stock In</h2>
-            <p class="text-gray-500 mt-1">Add incoming stock to inventory</p>
+            <h2 id="stockin-page-title" class="text-2xl font-bold text-gray-900">Stock In</h2>
+            <p id="stockin-page-subtitle" class="text-gray-500 mt-1">Add incoming stock to inventory</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="flex flex-col rounded-lg border border-gray-300 overflow-hidden sm:flex-row">

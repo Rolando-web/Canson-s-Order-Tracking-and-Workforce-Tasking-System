@@ -7,6 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
         'suppliers': document.getElementById('tab-suppliers'),
     };
 
+    const headerTitle    = document.getElementById('stockin-page-title');
+    const headerSubtitle = document.getElementById('stockin-page-subtitle');
+
+    const headerMap = {
+        'stock-in-form':    { title: 'Stock In',          subtitle: 'Add incoming stock to inventory' },
+        'stock-in-history': { title: 'Movement History',  subtitle: 'Track all stock movements and transactions' },
+        'suppliers':        { title: 'Suppliers',          subtitle: 'Manage your suppliers and vendor information' },
+    };
+
     function activateTab(tabKey) {
         tabs.forEach(t => { t.className = 'stockin-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50'; });
         Object.values(tabPanels).forEach(p => { if (p) p.classList.add('hidden'); });
@@ -15,6 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const panel = tabPanels[tabKey];
         if (btn) btn.className = 'stockin-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white';
         if (panel) panel.classList.remove('hidden');
+
+        const header = headerMap[tabKey];
+        if (header) {
+            if (headerTitle)    headerTitle.textContent    = header.title;
+            if (headerSubtitle) headerSubtitle.textContent = header.subtitle;
+        }
 
         localStorage.setItem('stockin-active-tab', tabKey);
     }
