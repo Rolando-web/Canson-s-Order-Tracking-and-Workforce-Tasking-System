@@ -37,7 +37,6 @@
                     <option value="">All Status</option>
                     <option value="Pending">Pending</option>
                     <option value="In-Progress">In-Progress</option>
-                    <option value="Completed">Completed</option>
                 </select>
             </div>
         </div>
