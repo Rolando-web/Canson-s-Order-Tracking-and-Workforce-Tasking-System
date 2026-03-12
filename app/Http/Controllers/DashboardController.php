@@ -100,4 +100,46 @@ class DashboardController extends Controller
             'salesDays', 'prodDays', 'recentSales', 'topProducts', 'orderStatusCounts'
         ));
     }
+
+    public function salesData(Request $request)
+    {
+        $period = $request->get('period', 'weekly');
+        $data   = [];
+
+        if ($period === 'weekly') {
+            $days  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            $start = now()->startOfWeek(Carbon::MONDAY);
+            foreach ($days as $i => $label) {
+                $date = $start->copy()->addDays($i);
+                $data[$label] = [
+                    'amount' => (float) Order::whereDate('created_at', $date)->sum('total_amount'),
+                    'orders' => (int)   Order::whereDate('created_at', $date)->count(),
+                ];
+            }
+        } elseif ($period === 'monthly') {
+            $start = now()->startOfMonth();
+            $end   = now()->endOfMonth();
+            for ($w = 0; $w < 5; $w++) {
+                $wStart = $start->copy()->addWeeks($w);
+                if ($wStart->gt($end)) break;
+                $wEnd = $wStart->copy()->addDays(6)->endOfDay();
+                if ($wEnd->gt($end)) $wEnd = $end->copy()->endOfDay();
+                $label = 'Wk ' . ($w + 1);
+                $data[$label] = [
+                    'amount' => (float) Order::whereBetween('created_at', [$wStart->startOfDay(), $wEnd])->sum('total_amount'),
+                    'orders' => (int)   Order::whereBetween('created_at', [$wStart->startOfDay(), $wEnd])->count(),
+                ];
+            }
+        } elseif ($period === 'yearly') {
+            $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            foreach ($months as $i => $label) {
+                $data[$label] = [
+                    'amount' => (float) Order::whereYear('created_at', now()->year)->whereMonth('created_at', $i + 1)->sum('total_amount'),
+                    'orders' => (int)   Order::whereYear('created_at', now()->year)->whereMonth('created_at', $i + 1)->count(),
+                ];
+            }
+        }
+
+        return response()->json($data);
+    }
 }

@@ -114,12 +114,6 @@
         {{-- ==================== RIGHT PANEL — Login Form ==================== --}}
         <div class="flex-1 flex flex-col items-center justify-center px-6 sm:px-10 lg:px-14 xl:px-20 py-10 bg-white relative">
 
-            {{-- Accent bar --}}
-            <div class="absolute top-0 left-0 right-0 flex h-1">
-                <div class="w-16 bg-emerald-500 rounded-br-full"></div>
-                <div class="w-8 bg-red-400 rounded-br-full"></div>
-            </div>
-
             <div class="w-full max-w-sm">
 
                 {{-- Mobile logo (hidden on desktop) --}}

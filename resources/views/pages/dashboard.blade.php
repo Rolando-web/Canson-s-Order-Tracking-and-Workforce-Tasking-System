@@ -322,12 +322,12 @@
         <div class="flex items-center justify-between mb-2">
             <div>
                 <h3 class="text-lg font-bold text-gray-900">Sales Overview</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Weekly revenue trend</p>
+                <p id="sales-subtitle" class="text-xs text-gray-400 mt-0.5">Weekly revenue trend</p>
             </div>
             <div class="flex items-center flex-col sm:flex-row gap-2">
-                <button class="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200">Weekly</button>
-                <button class="px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:bg-gray-50 border border-gray-200">Monthly</button>
-                <button class="px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:bg-gray-50 border border-gray-200">Yearly</button>
+                <button data-period="weekly" class="period-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200">Weekly</button>
+                <button data-period="monthly" class="period-btn px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:bg-gray-50 border border-gray-200">Monthly</button>
+                <button data-period="yearly" class="period-btn px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:bg-gray-50 border border-gray-200">Yearly</button>
             </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -348,7 +348,7 @@
                     $areaPoints = "0,{$chartH} " . $linePoints . " {$chartW},{$chartH}";
                 @endphp
                 <div class="relative mt-4">
-                    <svg viewBox="0 0 600 200" class="w-full h-auto" style="overflow: visible;" preserveAspectRatio="xMidYMid meet">
+                    <svg id="sales-chart-svg" viewBox="0 0 600 200" class="w-full h-auto" style="overflow: visible;" preserveAspectRatio="xMidYMid meet">
                         <defs>
                             <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%" stop-color="#10b981" stop-opacity="0.35"/>
@@ -361,10 +361,11 @@
                             <line x1="0" y1="{{ $gy }}" x2="{{ $chartW }}" y2="{{ $gy }}" stroke="#f3f4f6" stroke-width="1" stroke-dasharray="4 4"/>
                         @endfor
                         {{-- Area fill --}}
-                        <polygon points="{{ $areaPoints }}" fill="url(#salesGrad)"/>
+                        <polygon class="chart-area" points="{{ $areaPoints }}" fill="url(#salesGrad)"/>
                         {{-- Line --}}
-                        <polyline points="{{ $linePoints }}" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <polyline class="chart-line" points="{{ $linePoints }}" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                         {{-- Data points with tooltips --}}
+                        <g class="chart-dots-container">
                         @foreach($points as $i => $p)
                             @php
                                 $ttW = 68; $ttH = 26;
@@ -384,9 +385,10 @@
                                 </g>
                             </g>
                         @endforeach
+                        </g>
                     </svg>
                     {{-- X-axis labels --}}
-                    <div class="flex justify-between px-0 mt-2">
+                    <div id="sales-chart-labels" class="flex justify-between px-0 mt-2">
                         @foreach($dayKeys as $day)
                             <span class="text-xs text-gray-400 font-medium">{{ $day }}</span>
                         @endforeach

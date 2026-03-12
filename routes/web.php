@@ -41,6 +41,7 @@ Route::get('/', function () {
 */
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/sales-data', [DashboardController::class, 'salesData'])->name('dashboard.salesData');
     
     Route::get('/schedule', [ScheduleController::class, 'index'])->name('schedule');
     
