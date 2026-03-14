@@ -19,6 +19,20 @@ class OrdersController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Calculate reserved quantities from pending/in-progress orders
+        $reservedQty = OrderPhaseItem::whereHas('phase.order', function ($q) {
+                $q->whereIn('status', ['Pending', 'In-Progress']);
+            })
+            ->select('product_id', DB::raw('SUM(base_qty) as total_reserved'))
+            ->groupBy('product_id')
+            ->pluck('total_reserved', 'product_id');
+
+        // Attach effective available stock to each product
+        foreach ($inventoryItems as $item) {
+            $reserved = $reservedQty[$item->Product_Id] ?? 0;
+            $item->available = max(0, $item->stock - $reserved);
+        }
+
         $orders = Order::with(['phases.items'])
             ->whereNotIn('status', ['Delivered', 'Ready for Delivery'])
             ->orderBy('created_at', 'desc')
@@ -52,13 +66,13 @@ class OrdersController extends Controller
                     'priorityColor' => $priorityColors[$order->priority] ?? $priorityColors['Normal'],
                     'notes'         => $order->notes,
                     'phase_count'   => $order->phases->count(),
-                    'order_items'   => $order->phases->first()?->items->map(fn($i) => [
-                        'name'          => $i->name,
-                        'qty'           => $i->base_qty,
-                        'price'         => $i->unit_price,
-                        'subtotal'      => $i->subtotal,
-                        'completed_qty' => $i->completed_qty ?? 0,
-                    ])->toArray() ?? [],
+                    'order_items'   => $allPhaseItems->groupBy('name')->map(fn($group) => [
+                        'name'          => $group->first()->name,
+                        'qty'           => $group->sum('base_qty'),
+                        'price'         => $group->first()->unit_price,
+                        'subtotal'      => $group->sum('subtotal'),
+                        'completed_qty' => $group->sum('completed_qty'),
+                    ])->values()->toArray(),
                     'phases'        => $order->phases->sortBy('phase_number')->map(fn($p) => [
                         'number'        => $p->phase_number,
                         'delivery_date' => $p->delivery_date->format('Y-m-d'),
@@ -126,11 +140,20 @@ class OrdersController extends Controller
 
             foreach ($validated['items'] as $item) {
                 $inv = Product::where('name', $item['name'])->first();
-                if ($inv && $item['qty'] > $inv->stock) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "\"{$item['name']}\" only has {$inv->stock} in stock.",
-                    ], 422);
+                if ($inv) {
+                    // Calculate effective available stock (stock minus pending/in-progress order reservations)
+                    $reserved = OrderPhaseItem::where('product_id', $inv->Product_Id)
+                        ->whereHas('phase.order', function ($q) {
+                            $q->whereIn('status', ['Pending', 'In-Progress']);
+                        })
+                        ->sum('base_qty');
+                    $available = max(0, $inv->stock - $reserved);
+                    if ($item['qty'] > $available) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "\"{$item['name']}\" only has {$available} available (Stock: {$inv->stock}, Reserved by orders: {$reserved}).",
+                        ], 422);
+                    }
                 }
             }
 

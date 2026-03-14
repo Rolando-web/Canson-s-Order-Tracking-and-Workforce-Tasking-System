@@ -228,7 +228,7 @@
                                                 <select name="items[0][name]" required onchange="onItemSelected(this)" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                                                     <option value="">-- Select item --</option>
                                                     @foreach($inventoryItems as $item)
-                                                    <option value="{{ $item->name }}" data-price="{{ $item->unit_price }}" data-stock="{{ $item->stock }}">{{ $item->name }} ({{ $item->stock }} in stock)</option>
+                                                    <option value="{{ $item->name }}" data-price="{{ $item->unit_price }}" data-stock="{{ $item->available }}" data-total-stock="{{ $item->stock }}">{{ $item->name }} ({{ $item->available }} available)</option>
                                                     @endforeach
                                                 </select>
                                                 <div class="stock-indicator mt-1 text-xs"></div>

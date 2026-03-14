@@ -22,7 +22,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->unsignedInteger('created_by')->nullable();
             $table->foreign('created_by')->references('User_Id')->on('users')->nullOnDelete();
-            $table->timestamp('created_at')->nullable();
+            $table->timestamps();
         });
     }
 
