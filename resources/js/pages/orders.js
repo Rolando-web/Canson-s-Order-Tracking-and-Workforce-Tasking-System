@@ -225,7 +225,7 @@ window.addOrderItem = function() {
     if (firstSelect) {
         Array.from(firstSelect.options).forEach(opt => {
             if (opt.value) {
-                optionsHtml += `<option value="${opt.value}" data-price="${opt.getAttribute('data-price') || 0}" data-stock="${opt.getAttribute('data-stock') || 0}">${opt.text}</option>`;
+                optionsHtml += `<option value="${opt.value}" data-price="${opt.getAttribute('data-price') || 0}" data-stock="${opt.getAttribute('data-stock') || 0}" data-total-stock="${opt.getAttribute('data-total-stock') || 0}">${opt.text}</option>`;
             }
         });
     }
@@ -415,23 +415,26 @@ window.onItemSelected = function(selectEl) {
     const selectedOption = selectEl.options[selectEl.selectedIndex];
     const price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
     const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+    const totalStock = parseInt(selectedOption.getAttribute('data-total-stock')) || 0;
+    const reserved = totalStock - stock;
     const row = selectEl.closest('.order-item-row');
     const priceInput = row.querySelector('.item-price');
     if (priceInput) {
         priceInput.value = price.toFixed(2);
     }
 
-    // Show stock indicator
+    // Show stock indicator with reserved info
     const indicator = row.querySelector('.stock-indicator');
     if (indicator) {
+        const reservedHint = reserved > 0 ? ' <span class="text-gray-400">(Total: ' + totalStock + ', Reserved: ' + reserved + ')</span>' : '';
         if (!selectedOption.value) {
             indicator.innerHTML = '';
         } else if (stock <= 0) {
-            indicator.innerHTML = '<span class="inline-flex items-center gap-1 text-red-600 font-medium"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg> Out of stock</span>';
+            indicator.innerHTML = '<span class="inline-flex items-center gap-1 text-red-600 font-medium"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg> Out of stock' + reservedHint + '</span>';
         } else if (stock <= 10) {
-            indicator.innerHTML = '<span class="inline-flex items-center gap-1 text-amber-600 font-medium"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4"/></svg> Low stock: ' + stock + ' available</span>';
+            indicator.innerHTML = '<span class="inline-flex items-center gap-1 text-amber-600 font-medium"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4"/></svg> Low stock: ' + stock + ' available' + reservedHint + '</span>';
         } else {
-            indicator.innerHTML = '<span class="inline-flex items-center gap-1 text-emerald-600 font-medium"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4"/></svg> In stock: ' + stock + ' available</span>';
+            indicator.innerHTML = '<span class="inline-flex items-center gap-1 text-emerald-600 font-medium"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4"/></svg> In stock: ' + stock + ' available' + reservedHint + '</span>';
         }
     }
 

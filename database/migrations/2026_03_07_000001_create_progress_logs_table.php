@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('progress_logs', function (Blueprint $table) {
-            $table->id();
+            $table->increments('Progress_Log_Id');
             $table->unsignedInteger('assignment_id')->nullable();
             $table->foreign('assignment_id')->references('Assignment_Id')->on('assignments')->nullOnDelete();
             $table->unsignedInteger('phase_item_id')->nullable();
