@@ -213,6 +213,18 @@ class DispatchController extends Controller
                     }
                 }
 
+                // Auto-cover pending return items when a subsequent phase is delivered,
+                // since the replacement goods are included in this delivery.
+                $phaseHasCarryItems = $phase->items->sum('damage_carry') > 0;
+                if ($phaseHasCarryItems) {
+                    ReturnItem::where('order_reference', $order->order_number)
+                        ->where('status', 'Pending')
+                        ->update([
+                            'status'          => 'Covered',
+                            'covered_by_order' => $order->order_number,
+                        ]);
+                }
+
                 // If more phases are still pending, revert order to In-Progress for Phase 2 assignment
                 $pendingPhases = OrderPhase::where('order_id', $order->Order_Id)
                     ->whereNotIn('status', ['Delivered'])
