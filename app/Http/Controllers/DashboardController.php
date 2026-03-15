@@ -94,10 +94,15 @@ class DashboardController extends Controller
             'Completed'   => Order::where('status', 'Completed')->count(),
         ];
 
+        // Inventory widgets
+        $inventoryItemCount  = Product::count();
+        $lowStockCount       = Product::where('status', 'Low Stock')->orWhere('status', 'Out of Stock')->count();
+
         return view('pages.dashboard', compact(
             'totalOrders', 'totalSales', 'pendingCount', 'todaySales',
             'ordersPctChange', 'salesPctChange', 'todayPctChange',
-            'salesDays', 'prodDays', 'recentSales', 'topProducts', 'orderStatusCounts'
+            'salesDays', 'prodDays', 'recentSales', 'topProducts', 'orderStatusCounts',
+            'inventoryItemCount', 'lowStockCount'
         ));
     }
 

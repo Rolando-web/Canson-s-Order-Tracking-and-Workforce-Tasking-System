@@ -185,7 +185,8 @@ window.createOrderItemRow = function(index) {
     const items = window.inventoryItems || [];
     let optionsHtml = '<option value="">-- Select item --</option>';
     items.forEach(item => {
-        optionsHtml += `<option value="${item.name}" data-price="${item.unit_price}" data-stock="${item.stock}">${item.name} (${item.stock} in stock)</option>`;
+        const avail = item.available !== undefined ? item.available : item.stock;
+        optionsHtml += `<option value="${item.name}" data-price="${item.unit_price}" data-stock="${avail}" data-total-stock="${item.stock}">${item.name} (${avail} available)</option>`;
     });
 
     return `
@@ -613,7 +614,7 @@ window.addCoverItemRow = function(claim) {
             '<div class="flex items-center gap-2">' +
                 '<select name="items[' + idx + '][name]" required onchange="onItemSelected(this)" ' +
                     'class="w-full px-3 py-2.5 border border-amber-300 rounded-lg text-sm bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-400" disabled>' +
-                    '<option value="' + matchedItem.name + '" selected data-price="0" data-stock="' + matchedItem.stock + '">' + matchedItem.name + '</option>' +
+                    '<option value="' + matchedItem.name + '" selected data-price="0" data-stock="' + (matchedItem.available !== undefined ? matchedItem.available : matchedItem.stock) + '" data-total-stock="' + matchedItem.stock + '">' + matchedItem.name + '</option>' +
                 '</select>' +
             '</div>' +
             '<div class="mt-1 flex items-center gap-1.5">' +

@@ -4,16 +4,6 @@
     @vite('resources/css/pages/sales.css')
 @endpush
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
-        </div>
-    </div>
-@endsection
-
 @section('content')
 <div class="sales-page">
 
@@ -231,7 +221,7 @@
     <form method="GET" action="{{ route('sales') }}" class="bg-white rounded-xl border border-gray-200 p-4 mb-0">
         <input type="hidden" name="period" value="{{ $period }}">
         <div class="flex flex-wrap items-center gap-3">
-            <div class="flex-1 min-w-[200px] relative">
+            <div class="min-w-[200px] relative flex-1">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
                 </svg>
@@ -239,7 +229,7 @@
                        placeholder="Search by transaction ID, customer name..."
                        class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-50">
             </div>
-            <select name="status" class="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50">
+            <select name="status" class="sm:flex-0 flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50">
                 <option value="all"              {{ request('status','all') === 'all'              ? 'selected' : '' }}>All Status</option>
                 <option value="Pending"           {{ request('status') === 'Pending'               ? 'selected' : '' }}>Pending</option>
                 <option value="In-Progress"       {{ request('status') === 'In-Progress'           ? 'selected' : '' }}>In-Progress</option>
@@ -248,9 +238,8 @@
                 <option value="Completed"         {{ request('status') === 'Completed'             ? 'selected' : '' }}>Completed</option>
             </select>
             <input type="date" name="date" value="{{ request('date') }}"
-                   class="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50">
-            <button type="submit"
-                    class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5">
+                   class="sm:flex-0 flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50">
+                <button type="submit" class="bg-emerald-600 sm:flex-0 flex-1 justify-center hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 17l-5-5m0 0l5-5m-5 5h12a2 2 0 000-4H9"/>
                 </svg>

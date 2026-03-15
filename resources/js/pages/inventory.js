@@ -1,13 +1,40 @@
 // Inventory Page JavaScript
 
-// ========== Inventory Filter ==========
-function generateRef(prefix) {
-    const chars = '0123456789ABCDEF';
-    let code = '';
-    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-    return `${prefix}-${code}`;
-}
+// ========== Tab Switching ==========
+document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.inv-tab-btn');
+    const tabPanels = {
+        'inv-stock':   document.getElementById('tab-inv-stock'),
+        'inv-reports': document.getElementById('tab-inv-reports'),
+    };
+    const headerTitle    = document.getElementById('inv-page-title');
+    const headerSubtitle = document.getElementById('inv-page-subtitle');
+    const headerMap = {
+        'inv-stock':   { title: 'Inventory Management', subtitle: 'Track stock levels across all items' },
+        'inv-reports': { title: 'Inventory Reports',    subtitle: 'Stock valuation, low stock alerts, and movement summary' },
+    };
 
+    function activateInvTab(tabKey) {
+        tabs.forEach(t => { t.className = 'inv-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50'; });
+        Object.values(tabPanels).forEach(p => { if (p) p.classList.add('hidden'); });
+        const btn = [...tabs].find(t => t.dataset.tab === tabKey);
+        const panel = tabPanels[tabKey];
+        if (btn) btn.className = 'inv-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white';
+        if (panel) panel.classList.remove('hidden');
+        const header = headerMap[tabKey];
+        if (header) {
+            if (headerTitle)    headerTitle.textContent    = header.title;
+            if (headerSubtitle) headerSubtitle.textContent = header.subtitle;
+        }
+        localStorage.setItem('inv-active-tab', tabKey);
+    }
+
+    tabs.forEach(tab => { tab.addEventListener('click', () => activateInvTab(tab.dataset.tab)); });
+    const saved = localStorage.getItem('inv-active-tab');
+    if (saved && tabPanels[saved]) activateInvTab(saved);
+});
+
+// ========== Inventory Filter ==========
 window.filterInventory = function () {
     const search   = document.getElementById('inventorySearch')?.value.toLowerCase() ?? '';
     const category = document.getElementById('inventoryCategoryFilter')?.value ?? '';
@@ -24,159 +51,6 @@ window.filterInventory = function () {
 
         row.style.display = (matchSearch && matchCategory && matchStock) ? '' : 'none';
     });
-};
-
-// ========== Stock In Modal ==========
-let _stockInCurrent = 0;
-
-window.openStockInModal = function (item) {
-    _stockInCurrent = item.stock ?? 0;
-
-    // Populate item info
-    document.getElementById('stockInItemName').textContent    = item.name  ?? '—';
-    document.getElementById('stockInItemCode').textContent    = 'Code: ' + (item.code ?? 'N/A');
-    document.getElementById('stockInCurrentStock').textContent = item.stock ?? '—';
-    document.getElementById('stockInUnit').textContent        = item.unit  ?? '';
-
-    // Image
-    const imgBox = document.getElementById('stockInItemImage');
-    if (item.image) {
-        imgBox.innerHTML = `<img src="${item.image}" class="w-full h-full object-cover" alt="${item.name}">`;
-    } else {
-        imgBox.innerHTML = `<svg class="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M18 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75z"/></svg>`;
-    }
-
-    // Reset fields
-    document.getElementById('stockInQty').value       = 1;
-    document.getElementById('stockInSupplier').value  = '';
-    document.getElementById('stockInReference').value = generateRef('SI');
-    document.getElementById('stockInNotes').value     = '';
-    document.getElementById('stockInDate').value      = new Date().toISOString().split('T')[0];
-
-    updateStockInPreview();
-    document.getElementById('stockInModal').classList.remove('hidden');
-};
-
-window.closeStockInModal = function () {
-    document.getElementById('stockInModal').classList.add('hidden');
-};
-
-window.adjustStockInQty = function (delta) {
-    const input = document.getElementById('stockInQty');
-    const val   = Math.max(1, (parseInt(input.value) || 1) + delta);
-    input.value = val;
-    updateStockInPreview();
-};
-
-function updateStockInPreview() {
-    const qty    = parseInt(document.getElementById('stockInQty')?.value) || 0;
-    const newVal = _stockInCurrent + qty;
-    document.getElementById('stockInPreviewOld').textContent  = _stockInCurrent.toLocaleString();
-    document.getElementById('stockInPreviewNew').textContent  = newVal.toLocaleString();
-    document.getElementById('stockInPreviewDiff').textContent = `(+${qty.toLocaleString()})`;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('stockInQty')?.addEventListener('input', updateStockInPreview);
-});
-
-window.submitStockIn = function () {
-    const qty  = parseInt(document.getElementById('stockInQty').value) || 0;
-    const date = document.getElementById('stockInDate').value;
-    if (qty < 1) { alert('Please enter a valid quantity.'); return; }
-    if (!date)   { alert('Please select a date received.'); return; }
-
-    console.log('Stock In submitted:', {
-        qty,
-        date,
-        supplier:  document.getElementById('stockInSupplier').value,
-        reference: document.getElementById('stockInReference').value,
-        notes:     document.getElementById('stockInNotes').value,
-    });
-
-    closeStockInModal();
-    showInventoryToast('Stock In recorded successfully!', 'green');
-};
-
-// ========== Stock Out Modal ==========
-let _stockOutCurrent = 0;
-
-window.openStockOutModal = function (item) {
-    _stockOutCurrent = item.stock ?? 0;
-
-    document.getElementById('stockOutItemName').textContent    = item.name  ?? '—';
-    document.getElementById('stockOutItemCode').textContent    = 'Code: ' + (item.code ?? 'N/A');
-    document.getElementById('stockOutCurrentStock').textContent = item.stock ?? '—';
-    document.getElementById('stockOutUnit').textContent        = item.unit  ?? '';
-
-    const imgBox = document.getElementById('stockOutItemImage');
-    if (item.image) {
-        imgBox.innerHTML = `<img src="${item.image}" class="w-full h-full object-cover" alt="${item.name}">`;
-    } else {
-        imgBox.innerHTML = `<svg class="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M18 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75z"/></svg>`;
-    }
-
-    document.getElementById('stockOutQty').value       = 1;
-    document.getElementById('stockOutReason').value    = '';
-    document.getElementById('stockOutReference').value = generateRef('SO');
-    document.getElementById('stockOutNotes').value     = '';
-    document.getElementById('stockOutDate').value      = new Date().toISOString().split('T')[0];
-    document.getElementById('stockOutQtyError').classList.add('hidden');
-
-    updateStockOutPreview();
-    document.getElementById('stockOutModal').classList.remove('hidden');
-};
-
-window.closeStockOutModal = function () {
-    document.getElementById('stockOutModal').classList.add('hidden');
-};
-
-window.adjustStockOutQty = function (delta) {
-    const input = document.getElementById('stockOutQty');
-    const val   = Math.max(1, (parseInt(input.value) || 1) + delta);
-    input.value = val;
-    updateStockOutPreview();
-};
-
-window.updateStockOutPreview = function () {
-    const qty    = parseInt(document.getElementById('stockOutQty')?.value) || 0;
-    const newVal = _stockOutCurrent - qty;
-    document.getElementById('stockOutPreviewOld').textContent  = _stockOutCurrent.toLocaleString();
-    document.getElementById('stockOutPreviewNew').textContent  = Math.max(0, newVal).toLocaleString();
-    document.getElementById('stockOutPreviewDiff').textContent = `(-${qty.toLocaleString()})`;
-
-    const errEl = document.getElementById('stockOutQtyError');
-    if (newVal < 0) {
-        errEl.classList.remove('hidden');
-    } else {
-        errEl.classList.add('hidden');
-    }
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('stockOutQty')?.addEventListener('input', updateStockOutPreview);
-});
-
-window.submitStockOut = function () {
-    const qty    = parseInt(document.getElementById('stockOutQty').value) || 0;
-    const reason = document.getElementById('stockOutReason').value;
-    const date   = document.getElementById('stockOutDate').value;
-
-    if (qty < 1)                    { alert('Please enter a valid quantity.'); return; }
-    if (qty > _stockOutCurrent)     { alert('Quantity exceeds current stock.'); return; }
-    if (!reason)                    { alert('Please select a reason.'); return; }
-    if (!date)                      { alert('Please select a date.'); return; }
-
-    console.log('Stock Out submitted:', {
-        qty,
-        reason,
-        date,
-        reference: document.getElementById('stockOutReference').value,
-        notes:     document.getElementById('stockOutNotes').value,
-    });
-
-    closeStockOutModal();
-    showInventoryToast('Stock Out recorded successfully!', 'red');
 };
 
 // ========== Toast ==========
@@ -204,6 +78,7 @@ window.openAddProductModal = function () {
     document.getElementById('addProductUnit').value = '';
     document.getElementById('addProductPrice').value = '';
     document.getElementById('addProductStock').value = '';
+    document.getElementById('addProductReorderPoint').value = '50';
     document.getElementById('addProductStatus').value = 'In Stock';
     document.getElementById('addProductImage').value = '';
 
