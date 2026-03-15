@@ -476,10 +476,9 @@ class AssignmentsController extends Controller
                             $previousStock = $inventoryItem->stock;
                             $newStock      = max(0, $previousStock - $totalQty);
 
-                            $inventoryItem->update([
-                                'stock'  => $newStock,
-                                'status' => $newStock > 0 ? ($newStock < 50 ? 'Low Stock' : 'In Stock') : 'Out of Stock',
-                            ]);
+                            $inventoryItem->update(['stock' => $newStock]);
+                            $inventoryItem->updateStockStatus();
+                            $inventoryItem->checkAndNotifyLowStock($previousStock);
 
                             StockOut::create([
                                 'product_id'       => $inventoryItem->Product_Id,

@@ -85,6 +85,39 @@
             </div>
         </div>
     </div>
+
+    {{-- Inventory Widgets --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center justify-between">
+                <div class="w-8 h-8 xl:w-11 xl:h-11 rounded-xl bg-violet-100 flex items-center justify-center">
+                    <svg class="w-4 h-4 xl:w-6 xl:h-6 text-violet-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">Inventory Items</p>
+                    <p class="text-2xl xl:text-3xl font-bold text-gray-900 mt-1 text-end">{{ number_format($inventoryItemCount) }}</p>
+                    <p class="text-[0.6rem] xl:text-xs text-gray-400 mt-1">Total products tracked</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center justify-between">
+                <div class="w-8 h-8 xl:w-11 xl:h-11 rounded-xl bg-red-100 flex items-center justify-center">
+                    <svg class="w-4 h-4 xl:w-6 xl:h-6 text-red-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs xl:text-sm text-gray-500 text-end">Low Stock Alerts</p>
+                    <p class="text-2xl xl:text-3xl font-bold {{ $lowStockCount > 0 ? 'text-red-600' : 'text-gray-900' }} mt-1 text-end">{{ $lowStockCount }}</p>
+                    <p class="text-[0.6rem] xl:text-xs {{ $lowStockCount > 0 ? 'text-red-400' : 'text-green-500' }} mt-1">{{ $lowStockCount > 0 ? 'Items need restocking' : 'All items stocked' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @else
     {{-- Employee Stats Cards (no money) --}}
     @php

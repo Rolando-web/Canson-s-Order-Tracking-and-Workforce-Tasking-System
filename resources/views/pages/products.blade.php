@@ -12,16 +12,6 @@
 </style>
 @endpush
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
-        </div>
-    </div>
-@endsection
-
 @section('content')
 <div class="products-page">
     {{-- Header --}}
@@ -92,7 +82,7 @@
                         @if($item->is_best_seller)
                             <span class="flex-shrink-0 px-2 py-0.5 text-[0.65rem] font-bold bg-amber-100 text-amber-700 rounded-full">BEST</span>
                         @endif
-                        <button onclick="openEditProductModal({{ $item->Product_Id }}, '{{ addslashes($item->name) }}', {{ $item->unit_price ?? 0 }}, '{{ $item->image_path ? asset('storage/' . $item->image_path) : '' }}')" 
+                        <button onclick="openEditProductModal({{ $item->Product_Id }}, '{{ addslashes($item->name) }}', {{ $item->unit_price ?? 0 }}, '{{ $item->image_path ? asset('storage/' . $item->image_path) : '' }}', {{ $item->reorder_point ?? 50 }})" 
                             class="flex-shrink-0 w-7 h-7 rounded-lg bg-gray-100 hover:bg-emerald-100 flex items-center justify-center transition-colors group"
                             title="Edit product">
                             <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -152,10 +142,26 @@
 
 @push('scripts')
 <script>
-function openEditProductModal(id, name, price) {
+function openEditProductModal(id, name, price, imageUrl, reorderPoint) {
     document.getElementById('editProductId').value = id;
     document.getElementById('editProductName').value = name;
     document.getElementById('editProductPrice').value = price;
+    document.getElementById('editProductReorderPoint').value = reorderPoint || 50;
+
+    var preview = document.getElementById('editProductImagePreview');
+    var previewImg = document.getElementById('editProductImagePreviewImg');
+    var placeholder = document.getElementById('editProductImagePlaceholder');
+    var fileInput = document.getElementById('editProductImage');
+    if (fileInput) fileInput.value = '';
+    if (imageUrl) {
+        previewImg.src = imageUrl;
+        if (preview) preview.classList.remove('hidden');
+        if (placeholder) placeholder.classList.add('hidden');
+    } else {
+        if (preview) preview.classList.add('hidden');
+        if (placeholder) placeholder.classList.remove('hidden');
+    }
+
     document.getElementById('editProductModal').classList.remove('hidden');
 }
 function closeEditProductModal() {

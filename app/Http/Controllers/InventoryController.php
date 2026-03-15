@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Models\StockIn;
 use App\Models\StockOut;
 use App\Models\Supplier;
-use App\Models\User;
 
 class InventoryController extends Controller
 {
@@ -15,34 +14,91 @@ class InventoryController extends Controller
     {
         $items = Product::orderBy('item_code')->get();
         $totalItems = $items->count();
-        $lowStockAlert = $items->where('stock', '<', 50)->count();
+        $lowStockAlert = $items->where('status', 'Low Stock')->count();
 
-        return view('pages.inventory', compact('items', 'totalItems', 'lowStockAlert'));
+        // Reports data
+        $lowStockItems = $items->whereIn('status', ['Low Stock', 'Out of Stock'])->values();
+
+        $valuationByCategory = $items->groupBy('category')->map(function ($group, $category) {
+            return (object) [
+                'category'    => $category,
+                'item_count'  => $group->count(),
+                'total_stock' => $group->sum('stock'),
+                'total_value' => $group->sum(fn($p) => $p->stock * $p->unit_price),
+            ];
+        })->values();
+
+        $recentStockIn  = StockIn::with('product')->orderBy('created_at', 'desc')->limit(10)->get();
+        $recentStockOut = StockOut::with('product')->orderBy('created_at', 'desc')->limit(10)->get();
+
+        return view('pages.inventory', compact(
+            'items', 'totalItems', 'lowStockAlert',
+            'lowStockItems', 'valuationByCategory', 'recentStockIn', 'recentStockOut'
+        ));
     }
 
     public function stockInPage()
     {
         $items = Product::orderBy('name')->get();
-        $transactions = StockIn::with(['product', 'creator', 'supplier'])
+
+        $allTransactions = StockIn::with(['product', 'creator', 'supplier'])
             ->orderBy('created_at', 'desc')
-            ->limit(50)
             ->get();
+
+        // Group into batches by reference number (1 row per receipt/batch)
+        $batches = $allTransactions
+            ->groupBy('reference_number')
+            ->map(function ($group) {
+                $first = $group->first();
+                return (object) [
+                    'reference_number' => $first->reference_number,
+                    'created_at'       => $first->created_at,
+                    'supplier'         => $first->supplier,
+                    'notes'            => $first->notes,
+                    'creator'          => $first->creator,
+                    'items'            => $group,
+                    'total_qty'        => $group->sum('quantity'),
+                    'total_cost'       => $group->sum(fn($i) => $i->quantity * $i->unit_cost),
+                    'item_count'       => $group->count(),
+                ];
+            })
+            ->values()
+            ->take(50);
+
         $todayCount = StockIn::whereDate('created_at', today())->count();
         $suppliers = Supplier::active()->orderBy('name')->get();
+        $archivedSuppliers = Supplier::where('archived', true)->orderBy('name')->get();
 
-        return view('pages.stock-in', compact('items', 'transactions', 'todayCount', 'suppliers'));
+        return view('pages.stock-in', compact('items', 'batches', 'todayCount', 'suppliers', 'archivedSuppliers'));
     }
 
     public function stockOutPage()
     {
-        $items = Product::orderBy('name')->get();
-        $transactions = StockOut::with(['product', 'creator'])
+        $allTransactions = StockOut::with(['product', 'creator'])
             ->orderBy('created_at', 'desc')
-            ->limit(50)
             ->get();
+
+        $batches = $allTransactions
+            ->groupBy('reference_number')
+            ->map(function ($group) {
+                $first = $group->first();
+                return (object) [
+                    'reference_number' => $first->reference_number,
+                    'created_at'       => $first->created_at,
+                    'reason'           => $first->reason,
+                    'notes'            => $first->notes,
+                    'creator'          => $first->creator,
+                    'items'            => $group,
+                    'total_qty'        => $group->sum('quantity'),
+                    'item_count'       => $group->count(),
+                ];
+            })
+            ->values()
+            ->take(50);
+
         $todayCount = StockOut::whereDate('created_at', today())->count();
 
-        return view('pages.stock-out', compact('items', 'transactions', 'todayCount'));
+        return view('pages.stock-out', compact('batches', 'todayCount'));
     }
 
     public function products()
@@ -56,9 +112,10 @@ class InventoryController extends Controller
     public function updateProduct(Request $request, Product $item)
     {
         $validated = $request->validate([
-            'name'       => 'required|string|max:255',
-            'unit_price' => 'required|numeric|min:0',
-            'image'      => 'nullable|image|max:2048',
+            'name'          => 'required|string|max:255',
+            'unit_price'    => 'required|numeric|min:0',
+            'reorder_point' => 'nullable|integer|min:1',
+            'image'         => 'nullable|image|max:2048',
         ]);
 
         if ($request->hasFile('image')) {
@@ -68,6 +125,7 @@ class InventoryController extends Controller
         unset($validated['image']);
 
         $item->update($validated);
+        $item->updateStockStatus();
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'item' => $item]);
@@ -79,13 +137,14 @@ class InventoryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'       => 'required|string|max:255',
-            'category'   => 'required|string|max:255',
-            'unit'       => 'required|string|max:50',
-            'unit_price' => 'nullable|numeric|min:0',
-            'stock'      => 'required|integer|min:0',
-            'status'     => 'nullable|string|max:50',
-            'image'      => 'nullable|image|max:2048',
+            'name'          => 'required|string|max:255',
+            'category'      => 'required|string|max:255',
+            'unit'          => 'required|string|max:50',
+            'unit_price'    => 'nullable|numeric|min:0',
+            'stock'         => 'required|integer|min:0',
+            'reorder_point' => 'nullable|integer|min:1',
+            'status'        => 'nullable|string|max:50',
+            'image'         => 'nullable|image|max:2048',
         ]);
 
         $lastItem = Product::orderBy('Product_Id', 'desc')->first();
@@ -93,7 +152,7 @@ class InventoryController extends Controller
         $validated['item_code'] = 'INV-' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
 
         if (empty($validated['status'])) {
-            $validated['status'] = $validated['stock'] > 0 ? 'In Stock' : 'Out of Stock';
+            $validated['status'] = 'In Stock'; // will be corrected by updateStockStatus()
         }
 
         if ($request->hasFile('image')) {
@@ -103,6 +162,7 @@ class InventoryController extends Controller
         unset($validated['image']);
 
         $item = Product::create($validated);
+        $item->updateStockStatus();
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'item' => $item]);
@@ -141,86 +201,43 @@ class InventoryController extends Controller
         return redirect()->back()->with('success', 'Item deleted successfully.');
     }
 
-    public function stockIn(Request $request)
+    public function bulkStockIn(Request $request)
     {
         $validated = $request->validate([
-            'item_id'     => 'required|exists:products,Product_Id',
-            'quantity'    => 'required|integer|min:1',
-            'supplier_id' => 'nullable|exists:suppliers,Supplier_Id',
-            'notes'       => 'nullable|string',
+            'items'              => 'required|array|min:1',
+            'items.*.item_id'    => 'required|exists:products,Product_Id',
+            'items.*.quantity'   => 'required|integer|min:1',
+            'items.*.unit_cost'  => 'nullable|numeric|min:0',
+            'supplier_id'        => 'nullable|exists:suppliers,Supplier_Id',
+            'notes'              => 'nullable|string',
         ]);
 
-        $item = Product::findOrFail($validated['item_id']);
-        $previousStock = $item->stock;
-        $newStock = $previousStock + $validated['quantity'];
+        $reference = 'SI-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+        $now = now();
 
-        $item->update([
-            'stock'  => $newStock,
-            'status' => $newStock > 0 ? ($newStock < 50 ? 'Low Stock' : 'In Stock') : 'Out of Stock',
-        ]);
+        foreach ($validated['items'] as $entry) {
+            $item = Product::findOrFail($entry['item_id']);
+            $previousStock = $item->stock;
+            $newStock = $previousStock + $entry['quantity'];
 
-        StockIn::create([
-            'product_id'       => $item->Product_Id,
-            'quantity'         => $validated['quantity'],
-            'previous_stock'   => $previousStock,
-            'new_stock'        => $newStock,
-            'reference_number' => 'SI-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)),
-            'supplier_id'      => $validated['supplier_id'] ?? null,
-            'notes'            => $validated['notes'] ?? null,
-            'created_by'       => auth()->id(),
-            'created_at'       => now(),
-        ]);
+            $item->update(['stock' => $newStock]);
+            $item->updateStockStatus();
 
-        if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'item' => $item->fresh()]);
+            StockIn::create([
+                'product_id'       => $item->Product_Id,
+                'quantity'         => $entry['quantity'],
+                'previous_stock'   => $previousStock,
+                'new_stock'        => $newStock,
+                'unit_cost'        => $entry['unit_cost'] ?? 0,
+                'reference_number' => $reference,
+                'supplier_id'      => $validated['supplier_id'] ?? null,
+                'notes'            => $validated['notes'] ?? null,
+                'created_by'       => auth()->id(),
+                'created_at'       => $now,
+            ]);
         }
 
-        return redirect()->back()->with('success', 'Stock added successfully.');
-    }
-
-    public function stockOut(Request $request)
-    {
-        $validated = $request->validate([
-            'item_id'  => 'required|exists:products,Product_Id',
-            'quantity' => 'required|integer|min:1',
-            'reason'   => 'nullable|string|max:100',
-            'notes'    => 'nullable|string',
-        ]);
-
-        $item = Product::findOrFail($validated['item_id']);
-        $previousStock = $item->stock;
-
-        if ($validated['quantity'] > $previousStock) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Insufficient stock.'], 422);
-            }
-            return redirect()->back()->with('error', 'Insufficient stock.');
-        }
-
-        $newStock = $previousStock - $validated['quantity'];
-
-        $item->update([
-            'stock'  => $newStock,
-            'status' => $newStock > 0 ? ($newStock < 50 ? 'Low Stock' : 'In Stock') : 'Out of Stock',
-        ]);
-
-        StockOut::create([
-            'product_id'       => $item->Product_Id,
-            'quantity'         => $validated['quantity'],
-            'previous_stock'   => $previousStock,
-            'new_stock'        => $newStock,
-            'reference_number' => 'SO-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)),
-            'reason'           => $validated['reason'] ?? null,
-            'notes'            => $validated['notes'] ?? null,
-            'created_by'       => auth()->id(),
-            'created_at'       => now(),
-        ]);
-
-        if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'item' => $item->fresh()]);
-        }
-
-        return redirect()->back()->with('success', 'Stock removed successfully.');
+        return response()->json(['success' => true, 'count' => count($validated['items']), 'reference' => $reference]);
     }
 
     // ========== Supplier CRUD ==========

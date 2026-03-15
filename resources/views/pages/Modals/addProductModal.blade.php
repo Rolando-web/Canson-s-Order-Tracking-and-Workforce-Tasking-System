@@ -83,6 +83,17 @@
                 </div>
             </div>
 
+            {{-- Reorder Point --}}
+            <div>
+                <label for="addProductReorderPoint" class="block text-sm font-semibold text-gray-700 mb-1.5">Low Stock Threshold</label>
+                <div class="flex items-center gap-3">
+                    <input type="number" id="addProductReorderPoint" name="reorder_point" min="1" value="50"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        placeholder="50">
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Alert when stock drops below this number (default: 50)</p>
+            </div>
+
             {{-- Product Image --}}
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Product Image <span class="text-gray-400 font-normal">(optional)</span></label>

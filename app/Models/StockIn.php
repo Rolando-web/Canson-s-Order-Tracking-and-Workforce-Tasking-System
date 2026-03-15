@@ -16,6 +16,7 @@ class StockIn extends Model
         'quantity',
         'previous_stock',
         'new_stock',
+        'unit_cost',
         'reference_number',
         'supplier_id',
         'notes',
@@ -25,6 +26,7 @@ class StockIn extends Model
 
     protected $casts = [
         'created_at' => 'datetime',
+        'unit_cost'  => 'decimal:2',
     ];
 
     public function product()

@@ -87,8 +87,7 @@ Route::middleware(['auth', 'admin_or_above'])->group(function () {
     Route::post('/inventory', [InventoryController::class, 'store'])->name('inventory.store');
     Route::put('/inventory/{item}', [InventoryController::class, 'update'])->name('inventory.update');
     Route::delete('/inventory/{item}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
-    Route::post('/inventory/stock-in', [InventoryController::class, 'stockIn'])->name('inventory.stock-in');
-    Route::post('/inventory/stock-out', [InventoryController::class, 'stockOut'])->name('inventory.stock-out');
+    Route::post('/inventory/stock-in/bulk', [InventoryController::class, 'bulkStockIn'])->name('inventory.stock-in.bulk');
     Route::get('/stock-in', [InventoryController::class, 'stockInPage'])->name('stock-in');
     Route::get('/stock-out', [InventoryController::class, 'stockOutPage'])->name('stock-out');
 

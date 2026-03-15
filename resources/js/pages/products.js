@@ -8,10 +8,11 @@ window.closeAddProductModal = function() {
 };
 
 // Edit Product Modal
-window.openEditProductModal = function(id, name, price, imageUrl) {
+window.openEditProductModal = function(id, name, price, imageUrl, reorderPoint) {
     document.getElementById('editProductId').value = id;
     document.getElementById('editProductName').value = name;
     document.getElementById('editProductPrice').value = price;
+    document.getElementById('editProductReorderPoint').value = reorderPoint || 50;
 
     const preview = document.getElementById('editProductImagePreview');
     const previewImg = document.getElementById('editProductImagePreviewImg');
@@ -57,6 +58,7 @@ window.submitEditProduct = function() {
     const id = document.getElementById('editProductId')?.value;
     const name = document.getElementById('editProductName')?.value;
     const price = document.getElementById('editProductPrice')?.value;
+    const reorderPoint = document.getElementById('editProductReorderPoint')?.value;
     const image = document.getElementById('editProductImage')?.files[0];
 
     if (!name || price === '' || price === null) {
@@ -67,6 +69,7 @@ window.submitEditProduct = function() {
     const formData = new FormData();
     formData.append('name', name);
     formData.append('unit_price', price);
+    formData.append('reorder_point', reorderPoint || 50);
     formData.append('_method', 'PUT');
     if (image) formData.append('image', image);
 
@@ -120,6 +123,7 @@ window.submitAddProduct = function() {
     const unit = document.getElementById('addProductUnit')?.value;
     const price = document.getElementById('addProductPrice')?.value;
     const stock = document.getElementById('addProductStock')?.value;
+    const reorderPoint = document.getElementById('addProductReorderPoint')?.value;
     const status = document.getElementById('addProductStatus')?.value;
     const image = document.getElementById('addProductImage')?.files[0];
 
@@ -133,6 +137,7 @@ window.submitAddProduct = function() {
     formData.append('unit', unit);
     formData.append('unit_price', price);
     formData.append('stock', stock);
+    formData.append('reorder_point', reorderPoint || 50);
     formData.append('status', status);
     if (image) formData.append('image', image);
 

@@ -8,30 +8,27 @@
     @vite('resources/js/pages/inventory.js')
 @endpush
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
-        </div>
-    </div>
-@endsection
-
 @section('content')
 <div class="inventory-page">
     {{-- Header --}}
     <div class="flex items-start justify-between mb-6">
         <div>
-            <h2 class="text-2xl font-bold text-gray-900">Inventory Management</h2>
-            <p class="text-gray-500 mt-1">Track stock levels across all items</p>
+            <h2 id="inv-page-title" class="text-2xl font-bold text-gray-900">Inventory Management</h2>
+            <p id="inv-page-subtitle" class="text-gray-500 mt-1">Track stock levels across all items</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="flex flex-col rounded-lg border border-gray-300 overflow-hidden sm:flex-row">
+                <button class="inv-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-emerald-600 text-white" data-tab="inv-stock">Inventory</button>
+                <button class="inv-tab-btn p-2 text-sm font-medium md:px-5 md:py-2.5 bg-white text-gray-600 hover:bg-gray-50" data-tab="inv-reports">Reports</button>
+            </div>
         </div>
     </div>
 
-    <div>
+    {{-- ===== INVENTORY TAB ===== --}}
+    <div id="tab-inv-stock">
         {{-- Stats Cards --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white rounded-xl border-2 border-emerald-500 p-5">
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
                 <div class="flex items-center">
                     <div class="w-10 h-10 rounded-xl flex-none bg-emerald-100 flex items-center justify-center">
                         <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -74,8 +71,8 @@
 
         {{-- Search & Filters --}}
         <div class="bg-white rounded-xl border border-gray-200 p-4 mb-0">
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <div class="relative flex-1">
+            <div class="flex flex-col md:flex-row items-stretch gap-3">
+                <div class="relative flex-1 md:w-md">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
                     <input id="inventorySearch" type="text" placeholder="Search inventory..." oninput="filterInventory()" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                 </div>
@@ -87,10 +84,9 @@
                 </select>
                 <select id="inventoryStockFilter" onchange="filterInventory()" class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                     <option value="">All Stock Levels</option>
-                    <option value="high">High Stock (&gt;100)</option>
-                    <option value="normal">Normal (21–100)</option>
-                    <option value="low">Low Stock (≤20)</option>
-                    <option value="out">Out of Stock</option>
+                    <option value="In Stock">In Stock</option>
+                    <option value="Low Stock">Low Stock</option>
+                    <option value="Out of Stock">Out of Stock</option>
                 </select>
             </div>
         </div>
@@ -111,10 +107,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach($items as $item)
-                    @php
-                        $stockLevel = $item->stock === 0 ? 'out' : ($item->stock <= 20 ? 'low' : ($item->stock <= 100 ? 'normal' : 'high'));
-                    @endphp
-                    <tr class="inventory-row hover:bg-gray-50 transition-colors" data-category="{{ $item->category }}" data-stock-level="{{ $stockLevel }}" data-name="{{ strtolower($item->name) }}">
+                    <tr class="inventory-row hover:bg-gray-50 transition-colors" data-category="{{ $item->category }}" data-stock-level="{{ $item->status }}" data-name="{{ strtolower($item->name) }}">
                         <td class="px-6 py-4">
                             @if($item->image_path)
                                 <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}" class="w-12 h-12 rounded-lg object-cover border border-gray-200">
@@ -150,6 +143,138 @@
             </div>
         </div>
     </div>
+    {{-- END INVENTORY TAB --}}
+
+    {{-- ===== REPORTS TAB ===== --}}
+    <div id="tab-inv-reports" class="hidden">
+
+        {{-- Stock Valuation by Category --}}
+        <div class="mb-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-3">Stock Valuation by Category</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-{{ $valuationByCategory->count() }} gap-4 mb-4">
+                @foreach($valuationByCategory as $cat)
+                <div class="bg-white rounded-xl border border-gray-200 p-5">
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{{ $cat->category }}</p>
+                    <p class="text-2xl font-bold text-gray-900">₱{{ number_format($cat->total_value, 2) }}</p>
+                    <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                        <span>{{ $cat->item_count }} items</span>
+                        <span class="text-gray-300">|</span>
+                        <span>{{ number_format($cat->total_stock) }} units</span>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Low Stock Items --}}
+        <div class="mb-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-3">Low Stock & Out of Stock Items</h3>
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                <table class="w-full min-w-[600px]">
+                    <thead>
+                        <tr class="border-b border-gray-200 bg-red-50/50">
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Code</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Current Stock</th>
+                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Reorder Point</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($lowStockItems as $item)
+                        <tr class="hover:bg-red-50/30 transition-colors">
+                            <td class="px-6 py-3 text-sm font-semibold text-gray-900">{{ $item->name }}</td>
+                            <td class="px-6 py-3 text-xs font-mono text-gray-500">{{ $item->item_code }}</td>
+                            <td class="px-6 py-3 text-sm text-gray-600">{{ $item->category }}</td>
+                            <td class="px-6 py-3 text-sm font-bold text-right {{ $item->stock <= 0 ? 'text-red-600' : 'text-amber-600' }}">{{ number_format($item->stock) }} {{ $item->unit }}</td>
+                            <td class="px-6 py-3 text-sm text-gray-500 text-right">{{ $item->reorder_point ?? 50 }}</td>
+                            <td class="px-6 py-3">
+                                @if($item->status === 'Out of Stock')
+                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">Out of Stock</span>
+                                @else
+                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">Low Stock</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-400">All items are well stocked!</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- Recent Stock Movements --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {{-- Recent Stock In --}}
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-3">Recent Stock In</h3>
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200 bg-emerald-50/50">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Product</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse($recentStockIn as $si)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2.5 text-xs text-gray-500">{{ $si->created_at->format('m/d/Y') }}</td>
+                                <td class="px-4 py-2.5 text-sm font-medium text-gray-800">{{ $si->product?->name ?? 'N/A' }}</td>
+                                <td class="px-4 py-2.5 text-sm font-bold text-green-600 text-right">+{{ number_format($si->quantity) }}</td>
+                                <td class="px-4 py-2.5 text-sm text-gray-500 text-right">{{ $si->unit_cost > 0 ? '₱' . number_format($si->unit_cost, 2) : '—' }}</td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="4" class="px-4 py-8 text-center text-sm text-gray-400">No stock in records yet.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Recent Stock Out --}}
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-3">Recent Stock Out</h3>
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200 bg-red-50/50">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Product</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse($recentStockOut as $so)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2.5 text-xs text-gray-500">{{ $so->created_at->format('m/d/Y') }}</td>
+                                <td class="px-4 py-2.5 text-sm font-medium text-gray-800">{{ $so->product?->name ?? 'N/A' }}</td>
+                                <td class="px-4 py-2.5 text-sm font-bold text-red-600 text-right">-{{ number_format($so->quantity) }}</td>
+                                <td class="px-4 py-2.5 text-xs text-gray-500">{{ $so->reason ?? 'Order Assignment' }}</td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="4" class="px-4 py-8 text-center text-sm text-gray-400">No stock out records yet.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{-- END REPORTS TAB --}}
 </div>
 
 @endsection
