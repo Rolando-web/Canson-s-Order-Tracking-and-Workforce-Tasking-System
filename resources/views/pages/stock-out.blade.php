@@ -80,12 +80,16 @@
                 @forelse($batches as $batch)
                 @php
                     $batchData = [
-                        'reference'  => $batch->reference_number,
-                        'date'       => $batch->created_at->format('m/d/Y h:i A'),
-                        'reason'     => $batch->reason ?? '—',
-                        'notes'      => $batch->notes ?? '—',
-                        'created_by' => $batch->creator?->name ?? 'System',
-                        'items'      => $batch->items->map(fn($i) => [
+                        'reference'     => $batch->reference_number,
+                        'date'          => $batch->created_at->format('m/d/Y h:i A'),
+                        'reason'        => $batch->reason ?? '—',
+                        'notes'         => $batch->notes ?? '—',
+                        'created_by'    => $batch->creator?->name ?? 'System',
+                        'order_number'  => $batch->order_number,
+                        'customer_name' => $batch->customer_name,
+                        'order_status'  => $batch->order_status,
+                        'phases'        => $batch->phases,
+                        'items'         => $batch->items->map(fn($i) => [
                             'name'     => $i->product?->name ?? 'N/A',
                             'code'     => $i->product?->item_code ?? '—',
                             'unit'     => $i->product?->unit ?? '',

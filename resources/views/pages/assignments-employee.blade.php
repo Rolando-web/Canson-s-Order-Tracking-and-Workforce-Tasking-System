@@ -72,7 +72,7 @@
                     class="px-4 py-2 rounded-md text-sm font-semibold transition-colors text-gray-600 hover:bg-gray-200">
                 Completed
                 @if($completedWork > 0)
-                <span class="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold bg-gray-300/50 text-gray-600">{{ $completedWork }}</span>
+                <span class="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold bg-white text-emerald-600">{{ $completedWork }}</span>
                 @endif
             </button>
         </div>
@@ -106,7 +106,7 @@
                         default => ['label' => 'NORMAL', 'color' => 'bg-gray-50 text-gray-500 border-gray-200'],
                     };
                 @endphp
-                <div class="border border-gray-200 rounded-xl p-2 sm:p-5 border-l-4 {{ $statusConfig['bg'] }} hover:shadow-md transition-shadow">
+                <div class="border border-gray-200 rounded-xl p-2 sm:p-5 border-l-4 {{ $statusConfig['bg'] }} hover:shadow-md transition-shadow" data-assignment-id="{{ $assignment['id'] }}" data-order-id="{{ $assignment['order_id'] }}" data-phase="{{ $assignment['phase_number'] ?? '' }}">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
@@ -158,6 +158,62 @@
                     </div>
                     @endif
 
+                    @if(!empty($assignment['is_phase_locked']))
+                    {{-- Phase Locked: previous phase not yet completed --}}
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-gray-700">Phase Locked</p>
+                                <p class="text-xs text-gray-500 mt-0.5">{{ $assignment['locked_reason'] }}</p>
+                            </div>
+                        </div>
+                        @if(!empty($assignment['all_phases']))
+                        <div class="space-y-2">
+                            @foreach($assignment['all_phases'] as $phaseInfo)
+                            @php
+                                $isCurrentPhase = $phaseInfo['number'] == $assignment['phase_number'];
+                                $phaseStatusConfig = match($phaseInfo['status']) {
+                                    'Completed', 'Delivered' => ['icon' => 'text-emerald-500', 'bg' => 'bg-emerald-50 border-emerald-200', 'text' => 'text-emerald-700'],
+                                    default => ['icon' => 'text-gray-400', 'bg' => 'bg-white border-gray-200', 'text' => 'text-gray-600'],
+                                };
+                            @endphp
+                            <div class="flex items-center gap-3 p-2.5 rounded-lg border {{ $phaseStatusConfig['bg'] }} {{ $isCurrentPhase ? 'ring-2 ring-gray-300' : '' }}">
+                                @if(in_array($phaseInfo['status'], ['Completed', 'Delivered']))
+                                <svg class="w-4 h-4 {{ $phaseStatusConfig['icon'] }} shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                @else
+                                <svg class="w-4 h-4 {{ $phaseStatusConfig['icon'] }} shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                @endif
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-semibold {{ $phaseStatusConfig['text'] }}">Phase {{ $phaseInfo['number'] }}</span>
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase {{ in_array($phaseInfo['status'], ['Completed', 'Delivered']) ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500' }}">{{ $phaseInfo['status'] }}</span>
+                                        @if($isCurrentPhase)
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-blue-100 text-blue-700">YOUR PHASE</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <div class="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                            <div class="{{ $phaseInfo['pct'] >= 100 ? 'bg-emerald-500' : 'bg-blue-500' }} h-full rounded-full" style="width: {{ $phaseInfo['pct'] }}%"></div>
+                                        </div>
+                                        <span class="text-[10px] text-gray-500">{{ $phaseInfo['pct'] }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+                    @else
+
                     {{-- Order Items Progress Section --}}
                     @if(!empty($assignment['order_items']) && $assignment['status'] !== 'completed' && $assignment['status'] !== 'cancelled')
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
@@ -167,6 +223,19 @@
                             </svg>
                             Item Progress{{ $assignment['phase_number'] ? ' — Phase ' . $assignment['phase_number'] : '' }}
                         </h5>
+
+                        @if($assignment['status'] === 'pending')
+                        {{-- Show locked message when employee hasn't started working yet --}}
+                        <div class="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-semibold text-amber-800">Progress Locked</p>
+                                <p class="text-xs text-amber-600 mt-0.5">You must click <strong>"Start Working"</strong> before you can update progress. This triggers stock adjustment.</p>
+                            </div>
+                        </div>
+                        @else
                         <form onsubmit="submitProgress(event, {{ $assignment['id'] }})" id="progressForm-{{ $assignment['id'] }}">
                             <div class="space-y-3">
                                 @foreach($assignment['order_items'] as $item)
@@ -226,6 +295,7 @@
                                 </button>
                             </div>
                         </form>
+                        @endif
 
                         {{-- Progress History --}}
                         @if(!empty($assignment['progress_history']))
@@ -319,6 +389,7 @@
                         @endif
                     </div>
                     @endif
+                    @endif {{-- end is_phase_locked --}}
 
                 </div>
                     @endif

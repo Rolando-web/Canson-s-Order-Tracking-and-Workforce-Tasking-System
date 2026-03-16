@@ -74,7 +74,7 @@ class InventoryController extends Controller
 
     public function stockOutPage()
     {
-        $allTransactions = StockOut::with(['product', 'creator'])
+        $allTransactions = StockOut::with(['product', 'creator', 'order.phases'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -82,6 +82,8 @@ class InventoryController extends Controller
             ->groupBy('reference_number')
             ->map(function ($group) {
                 $first = $group->first();
+                $order = $first->order;
+
                 return (object) [
                     'reference_number' => $first->reference_number,
                     'created_at'       => $first->created_at,
@@ -91,6 +93,17 @@ class InventoryController extends Controller
                     'items'            => $group,
                     'total_qty'        => $group->sum('quantity'),
                     'item_count'       => $group->count(),
+                    'order'            => $order,
+                    'order_number'     => $order ? $order->order_number : null,
+                    'customer_name'    => $order ? $order->customer_name : null,
+                    'order_status'     => $order ? $order->status : null,
+                    'phases'           => $order && $order->phases->isNotEmpty()
+                        ? $order->phases->sortBy('phase_number')->map(fn($p) => (object) [
+                            'number'   => $p->phase_number,
+                            'status'   => $p->status,
+                            'delivery' => $p->delivery_date->format('M d, Y'),
+                        ])->values()->toArray()
+                        : [],
                 ];
             })
             ->values()

@@ -49,6 +49,34 @@
                 </div>
             </div>
 
+            {{-- Order & Phase Traceability --}}
+            <div id="soDetailOrderSection" class="hidden">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Order Traceability</p>
+                <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+                    <div class="flex items-start gap-3 mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                            <svg class="w-4.5 h-4.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-sm font-bold text-gray-900" id="soDetailOrderNumber">—</span>
+                                <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" id="soDetailOrderStatus">—</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-0.5" id="soDetailCustomerName">—</p>
+                        </div>
+                    </div>
+                    {{-- Phase breakdown --}}
+                    <div id="soDetailPhasesContainer" class="hidden">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Phases</p>
+                        <div id="soDetailPhasesList" class="flex flex-wrap gap-2">
+                            {{-- Populated via JS --}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Items Table --}}
             <div>
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Items in this Batch</p>
