@@ -158,6 +158,7 @@ class DispatchController extends Controller
                             'new_stock'        => $new,
                             'reference_number' => 'SO-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)),
                             'reason'           => 'Delivery Damage',
+                            'order_id'         => $order->Order_Id,
                             'notes'            => $damage['reason'],
                             'created_by'       => auth()->id(),
                             'created_at'       => now(),

@@ -130,8 +130,11 @@ class AssignmentsController extends Controller
             // Load all phases of this order for the overview
             $order = Order::where('order_number', $group['order_id'])->with('phases.items')->first();
             $group['all_phases'] = [];
+            $group['is_phase_locked'] = false;
+            $group['locked_reason'] = '';
             if ($order && $order->phases->isNotEmpty()) {
-                $group['all_phases'] = $order->phases->sortBy('phase_number')->map(function ($p) {
+                $sortedPhases = $order->phases->sortBy('phase_number');
+                $group['all_phases'] = $sortedPhases->map(function ($p) {
                     $totalReq = $p->items->sum('required_qty');
                     $totalDone = $p->items->sum('completed_qty');
                     return [
@@ -143,6 +146,16 @@ class AssignmentsController extends Controller
                         'pct'           => $totalReq > 0 ? round(($totalDone / $totalReq) * 100) : 0,
                     ];
                 })->values()->toArray();
+
+                // Lock this phase if previous phase is not yet Completed/Delivered
+                $currentPhaseNum = $group['phase_number'];
+                if ($currentPhaseNum && $currentPhaseNum > 1) {
+                    $prevPhase = $sortedPhases->firstWhere('phase_number', $currentPhaseNum - 1);
+                    if ($prevPhase && !in_array($prevPhase->status, ['Completed', 'Delivered'])) {
+                        $group['is_phase_locked'] = true;
+                        $group['locked_reason'] = "Phase " . ($currentPhaseNum - 1) . " must be completed first before you can work on Phase {$currentPhaseNum}.";
+                    }
+                }
             }
 
             return $group;
@@ -487,6 +500,7 @@ class AssignmentsController extends Controller
                                 'new_stock'        => $newStock,
                                 'reference_number' => 'SO-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)),
                                 'reason'           => 'Order Assignment',
+                                'order_id'         => $order->Order_Id,
                                 'notes'            => "Auto stock out for order {$validated['order_id']} – {$phaseItem->name}" . ($employee ? " assigned to {$employee->name}" : ''),
                                 'created_by'       => auth()->id(),
                                 'created_at'       => now(),
@@ -581,6 +595,11 @@ class AssignmentsController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
+        // Check if previous phase must be completed first
+        if ($locked = $this->isPhaseLocked($assignment)) {
+            return response()->json(['success' => false, 'message' => $locked], 422);
+        }
+
         $validated = $request->validate([
             'status' => 'required|in:pending,in_progress,completed',
         ]);
@@ -605,6 +624,16 @@ class AssignmentsController extends Controller
 
         if ($assignment->employee_id !== $user->User_Id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        // Employee must "Start Working" first before updating progress
+        if ($assignment->status === 'pending') {
+            return response()->json(['success' => false, 'message' => 'You must click "Start Working" before updating progress.'], 422);
+        }
+
+        // Check if previous phase must be completed first
+        if ($locked = $this->isPhaseLocked($assignment)) {
+            return response()->json(['success' => false, 'message' => $locked], 422);
         }
 
         $order = Order::where('order_number', $assignment->order_number)->first();
@@ -703,5 +732,36 @@ class AssignmentsController extends Controller
             'success' => true,
             'notes'   => $phase->notes,
         ]);
+    }
+
+    /**
+     * Check if an assignment's phase is locked because a previous phase isn't completed yet.
+     * Returns the lock reason string if locked, or null if not locked.
+     */
+    private function isPhaseLocked(Assignment $assignment): ?string
+    {
+        if (!$assignment->phase_id) {
+            return null;
+        }
+
+        $phase = $assignment->phase;
+        if (!$phase || !$phase->phase_number || $phase->phase_number <= 1) {
+            return null;
+        }
+
+        $order = $assignment->order;
+        if (!$order) {
+            return null;
+        }
+
+        $prevPhase = OrderPhase::where('order_id', $order->Order_Id)
+            ->where('phase_number', $phase->phase_number - 1)
+            ->first();
+
+        if ($prevPhase && !in_array($prevPhase->status, ['Completed', 'Delivered'])) {
+            return "Phase " . ($phase->phase_number - 1) . " must be completed first before you can work on Phase {$phase->phase_number}.";
+        }
+
+        return null;
     }
 }

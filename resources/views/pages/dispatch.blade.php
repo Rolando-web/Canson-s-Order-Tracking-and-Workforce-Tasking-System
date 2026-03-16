@@ -4,15 +4,6 @@
     @vite('resources/css/pages/dispatch.css')
 @endpush
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
-        </div>
-    </div>
-@endsection
 
 @section('content')
 <div class="dispatch-page">
@@ -204,13 +195,13 @@
         </div>
 
         {{-- Footer --}}
-        <div class="flex justify-between items-center px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-            <button type="button" id="dmgSkipBtn" onclick="skipDamageReport()" class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                No Damages — Just Deliver
-            </button>
+        <div class="flex justify-between items-center px-6 py-4 border-t border-emerald-100 bg-gray-50 rounded-b-2xl">
             <button type="button" id="dmgSubmitBtn" onclick="submitDamageReport()" class="px-5 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
                 Report Damages & Deliver
+            </button>
+                        <button type="button" id="dmgSkipBtn" onclick="skipDamageReport()" class="px-4 py-2 text-sm font-medium text-white border-emerald-600 bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">
+                No Damages — Just Deliver
             </button>
         </div>
     </div>

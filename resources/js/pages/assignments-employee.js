@@ -3,19 +3,19 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 window.switchAssignmentTab = function(tab) {
     const activeContainer = document.getElementById('activeAssignments');
     const completedContainer = document.getElementById('completedAssignments');
-    const activeBtn = document.getElementById('tabActiveBtn');
-    const completedBtn = document.getElementById('tabCompletedBtn');
+    const activeBtn = document.getElementById('tabActive');
+    const completedBtn = document.getElementById('tabCompleted');
 
     if (tab === 'active') {
         activeContainer.classList.remove('hidden');
         completedContainer.classList.add('hidden');
-        activeBtn.className = 'px-4 py-1.5 rounded-md text-xs font-semibold transition-all bg-emerald-600 text-white shadow-sm';
-        completedBtn.className = 'px-4 py-1.5 rounded-md text-xs font-semibold transition-all text-gray-600 hover:bg-gray-200';
+        activeBtn.className = 'px-4 py-2 rounded-md text-sm font-semibold transition-colors bg-emerald-600 text-white';
+        completedBtn.className = 'px-4 py-2 rounded-md text-sm font-semibold transition-colors text-gray-600 hover:bg-gray-200';
     } else {
         activeContainer.classList.add('hidden');
         completedContainer.classList.remove('hidden');
-        completedBtn.className = 'px-4 py-1.5 rounded-md text-xs font-semibold transition-all bg-emerald-600 text-white shadow-sm';
-        activeBtn.className = 'px-4 py-1.5 rounded-md text-xs font-semibold transition-all text-gray-600 hover:bg-gray-200';
+        completedBtn.className = 'px-4 py-2 rounded-md text-sm font-semibold transition-colors bg-emerald-600 text-white';
+        activeBtn.className = 'px-4 py-2 rounded-md text-sm font-semibold transition-colors text-gray-600 hover:bg-gray-200';
     }
 }
 
@@ -97,11 +97,12 @@ window.submitProgress = function(event, assignmentId) {
     .then(data => {
         if (data.success) {
             if (data.all_completed) {
-                showToast('All items completed! Order is now Ready for Delivery.', 'success');
+                showToast('All items completed! Phase is now ready for delivery.', 'success');
+                moveCardToCompleted(assignmentId);
             } else {
                 showToast('Progress updated successfully!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
             }
-            setTimeout(() => window.location.reload(), 1000);
         } else {
             showToast(data.message || 'Failed to update progress.', 'error');
             submitBtn.disabled = false;
@@ -114,6 +115,143 @@ window.submitProgress = function(event, assignmentId) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
     });
+}
+
+/**
+ * Move a completed assignment card from Active tab to Completed tab in real-time.
+ */
+function moveCardToCompleted(assignmentId) {
+    const card = document.querySelector(`[data-assignment-id="${assignmentId}"]`);
+    if (!card) {
+        setTimeout(() => window.location.reload(), 1000);
+        return;
+    }
+
+    const activeContainer = document.getElementById('activeAssignments');
+    const completedContainer = document.getElementById('completedAssignments');
+
+    // Animate card out
+    card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'translateX(-20px)';
+
+    setTimeout(() => {
+        // Remove from active
+        card.remove();
+
+        // Check if active is now empty, show "No Active Work" message
+        const remainingActive = activeContainer.querySelectorAll('[data-assignment-id]');
+        if (remainingActive.length === 0) {
+            const emptyState = document.createElement('div');
+            emptyState.className = 'flex flex-col items-center justify-center py-10 text-center';
+            emptyState.innerHTML = `
+                <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <h3 class="text-sm font-bold text-gray-400">No Active Work</h3>
+                <p class="text-xs text-gray-400 mt-1">All your tasks are completed. Great job!</p>
+            `;
+            activeContainer.appendChild(emptyState);
+        }
+
+        // Build a completed card from the data
+        const orderId = card.dataset.orderId || '';
+        const phase = card.dataset.phase || '';
+
+        const completedCard = document.createElement('div');
+        completedCard.className = 'border border-gray-200 rounded-xl p-2 sm:p-5 border-l-4 border-l-emerald-400 bg-white shadow-sm';
+        completedCard.style.opacity = '0';
+        completedCard.style.transform = 'translateX(20px)';
+        completedCard.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+
+        completedCard.innerHTML = `
+            <div class="flex items-start justify-between gap-2 mb-3">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h4 class="text-sm font-bold text-gray-800">
+                            Order #${orderId}
+                            ${phase ? `<span class="text-gray-400 font-normal">&bull; Phase ${phase}</span>` : ''}
+                        </h4>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">
+                            Completed
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
+                <div class="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Completed — Ready for delivery
+                </div>
+            </div>
+        `;
+
+        // Remove "No Completed Work Yet" empty state if present
+        const emptyCompleted = completedContainer.querySelector('.flex.flex-col.items-center');
+        if (emptyCompleted && emptyCompleted.textContent.includes('No Completed Work Yet')) {
+            emptyCompleted.remove();
+        }
+
+        completedContainer.prepend(completedCard);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            completedCard.style.opacity = '1';
+            completedCard.style.transform = 'translateX(0)';
+        });
+
+        // Auto-switch to Completed tab after a brief delay
+        setTimeout(() => {
+            switchAssignmentTab('completed');
+        }, 600);
+
+        // Update tab badge counts
+        updateTabBadges();
+
+    }, 450);
+}
+
+/**
+ * Update the tab badge counters after moving a card.
+ */
+function updateTabBadges() {
+    const activeContainer = document.getElementById('activeAssignments');
+    const completedContainer = document.getElementById('completedAssignments');
+    const activeBtn = document.getElementById('tabActive');
+    const completedBtn = document.getElementById('tabCompleted');
+
+    const activeCount = activeContainer.querySelectorAll('[data-assignment-id]').length;
+    const completedCount = completedContainer.querySelectorAll('.border-l-emerald-400').length;
+
+    // Update Active tab badge
+    const activeBadge = activeBtn.querySelector('span');
+    if (activeCount > 0) {
+        if (activeBadge) {
+            activeBadge.textContent = activeCount;
+        } else {
+            const badge = document.createElement('span');
+            badge.className = 'ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold bg-white/20';
+            badge.textContent = activeCount;
+            activeBtn.appendChild(badge);
+        }
+    } else if (activeBadge) {
+        activeBadge.remove();
+    }
+
+    // Update Completed tab badge
+    const completedBadge = completedBtn.querySelector('span');
+    if (completedCount > 0) {
+        if (completedBadge) {
+            completedBadge.textContent = completedCount;
+        } else {
+            const badge = document.createElement('span');
+            badge.className = 'ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold bg-gray-300/50 text-gray-600';
+            badge.textContent = completedCount;
+            completedBtn.appendChild(badge);
+        }
+    }
 }
 
 function showToast(message, type) {
