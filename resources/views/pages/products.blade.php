@@ -30,13 +30,13 @@
     </div>
 
     {{-- Search & Filter Bar --}}
-    <div class="flex flex-col sm:flex-row gap-3 mb-6">
-        <div class="relative flex-1">
+    <div class="bg-white rounded-xl border p-4 border-gray-200 flex flex-col sm:flex-row gap-3 mb-6">
+        <div class="relative flex-1 xl:flex-none">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
             </svg>
             <input type="text" id="productSearch" placeholder="Search products..."
-                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                class="w-full xl:w-sm pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
         </div>
         <select id="categoryFilter"
             class="px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
@@ -64,9 +64,11 @@
             {{-- Product Image --}}
             <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
                 @if($item->image_path)
+                    <!-- DEBUG: Image path: {{ $item->image_path }} | Full URL: {{ asset('storage/' . $item->image_path) }} -->
                     <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}"
                         class="w-full h-full object-cover">
                 @else
+                    <!-- DEBUG: No image_path for {{ $item->name }} -->
                     <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>

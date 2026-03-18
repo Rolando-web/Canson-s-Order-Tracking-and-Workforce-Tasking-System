@@ -8,16 +8,6 @@
     @vite('resources/js/pages/employees.js')
 @endpush
 
-@section('nav')
-    <div class="flex items-center justify-between w-full">
-        <h1 class="text-lg font-semibold text-emerald-600">Canson <span class="text-gray-700 font-normal">Manager</span></h1>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">{{ now()->format('l, F d, Y') }}</span>
-            <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
-        </div>
-    </div>
-@endsection
-
 @section('content')
 <div class="employees-page">
     {{-- Header --}}
@@ -79,14 +69,14 @@
 
     {{-- Search --}}
     <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="relative sm:col-span-2">
+        <div class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1 lg:flex-none">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
                 </svg>
-                <input type="text" placeholder="Search employees..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                <input type="text" placeholder="Search employees..." class="w-full lg:w-sm pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
             </div>
-            <select class="w-full border border-gray-300 rounded-lg px-5 py-2.5 text-sm text-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <select class="border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 <option>All Status</option>
                 <option>Active</option>
                 <option>Inactive</option>
