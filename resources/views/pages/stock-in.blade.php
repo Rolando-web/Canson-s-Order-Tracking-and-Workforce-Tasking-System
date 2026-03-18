@@ -77,7 +77,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 mb-1.5">Supplier <span class="text-red-500">*</span></label>
-                            <select id="batchSupplier" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                            <select id="batchSupplier" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
                                 <option value="">Select Supplier</option>
                                 @foreach($suppliers as $supplier)
                                     <option value="{{ $supplier->Supplier_Id }}">{{ $supplier->name }}</option>
@@ -86,7 +86,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 mb-1.5">Date Received <span class="text-red-500">*</span></label>
-                            <input type="date" id="batchDate" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                            <input type="date" id="batchDate" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
                         </div>
                     </div>
 
@@ -94,7 +94,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1.5">Notes / Remarks</label>
                         <textarea id="batchNotes" rows="2" placeholder="e.g. Weekly supplier delivery, batch #123..."
-                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
                     </div>
 
                     {{-- Divider --}}
@@ -149,7 +149,7 @@
                 <div class="px-5 py-3 border-b border-gray-100">
                     <div class="relative">
                         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                        <input id="stockInSearch" type="text" placeholder="Search products..." oninput="filterStockInItems()" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+                        <input id="stockInSearch" type="text" placeholder="Search products..." oninput="filterStockInItems()" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
                     </div>
                 </div>
 
@@ -213,7 +213,7 @@
         <div class="bg-white rounded-xl border border-gray-200 p-4 mb-0">
             <div class="relative">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                <input id="stockInHistorySearch" type="text" placeholder="Search by reference or supplier..." oninput="filterStockInHistory()" class="w-full sm:w-md pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                <input id="stockInHistorySearch" type="text" placeholder="Search by reference or supplier..." oninput="filterStockInHistory()" class="w-full sm:w-md pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent">
             </div>
         </div>
 
@@ -317,7 +317,7 @@
             <div class="bg-white rounded-xl border border-gray-200 p-4 flex-1">
                 <div class="relative">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                    <input id="supplierSearch" type="text" placeholder="Search suppliers..." oninput="filterSuppliers()" class="w-full sm:w-md pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <input id="supplierSearch" type="text" placeholder="Search suppliers..." oninput="filterSuppliers()" class="w-full sm:w-md pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent">
                 </div>
             </div>
         </div>

@@ -51,17 +51,19 @@
 
     {{-- Navigation Links --}}
     <nav class="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1">
-        {{-- Accessible to ALL authenticated users --}}
         <x-side-bar-link icon="dashboard" label="Dashboard" :active="$active === 'dashboard'" href="/dashboard" />
         <x-side-bar-link icon="schedule"  label="Schedule"  :active="$active === 'schedule'" href="/schedule" />
         <x-side-bar-link icon="assignments" label="Assignments" :active="$active === 'assignments'" href="/assignments" />
-        <x-side-bar-link icon="progress" label="Order Progress" :active="$active === 'progress'" href="/progress" />
         <x-side-bar-link icon="notifications" label="Notifications" :active="$active === 'notifications'" href="/notifications" />
+        
+        
         
         {{-- Only for Super Admin (Boss) --}}
         @if(auth()->user()->isSuperAdmin())
             <x-side-bar-link icon="orders"    label="Orders"    :active="$active === 'orders'" href="/orders" />
         @endif
+
+        <x-side-bar-link icon="progress" label="Order Progress" :active="$active === 'progress'" href="/progress" />
         
         {{-- Dispatch - for Admin Manager and Super Admin --}}
         @if(auth()->user()->isAdminOrAbove())
@@ -76,16 +78,15 @@
                 <x-side-bar-link icon="stock-in" label="Stock In" :active="$active === 'stock-in'" href="/stock-in" />
                 <x-side-bar-link icon="stock-out" label="Stock Out" :active="$active === 'stock-out'" href="/stock-out" />
             </x-side-bar-dropdown>
-            <x-side-bar-link icon="analytics" label="Analytics" :active="$active === 'analytics'" href="/analytics" />
-            <x-side-bar-link icon="sales" label="Sales" :active="$active === 'sales'" href="/sales" />
             <x-side-bar-link icon="returns" label="Cover Items" :active="$active === 'returns'" href="/returns" />
+            <x-side-bar-link icon="sales" label="Sales" :active="$active === 'sales'" href="/sales" />
+            <x-side-bar-link icon="analytics" label="Analytics" :active="$active === 'analytics'" href="/analytics" />
             <x-side-bar-link icon="employees" label="Employees" :active="$active === 'employees'" href="/employees" />
         @endif
     </nav>
 
     {{-- Bottom Section --}}
     <div class="mt-auto border-t border-white/10 px-3 py-4 space-y-1">
-        {{-- Settings - Only for Admin and Super Admin --}}
         @if(auth()->user()->isAdminOrAbove())
             <x-side-bar-link icon="settings" label="Settings" :active="$active === 'settings'" href="/settings" />
         @endif

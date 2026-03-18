@@ -7,7 +7,6 @@
 
 @section('content')
 <div class="dispatch-page">
-    {{-- Header --}}
     <div class="flex items-start justify-between mb-6">
         <div>
             <h2 class="text-2xl font-bold text-gray-900">Dispatch & Delivery</h2>
@@ -23,7 +22,6 @@
 
     {{-- Status Cards --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        {{-- Ready for Delivery --}}
         <div class="bg-white rounded-xl flex justify-center border border-gray-200 p-5">
            <div class="flex justify-center flex-col">
              <div class="w-8 h-8 md:w-10 rounded-xl flex-none bg-emerald-100 flex items-center justify-center mb-3">
@@ -59,7 +57,7 @@
         <div class="relative max-w-md">
             <label for="dispatchSearch" class="sr-only">Search orders</label>
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-            <input id="dispatchSearch" type="text" placeholder="Search orders..." oninput="filterDispatch()" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            <input id="dispatchSearch" type="text" placeholder="Search orders..." oninput="filterDispatch()" class="w-full md:w-sm pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
         </div>
     </div>
 
@@ -146,12 +144,9 @@
     @endif
 </div>
 
-{{-- ============================================ --}}
 {{-- DAMAGE REPORT MODAL (shown after delivery)  --}}
-{{-- ============================================ --}}
 <div id="damageModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center p-4" style="display:none;" onclick="if(event.target===this)closeDamageModal()">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-        {{-- Header --}}
         <div class="flex items-center justify-between p-6 border-b border-gray-100">
             <div>
                 <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -187,7 +182,6 @@
                         </tr>
                     </thead>
                     <tbody id="dmgItemsBody" class="divide-y divide-gray-100">
-                        {{-- Populated via JS --}}
                     </tbody>
                 </table>
                 </div>
@@ -211,9 +205,9 @@
 window.allOrders = @json($orders);
 </script>
 
-{{-- ============================================ --}}
+
 {{-- ORDER DETAIL MODALS (Blade-rendered per order) --}}
-{{-- ============================================ --}}
+
 @foreach($orders as $order)
 @php
     $detailStatusConfig = match($order['status']) {
