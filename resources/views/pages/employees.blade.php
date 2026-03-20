@@ -39,32 +39,6 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center">
-                <div class="w-10 h-10 flex-none rounded-xl bg-green-100 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </div>
-                <div class="grow">
-                    <p class="text-2xl font-bold text-gray-900 text-end">{{ $activeCount ?? 0 }}</p>
-                    <p class="text-sm text-gray-500 text-end">Active</p>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center">
-                <div class="w-10 h-10 flex-none rounded-xl bg-gray-100 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
-                    </svg>
-                </div>
-                <div class="grow">
-                    <p class="text-2xl font-bold text-gray-900 text-end">{{ $inactiveCount ?? 0 }}</p>
-                    <p class="text-sm text-gray-500 text-end">Inactive</p>
-                </div>
-            </div>
-        </div>
     </div>
 
     {{-- Search --}}
@@ -76,11 +50,6 @@
                 </svg>
                 <input type="text" placeholder="Search employees..." class="w-full lg:w-sm pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
             </div>
-            <select class="border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option>All Status</option>
-                <option>Active</option>
-                <option>Inactive</option>
-            </select>
         </div>
     </div>
 
@@ -93,7 +62,6 @@
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Employee</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Role</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600">Contact Number</th>
-                        <th class="px-6 py-3.5 font-semibold text-gray-600">Status</th>
                         <th class="px-6 py-3.5 font-semibold text-gray-600 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -103,7 +71,11 @@
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-9 h-9 rounded-full {{ $emp['color'] }} flex items-center justify-center text-white text-xs font-bold">
-                                        {{ strtoupper(substr($emp['first'], 0, 1) . substr($emp['last'], 0, 1)) }}
+                                        @if(!empty($emp['avatar']))
+                                            <img src="{{ $emp['avatar'] }}" alt="{{ $emp['first'] }} {{ $emp['last'] }}" class="w-full h-full rounded-full object-cover">
+                                        @else
+                                            {{ strtoupper(substr($emp['first'], 0, 1) . substr($emp['last'], 0, 1)) }}
+                                        @endif
                                     </div>
                                     <div>
                                         <p class="font-medium text-gray-900">{{ $emp['first'] }} {{ $emp['last'] }}</p>
@@ -122,13 +94,6 @@
                                 <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium border {{ $roleConfig['color'] }}">{{ $roleConfig['label'] }}</span>
                             </td>
                             <td class="px-6 py-4 text-gray-600">{{ $emp['contact'] }}</td>
-                            <td class="px-6 py-4">
-                                @if($emp['status'] === 'Active')
-                                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">Active</span>
-                                @else
-                                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">Inactive</span>
-                                @endif
-                            </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-1">
                                     <button onclick="openModal('edit', {{ $emp['id'] }}, '{{ addslashes($emp['first']) }}', '{{ addslashes($emp['last']) }}', '{{ $emp['role'] }}', '{{ $emp['contact'] }}')"
@@ -197,7 +162,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Contact Number</label>
-                    <input id="empContact" type="text" placeholder="0917-123-4567"
+                    <input id="empContact" type="text" placeholder="09526874522"
                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                 </div>
                 <div id="passwordField">

@@ -221,13 +221,13 @@
     <form method="GET" action="{{ route('sales') }}" class="bg-white rounded-xl border border-gray-200 p-4 mb-0">
         <input type="hidden" name="period" value="{{ $period }}">
         <div class="flex flex-wrap items-center gap-3">
-            <div class="min-w-[200px] relative flex-1">
+            <div class="min-w-[200px] relative flex-1 lg:flex-none">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
                 </svg>
                 <input type="text" name="search" value="{{ request('search') }}"
                        placeholder="Search by transaction ID, customer name..."
-                       class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-50">
+                       class="w-full lg:w-sm pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-50">
             </div>
             <select name="status" class="sm:flex-0 flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50">
                 <option value="all"              {{ request('status','all') === 'all'              ? 'selected' : '' }}>All Status</option>

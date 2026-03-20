@@ -81,7 +81,7 @@
             <x-side-bar-link icon="returns" label="Cover Items" :active="$active === 'returns'" href="/returns" />
             <x-side-bar-link icon="sales" label="Sales" :active="$active === 'sales'" href="/sales" />
             <x-side-bar-link icon="analytics" label="Analytics" :active="$active === 'analytics'" href="/analytics" />
-            <x-side-bar-link icon="employees" label="Employees" :active="$active === 'employees'" href="/employees" />
+            <x-side-bar-link icon="employees" label="Users" :active="$active === 'employees'" href="/employees" />
         @endif
     </nav>
 

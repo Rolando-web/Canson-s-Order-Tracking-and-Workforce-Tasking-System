@@ -243,7 +243,6 @@
                             'items'      => $batch->items->map(fn($i) => [
                                 'name'      => $i->product?->name ?? 'N/A',
                                 'code'      => $i->product?->item_code ?? '—',
-                                'unit'      => $i->product?->unit ?? '',
                                 'prev'      => $i->previous_stock,
                                 'qty'       => $i->quantity,
                                 'new'       => $i->new_stock,

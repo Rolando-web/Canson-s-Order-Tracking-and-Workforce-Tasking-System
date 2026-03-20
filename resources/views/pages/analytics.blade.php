@@ -205,39 +205,43 @@
         <div class="bg-white rounded-xl border border-gray-200 p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-6">Order Status Distribution</h3>
             <div class="flex items-center justify-center gap-8">
-                @php
-                    $statusTotal = array_sum($orderStatusCounts ?? []) ?: 1;
-                    $statusColors = ['Pending' => '#3b82f6', 'In-Progress' => '#f59e0b', 'Completed' => '#10b981'];
-                    $statusOffset = 0;
-                @endphp
-                <div class="relative w-44 h-44">
-                    <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                {{-- Donut Chart --}}
+                <div class="relative w-44 h-44 flex-shrink-0">
+                    <svg id="donut-chart-svg" viewBox="0 0 36 36" class="w-full h-full -rotate-90"
+                         data-pending="{{ $orderStatusCounts['Pending'] ?? 0 }}"
+                         data-inprogress="{{ $orderStatusCounts['In-Progress'] ?? 0 }}"
+                         data-completed="{{ $orderStatusCounts['Completed'] ?? 0 }}">
                         <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" stroke-width="4"/>
-                        @foreach(($orderStatusCounts ?? []) as $status => $count)
-                            @php
-                                $pct = $count / $statusTotal;
-                                $dashLen = $pct * $circumference;
-                                $gapLen = $circumference - $dashLen;
-                                $sColor = $statusColors[$status] ?? '#9ca3af';
-                            @endphp
-                            @if($count > 0)
-                            <circle cx="18" cy="18" r="14" fill="none" stroke="{{ $sColor }}" stroke-width="4"
-                                    stroke-dasharray="{{ round($dashLen, 1) }} {{ round($gapLen, 1) }}" stroke-dashoffset="{{ round(-$statusOffset, 1) }}" stroke-linecap="round"/>
-                            @endif
-                            @php $statusOffset += $dashLen; @endphp
-                        @endforeach
                     </svg>
+                    <div id="donut-center" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-0 transition-opacity duration-200">
+                        <span id="donut-center-count" class="text-2xl font-bold text-gray-900 leading-none"></span>
+                        <span id="donut-center-pct" class="text-[11px] font-semibold leading-tight mt-0.5"></span>
+                        <span id="donut-center-label" class="text-[9px] text-gray-400 leading-tight"></span>
+                    </div>
                 </div>
-                <div class="space-y-4">
-                    @foreach(($orderStatusCounts ?? []) as $status => $count)
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full" style="background-color: {{ $statusColors[$status] ?? '#9ca3af' }}"></span>
+                {{-- Legend --}}
+                <div class="space-y-2" id="donut-legend">
+                    <div class="donut-legend-item flex items-center gap-2 cursor-pointer rounded-lg px-2 py-1.5 transition-all duration-150 hover:bg-gray-50" data-status="pending">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></span>
                         <div>
-                            <p class="text-sm text-gray-500">{{ $status }}</p>
-                            <p class="font-bold text-gray-900">{{ $count }} {{ Str::plural('Order', $count) }}</p>
+                            <p class="text-sm text-gray-500">Pending</p>
+                            <p class="font-bold text-gray-900">{{ $orderStatusCounts['Pending'] ?? 0 }} Orders</p>
                         </div>
                     </div>
-                    @endforeach
+                    <div class="donut-legend-item flex items-center gap-2 cursor-pointer rounded-lg px-2 py-1.5 transition-all duration-150 hover:bg-gray-50" data-status="inprogress">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                        <div>
+                            <p class="text-sm text-gray-500">In Progress</p>
+                            <p class="font-bold text-gray-900">{{ $orderStatusCounts['In-Progress'] ?? 0 }} Orders</p>
+                        </div>
+                    </div>
+                    <div class="donut-legend-item flex items-center gap-2 cursor-pointer rounded-lg px-2 py-1.5 transition-all duration-150 hover:bg-gray-50" data-status="completed">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+                        <div>
+                            <p class="text-sm text-gray-500">Completed</p>
+                            <p class="font-bold text-gray-900">{{ $orderStatusCounts['Completed'] ?? 0 }} Orders</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
