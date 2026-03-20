@@ -8,8 +8,8 @@
         </span></h1>
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-full bg-emerald-600 overflow-hidden flex items-center justify-center text-white text-sm font-bold">
-                @if(!empty(auth()->user()->profile_image))
-                    <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="Profile" class="w-full h-full object-cover">
+                @if(!empty(auth()->user()->profile_image_url))
+                    <img src="{{ auth()->user()->profile_image_url }}" alt="Profile" class="w-full h-full object-cover">
                 @else
                     {{ auth()->user()->initial }}
                 @endif

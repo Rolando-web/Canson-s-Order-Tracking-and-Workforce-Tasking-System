@@ -2,3 +2,9 @@
 !.gitignore
 !inventory/
 !inventory/**
+!products/
+!products/**
+!Product/
+!Product/**
+!Profile/
+!Profile/**

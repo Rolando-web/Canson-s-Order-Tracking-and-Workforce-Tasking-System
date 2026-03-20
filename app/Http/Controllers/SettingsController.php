@@ -42,6 +42,8 @@ class SettingsController extends Controller
         }
 
         if ($request->hasFile('profile_image')) {
+            Storage::disk('public')->makeDirectory('Profile');
+
             if (!empty($user->profile_image)) {
                 Storage::disk('public')->delete($user->profile_image);
             }

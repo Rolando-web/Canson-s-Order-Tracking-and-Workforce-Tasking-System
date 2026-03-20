@@ -22,7 +22,7 @@ class EmployeesController extends Controller
                 'last'    => $nameParts[1] ?? '',
                 'role'    => $emp->role,
                 'contact' => $emp->contact_number ?? '—',
-                'avatar'  => !empty($emp->profile_image) ? asset('storage/' . $emp->profile_image) : null,
+                'avatar'  => $emp->profile_image_url,
                 'status'  => 'Active',
                 'color'   => $colors[$index % count($colors)],
             ];

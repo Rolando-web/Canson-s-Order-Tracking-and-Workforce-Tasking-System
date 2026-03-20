@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\StockIn;
 use App\Models\StockOut;
 use App\Models\Supplier;
+use Illuminate\Support\Facades\Storage;
 
 class InventoryController extends Controller
 {
@@ -132,7 +133,8 @@ class InventoryController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $validated['image_path'] = $request->file('image')->store('products', 'public');
+              Storage::disk('public')->makeDirectory('Product');
+              $validated['image_path'] = $request->file('image')->store('Product', 'public');
         }
 
         unset($validated['image']);
@@ -169,7 +171,8 @@ class InventoryController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $validated['image_path'] = $request->file('image')->store('products', 'public');
+                Storage::disk('public')->makeDirectory('Product');
+                $validated['image_path'] = $request->file('image')->store('Product', 'public');
         }
 
         unset($validated['image']);
