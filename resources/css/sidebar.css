@@ -18,7 +18,7 @@
 
 /* ── Collapsed State ── */
 .sidebar.collapsed {
-    width: 4.5rem; /* 72px */
+    width: 4.5rem; 
 }
 
 .sidebar.collapsed .sidebar-label {
