@@ -58,7 +58,6 @@
                             <tr class="bg-gray-50 border-b border-gray-200">
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Code</th>
-                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Unit Cost</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Prev Stock</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Qty Added</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">New Stock</th>

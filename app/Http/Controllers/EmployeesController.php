@@ -21,7 +21,8 @@ class EmployeesController extends Controller
                 'first'   => $nameParts[0] ?? $emp->name,
                 'last'    => $nameParts[1] ?? '',
                 'role'    => $emp->role,
-                'contact' => '',
+                'contact' => $emp->contact_number ?? '—',
+                'avatar'  => !empty($emp->profile_image) ? asset('storage/' . $emp->profile_image) : null,
                 'status'  => 'Active',
                 'color'   => $colors[$index % count($colors)],
             ];
@@ -40,16 +41,17 @@ class EmployeesController extends Controller
             'empFirstName' => 'required|string|max:100',
             'empLastName'  => 'required|string|max:100',
             'empRole'      => 'required|in:employee,admin,super_admin',
-            'empContact'   => 'nullable|string|max:20',
+            'empContact'   => ['required', 'string', 'regex:/^09\d{9}$/'],
             'password'     => 'nullable|string|min:6',
         ]);
 
         $name = trim($validated['empFirstName'] . ' ' . $validated['empLastName']);
 
         $user = User::create([
-            'name'     => $name,
-            'role'     => $validated['empRole'],
-            'password' => Hash::make($validated['password'] ?? 'password123'),
+            'name'           => $name,
+            'role'           => $validated['empRole'],
+            'contact_number' => $validated['empContact'],
+            'password'       => Hash::make($validated['password'] ?? 'password123'),
         ]);
 
         if ($request->expectsJson()) {
@@ -65,14 +67,15 @@ class EmployeesController extends Controller
             'empFirstName' => 'required|string|max:100',
             'empLastName'  => 'required|string|max:100',
             'empRole'      => 'required|in:employee,admin,super_admin',
-            'empContact'   => 'nullable|string|max:20',
+            'empContact'   => ['required', 'string', 'regex:/^09\d{9}$/'],
             'password'     => 'nullable|string|min:6',
         ]);
 
         $name = trim($validated['empFirstName'] . ' ' . $validated['empLastName']);
         $updateData = [
-            'name' => $name,
-            'role' => $validated['empRole'],
+            'name'           => $name,
+            'role'           => $validated['empRole'],
+            'contact_number' => $validated['empContact'],
         ];
 
         if (!empty($validated['password'])) {

@@ -85,13 +85,12 @@ window.openStockInDetailModal = function(batch) {
         <tr class="hover:bg-gray-50">
             <td class="px-4 py-3 text-sm font-semibold text-gray-900">${item.name}</td>
             <td class="px-4 py-3 text-xs font-mono text-gray-500">${item.code}</td>
-            <td class="px-4 py-3 text-sm text-right text-gray-600">${Number(item.unit_cost || 0) > 0 ? '₱' + Number(item.unit_cost).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : '—'}</td>
             <td class="px-4 py-3 text-sm text-gray-500 text-right">${Number(item.prev).toLocaleString()}</td>
             <td class="px-4 py-3 text-sm text-right">
                 <span class="font-bold text-green-600">+${Number(item.qty).toLocaleString()}</span>
             </td>
             <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">
-                ${Number(item.new).toLocaleString()} <span class="text-xs font-normal text-gray-400">${item.unit}</span>
+                ${Number(item.new).toLocaleString()}
             </td>
         </tr>`;
     }
@@ -197,10 +196,6 @@ function renderBatch() {
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
                 <div class="flex flex-col items-center">
-                    <span class="text-[0.6rem] text-gray-400 mb-0.5">Cost</span>
-                    <input type="number" min="0" step="0.01" value="${item.unit_cost || ''}" placeholder="0.00"
-                        onchange="updateBatchCost(${id}, this.value)"
-                        class="w-16 text-center border border-gray-300 rounded-md text-xs py-1 focus:outline-none focus:ring-1 focus:ring-green-500">
                 </div>
                 <div class="flex flex-col items-center">
                     <span class="text-[0.6rem] text-gray-400 mb-0.5">Qty</span>

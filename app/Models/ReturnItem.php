@@ -65,4 +65,21 @@ class ReturnItem extends Model
 
         return "{$prefix}-{$year}-" . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
     }
+
+    public function getClaimIdAttribute(): ?string
+    {
+        if (!empty($this->order_reference)) {
+            if (preg_match('/(\d+)/', (string) $this->order_reference, $matches)) {
+                return 'CLM-' . str_pad((string) intval($matches[1]), 3, '0', STR_PAD_LEFT);
+            }
+
+            return 'CLM-' . (string) $this->order_reference;
+        }
+
+        if (!empty($this->Return_Id)) {
+            return 'CLM-' . str_pad((string) $this->Return_Id, 3, '0', STR_PAD_LEFT);
+        }
+
+        return null;
+    }
 }

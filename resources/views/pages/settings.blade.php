@@ -21,7 +21,7 @@
         <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-6">Profile Settings</h3>
 
-            <form method="POST" action="{{ route('settings.update') }}">
+            <form method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -42,9 +42,17 @@
             <div class="space-y-6">
                 {{-- Avatar --}}
                 <div class="flex items-center gap-6">
-                    <div class="w-14 h-12 md:w-18 md:h-18 sm:w-15 sm:h-15 rounded-full bg-emerald-600 flex items-center justify-center text-white text-2xl font-bold">{{ strtoupper(substr($firstName ?? 'A', 0, 1) . substr($lastName ?? 'D', 0, 1)) }}</div>
+                    <div class="w-14 h-12 md:w-18 md:h-18 sm:w-15 sm:h-15 rounded-full bg-emerald-600 overflow-hidden flex items-center justify-center text-white text-2xl font-bold" id="avatarPreviewWrap">
+                        @if(!empty($user->profile_image))
+                            <img id="avatarPreviewImage" src="{{ asset('storage/' . $user->profile_image) }}" alt="Profile Avatar" class="w-full h-full object-cover">
+                        @else
+                            <span id="avatarPreviewInitials">{{ strtoupper(substr($firstName ?? 'A', 0, 1) . substr($lastName ?? 'D', 0, 1)) }}</span>
+                            <img id="avatarPreviewImage" src="" alt="Profile Avatar" class="w-full h-full object-cover hidden">
+                        @endif
+                    </div>
                     <div>
-                        <button type="button" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors">Change Avatar</button>
+                        <input type="file" id="profileImageInput" name="profile_image" accept="image/png,image/jpeg,image/jpg,image/gif" class="hidden">
+                        <button type="button" id="changeAvatarBtn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors">Change Avatar</button>
                         <p class="text-xs text-gray-400 mt-2">JPG, PNG or GIF. Max size of 2MB.</p>
                     </div>
                 </div>
