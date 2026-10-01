@@ -70,6 +70,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY docker/nginx.conf /etc/nginx/sites-available/default
 COPY docker/php.ini /usr/local/etc/php/conf.d/app.ini
+COPY docker/php-fpm.conf /usr/local/etc/php-fpm.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/app.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
 
@@ -82,6 +83,8 @@ COPY --from=vendor /app /var/www/html
 COPY --from=assets /app/public/build ./public/build
 
 # The container filesystem is ephemeral, so these must exist before boot.
+# php-fpm runs as www-data, which cannot create directories inside /var/www/html,
+# so every writable path has to be present and owned by www-data in the image.
 RUN mkdir -p \
         storage/app/public \
         storage/framework/cache/data \
@@ -89,7 +92,13 @@ RUN mkdir -p \
         storage/framework/views \
         storage/logs \
         bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R ug+rwX storage bootstrap/cache
+
+# php-fpm writes its pid file here. Running as www-data, it cannot create this
+# directory, and a missing prefix directory makes the master exit 64.
+RUN mkdir -p /run/php \
+    && chown www-data:www-data /run/php
 
 EXPOSE 80
 
