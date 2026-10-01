@@ -75,7 +75,8 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/app.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
 
 RUN chmod +x /usr/local/bin/entrypoint \
-    && rm -f /etc/nginx/sites-enabled/default
+    && rm -f /etc/nginx/sites-enabled/default \
+    && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 WORKDIR /var/www/html
 
