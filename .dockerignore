@@ -1,0 +1,32 @@
+# Dependencies - restored inside the image
+node_modules
+vendor
+
+# Build output - produced by the assets stage
+public/build
+public/hot
+
+# Secrets - injected as environment variables on the host, never baked in
+.env
+.env.backup
+.env.production
+
+# Framework caches - regenerated at runtime
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*.php
+
+# VCS and tooling
+.git
+.gitignore
+.github
+.idea
+.vscode
+.phpunit.cache
+.phpunit.result.cache
+
+# Not needed at runtime
+tests
+node_modules

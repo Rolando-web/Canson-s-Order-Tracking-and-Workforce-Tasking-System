@@ -60,6 +60,34 @@ return [
             'report' => false,
         ],
 
+        /*
+        |----------------------------------------------------------------------
+        | Profile Images Disk
+        |----------------------------------------------------------------------
+        |
+        | Profile images need to survive redeploys. A Render container's local
+        | filesystem is ephemeral, so anything written to the "public" disk is
+        | lost on every deploy. When AWS_ENDPOINT is configured this disk
+        | points at Supabase Storage; otherwise it behaves exactly like the
+        | "public" disk so local development is unchanged.
+        |
+        */
+
+        'profile_images' => [
+            'driver' => env('AWS_ENDPOINT') ? 's3' : 'local',
+            'root' => storage_path('app/public'),
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_BUCKET'),
+            'url' => env('AWS_URL', rtrim(env('APP_URL', 'http://localhost'), '/').'/storage'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

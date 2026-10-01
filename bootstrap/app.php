@@ -11,6 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Render terminates TLS and forwards plain HTTP to the container, so
+        // without this Laravel generates http:// URLs behind https:// and
+        // redirects loop. The app sits behind a single known proxy, so the
+        // forwarded headers are trusted from Render's range.
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'employee' => \App\Http\Middleware\EmployeeMiddleware::class,

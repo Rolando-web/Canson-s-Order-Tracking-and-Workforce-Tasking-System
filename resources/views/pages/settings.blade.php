@@ -44,7 +44,7 @@
                 <div class="flex items-center gap-6">
                     <div class="w-14 h-12 md:w-18 md:h-18 sm:w-15 sm:h-15 rounded-full bg-emerald-600 overflow-hidden flex items-center justify-center text-white text-2xl font-bold" id="avatarPreviewWrap">
                         @if(!empty($user->profile_image))
-                            <img id="avatarPreviewImage" src="{{ asset('storage/' . $user->profile_image) }}" alt="Profile Avatar" class="w-full h-full object-cover">
+                            <img id="avatarPreviewImage" src="{{ \Illuminate\Support\Facades\Storage::disk('profile_images')->url($user->profile_image) }}" alt="Profile Avatar" class="w-full h-full object-cover">
                         @else
                             <span id="avatarPreviewInitials">{{ strtoupper(substr($firstName ?? 'A', 0, 1) . substr($lastName ?? 'D', 0, 1)) }}</span>
                             <img id="avatarPreviewImage" src="" alt="Profile Avatar" class="w-full h-full object-cover hidden">
