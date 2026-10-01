@@ -25,38 +25,65 @@ db_probe() {
             $pdo->query("select 1");
             exit(0);
         } catch (Throwable $e) {
-            fwrite(STDERR, $e->getMessage().PHP_EOL);
-            exit(1);
+            $message = $e->getMessage();
+
+            // Retry is only worthwhile for transient failures. A rejected
+            // password or an open circuit breaker will not fix itself within
+            // this loop, and every further attempt deepens the lockout.
+            $permanent = str_contains($message, "ECIRCUITBREAKER")
+                || str_contains($message, "SQLSTATE[28000]")
+                || str_contains($message, "SQLSTATE[28P01]")
+                || str_contains($message, "password authentication failed");
+
+            fwrite(STDERR, ($permanent ? "PERMANENT " : "TRANSIENT ").$message.PHP_EOL);
+            exit($permanent ? 2 : 1);
         }
     ' 2>&1
+}
+
+describe_connection() {
+    {
+        echo "   Connection target:"
+        echo "     host    = ${DB_HOST:-<UNSET>}"
+        echo "     port    = ${DB_PORT:-5432}"
+        echo "     dbname  = ${DB_DATABASE:-<UNSET>}"
+        echo "     user    = ${DB_USERNAME:-<UNSET>}"
+        echo "     sslmode = ${DB_SSLMODE:-prefer}"
+        if [ -n "${DB_PASSWORD:-}" ]; then
+            echo "     password= <set>"
+        else
+            echo "     password= <UNSET>"
+        fi
+        echo "   Driver error: $last_error"
+    } >&2
 }
 
 echo "==> Waiting for database..."
 last_error=""
 for attempt in $(seq 1 30); do
-    if output=$(db_probe); then
+    status=0
+    output=$(db_probe) || status=$?
+
+    if [ "$status" -eq 0 ]; then
         echo "==> Database reachable"
         break
-    else
-        last_error="$output"
+    fi
+
+    last_error="$output"
+
+    # Exit 2 means the failure will not resolve itself: a rejected password
+    # or an open circuit breaker. Bail immediately rather than spending 30
+    # more attempts against a locked-out endpoint, which is what tripped the
+    # breaker in the first place.
+    if [ "$status" -eq 2 ]; then
+        echo "!! Database rejected the connection; retrying will not help" >&2
+        describe_connection
+        exit 1
     fi
 
     if [ "$attempt" -eq 30 ]; then
-        {
-            echo "!! Database unreachable after 30 attempts (60s)"
-            echo "   Connection target:"
-            echo "     host    = ${DB_HOST:-<UNSET>}"
-            echo "     port    = ${DB_PORT:-5432}"
-            echo "     dbname  = ${DB_DATABASE:-<UNSET>}"
-            echo "     user    = ${DB_USERNAME:-<UNSET>}"
-            echo "     sslmode = ${DB_SSLMODE:-prefer}"
-            if [ -n "${DB_PASSWORD:-}" ]; then
-                echo "     password= <set>"
-            else
-                echo "     password= <UNSET>"
-            fi
-            echo "   Driver error: $last_error"
-        } >&2
+        echo "!! Database unreachable after 30 attempts (60s)" >&2
+        describe_connection
         exit 1
     fi
 
