@@ -136,9 +136,21 @@ class InventoryController extends Controller
         if ($request->hasFile('image')) {
             $storage = app(ImageStorage::class);
 
+            try {
+                $path = $storage->put($request->file('image'), 'products');
+            } catch (\Throwable $e) {
+                // Without this the upload failure surfaces as a bare 500 with
+                // APP_DEBUG=false, which says nothing about the cause.
+                report($e);
+
+                return back()
+                    ->withInput()
+                    ->with('error', 'Image upload failed. Check the application log for details.');
+            }
+
             $storage->delete($item->image_path);
 
-            $validated['image_path'] = $storage->put($request->file('image'), 'products');
+            $validated['image_path'] = $path;
         }
 
         unset($validated['image']);

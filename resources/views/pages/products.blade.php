@@ -29,6 +29,22 @@
         </button>
     </div>
 
+    @if(session('error'))
+        <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <ul class="list-disc pl-4">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     {{-- Search & Filter Bar --}}
     <div class="bg-white rounded-xl border p-4 border-gray-200 flex flex-col sm:flex-row gap-3 mb-6">
         <div class="relative flex-1 xl:flex-none">

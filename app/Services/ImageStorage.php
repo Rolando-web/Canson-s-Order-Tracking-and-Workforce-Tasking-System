@@ -44,7 +44,15 @@ class ImageStorage
             ]
         );
 
-        return $this->secureUrl($response);
+        $url = $this->secureUrl($response);
+
+        Log::info('Uploaded product image to Cloudinary', [
+            'folder' => $folder,
+            'cloud' => config('cloudinary.cloud_name'),
+            'url' => $url,
+        ]);
+
+        return $url;
     }
 
     /**
@@ -64,6 +72,8 @@ class ImageStorage
         }
 
         try {
+            // destroy() lives on UploadApi, reached via EditTrait, not on the
+            // Cloudinary wrapper itself.
             $this->client()->uploadApi()->destroy(
                 $this->publicIdFromUrl($imagePath),
                 ['resource_type' => 'image', 'invalidate' => true]
