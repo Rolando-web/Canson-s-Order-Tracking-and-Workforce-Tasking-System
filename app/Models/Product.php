@@ -26,10 +26,22 @@ class Product extends Model
 
     protected $casts = [
         'is_best_seller' => 'boolean',
-        'stock'          => 'integer',
-        'unit_price'     => 'decimal:2',
-        'reorder_point'  => 'integer',
+        'stock' => 'integer',
+        'unit_price' => 'decimal:2',
+        'reorder_point' => 'integer',
     ];
+
+    /**
+     * Resolved URL for image_path, safe to use directly in an <img src>.
+     *
+     * The column holds either a relative path on the public disk (seeded rows)
+     * or an absolute Cloudinary URL (uploaded rows), so it cannot be used
+     * without resolving which kind it is.
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        return app(\App\Services\ImageStorage::class)->url($this->image_path);
+    }
 
     public function phaseItems()
     {

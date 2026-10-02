@@ -169,8 +169,8 @@
                             <tr class="stockin-item-row hover:bg-emerald-50/40 transition-colors" data-id="{{ $item->Product_Id }}" data-name="{{ strtolower($item->name) }}">
                                 <td class="px-5 py-3">
                                     <div class="flex items-center gap-3">
-                                        @if($item->image_path)
-                                            <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}" class="w-9 h-9 rounded-lg object-cover border border-gray-200 flex-shrink-0">
+@if($item->image_path)
+                                    <img src="{{ $item->image_url }}" alt="{{ $item->name }}" class="w-9 h-9 rounded-lg object-cover border border-gray-200 flex-shrink-0">
                                         @else
                                             <div class="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                                                 <svg class="w-4.5 h-4.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M18 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75z"/></svg>

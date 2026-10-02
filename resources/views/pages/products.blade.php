@@ -64,11 +64,9 @@
             {{-- Product Image --}}
             <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
                 @if($item->image_path)
-                    <!-- DEBUG: Image path: {{ $item->image_path }} | Full URL: {{ asset('storage/' . $item->image_path) }} -->
-                    <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}"
+                    <img src="{{ $item->image_url }}" alt="{{ $item->name }}"
                         class="w-full h-full object-cover">
                 @else
-                    <!-- DEBUG: No image_path for {{ $item->name }} -->
                     <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
@@ -84,7 +82,7 @@
                         @if($item->is_best_seller)
                             <span class="flex-shrink-0 px-2 py-0.5 text-[0.65rem] font-bold bg-amber-100 text-amber-700 rounded-full">BEST</span>
                         @endif
-                        <button onclick="openEditProductModal({{ $item->Product_Id }}, '{{ addslashes($item->name) }}', {{ $item->unit_price ?? 0 }}, '{{ $item->image_path ? asset('storage/' . $item->image_path) : '' }}', {{ $item->reorder_point ?? 50 }})" 
+                        <button onclick="openEditProductModal({{ $item->Product_Id }}, '{{ addslashes($item->name) }}', {{ $item->unit_price ?? 0 }}, '{{ $item->image_url ?? '' }}', {{ $item->reorder_point ?? 50 }})" 
                             class="flex-shrink-0 w-7 h-7 rounded-lg bg-gray-100 hover:bg-emerald-100 flex items-center justify-center transition-colors group"
                             title="Edit product">
                             <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
