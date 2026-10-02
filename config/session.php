@@ -16,9 +16,16 @@ return [
     | Supported: "file", "cookie", "database", "memcached",
     |            "redis", "dynamodb", "array"
     |
+    | The default here is "file" rather than Laravel's shipped "database"
+    | because this app runs as a single container. A database session store
+    | costs one read and one write against a remote Postgres on every request,
+    | which is pure latency for data that never leaves the container. The
+    | database tables are left in place so this is a one-line revert if the
+    | app is ever scaled to more than one instance.
+    |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    'driver' => env('SESSION_DRIVER', 'file'),
 
     /*
     |--------------------------------------------------------------------------

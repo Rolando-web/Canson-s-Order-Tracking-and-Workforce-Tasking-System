@@ -4,8 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\Concerns\FiltersByCalendarDate;
+
 class StockOut extends Model
 {
+    use FiltersByCalendarDate;
+
     protected $table = 'stock_out';
     protected $primaryKey = 'Stock_Out_Id';
 

@@ -7,61 +7,52 @@ use App\Models\Order;
 use App\Models\OrderPhaseItem;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Support\DateBucket;
 
 class SalesController extends Controller
 {
     public function index(Request $request)
     {
-        $totalRevenue      = Order::sum('total_amount');
-        $totalTransactions = Order::count();
+        // â”€â”€ Headline totals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // The month figures used to be four separate whereYear()+whereMonth()
+        // pairs. Both months now come out of one range scan. The range spans
+        // exactly two consecutive months, so the month number alone identifies
+        // which is which, and both forms now pin the year explicitly.
+        $monthTotals = Order::query()
+            ->whereBetween('created_at', [
+                now()->subMonth()->startOfMonth(),
+                now()->endOfMonth(),
+            ])
+            ->selectRaw(
+                DateBucket::monthNumber('created_at').' as month_key, '
+                .'COUNT(*) as period_orders, COALESCE(SUM(total_amount), 0) as period_total'
+            )
+            ->groupBy('month_key')
+            ->get()
+            ->keyBy('month_key');
+
+        $thisMonthRow = $monthTotals[now()->month] ?? null;
+        $lastMonthRow = $monthTotals[now()->subMonth()->month] ?? null;
+
+        $thisMonthRevenue      = (float) ($thisMonthRow->period_total ?? 0);
+        $thisMonthTransactions = (int) ($thisMonthRow->period_orders ?? 0);
+
+        $lastMonthRevenue = (float) ($lastMonthRow->period_total ?? 0);
+        $revenuePctChange = $lastMonthRevenue > 0
+            ? round((($thisMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1)
+            : 0;
+
+        $grandTotals = Order::query()
+            ->selectRaw('COUNT(*) as order_count, COALESCE(SUM(total_amount), 0) as sales_total')
+            ->first();
+
+        $totalRevenue      = (float) $grandTotals->sales_total;
+        $totalTransactions = (int) $grandTotals->order_count;
         $avgOrderValue     = $totalTransactions > 0 ? $totalRevenue / $totalTransactions : 0;
 
-        $thisMonthRevenue = Order::whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
-            ->sum('total_amount');
-        $thisMonthTransactions = Order::whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
-            ->count();
-
-        $lastMonth        = now()->subMonth();
-        $lastMonthRevenue = Order::whereYear('created_at', $lastMonth->year)
-            ->whereMonth('created_at', $lastMonth->month)
-            ->sum('total_amount');
-        $revenuePctChange = $lastMonthRevenue > 0
-            ? round((($thisMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1) : 0;
-
+        // â”€â”€ Trend series: one grouped query instead of up to 24 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $period     = $request->input('period', 'daily');
-        $salesTrend = [];
-
-        if ($period === 'weekly') {
-            for ($i = 7; $i >= 0; $i--) {
-                $weekStart = now()->startOfWeek()->subWeeks($i);
-                $weekEnd   = $weekStart->copy()->endOfWeek();
-                $label     = $weekStart->format('M d');
-                $salesTrend[$label] = [
-                    'amount' => (float) Order::whereBetween('created_at', [$weekStart, $weekEnd])->sum('total_amount'),
-                    'orders' => (int)   Order::whereBetween('created_at', [$weekStart, $weekEnd])->count(),
-                ];
-            }
-        } elseif ($period === 'monthly') {
-            for ($i = 11; $i >= 0; $i--) {
-                $date  = now()->subMonths($i);
-                $label = $date->format('M Y');
-                $salesTrend[$label] = [
-                    'amount' => (float) Order::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->sum('total_amount'),
-                    'orders' => (int)   Order::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->count(),
-                ];
-            }
-        } else {
-            for ($i = 6; $i >= 0; $i--) {
-                $date  = now()->subDays($i);
-                $label = $date->format('M d');
-                $salesTrend[$label] = [
-                    'amount' => (float) Order::whereDate('created_at', $date)->sum('total_amount'),
-                    'orders' => (int)   Order::whereDate('created_at', $date)->count(),
-                ];
-            }
-        }
+        $salesTrend = $this->buildSalesTrend($period);
 
         $query = Order::with('phases.items')->orderBy('created_at', 'desc');
 
@@ -74,9 +65,7 @@ class SalesController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
-        }
+        $query->filterByDay($request->input('date'));
 
         $salesPaginated = $query->paginate(10)->withQueryString();
 
@@ -127,7 +116,7 @@ class SalesController extends Controller
         $topCategoryName = $topCategory && $topCategory->product
             ? $topCategory->product->category : 'N/A';
 
-        $todaySalesAmount = Order::whereDate('created_at', today())->sum('total_amount');
+        $todaySalesAmount = Order::forDay(now())->sum('total_amount');
 
         return view('pages.sales', compact(
             'totalRevenue', 'totalTransactions', 'avgOrderValue',
@@ -135,6 +124,129 @@ class SalesController extends Controller
             'revenuePctChange', 'salesTrend', 'salesPaginated',
             'topCategoryName', 'todaySalesAmount', 'period'
         ));
+    }
+
+    /**
+     * Build the trend series for the sales page.
+     *
+     * The original ran one sum() and one count() per bucket inside a loop:
+     * 8 buckets for weekly, 12 for monthly, 7 for daily. That is up to 24
+     * queries, each one a non-sargable full table scan because of whereDate()
+     * and whereYear()+whereMonth(). Every bucket is now derived from a single
+     * grouped query over one range, and each label is pre-seeded to zero so
+     * the chart always renders a complete axis.
+     *
+     * @return array<string, array{amount: float, orders: int}>
+     */
+    private function buildSalesTrend(string $period): array
+    {
+        if ($period === 'weekly') {
+            // 8 weeks, Monday-aligned, oldest first.
+            $weekStarts = [];
+            for ($i = 7; $i >= 0; $i--) {
+                $weekStarts[] = now()->startOfWeek()->subWeeks($i);
+            }
+
+            $start = $weekStarts[0]->copy()->startOfDay();
+            $end   = $weekStarts[7]->copy()->endOfWeek();
+
+            // Bucketed by DAY, then folded into weeks in PHP.
+            //
+            // Bucketing by week in SQL would need WEEK(), whose week-start day
+            // and week-numbering differ between MySQL and PostgreSQL, and this
+            // app runs on both. Summing seven daily buckets is portable and
+            // costs nothing: the query already returned every row in range.
+            $daily = $this->groupOrdersBy($start, $end, DateBucket::day('created_at'));
+
+            $series = [];
+            foreach ($weekStarts as $weekStart) {
+                $amount = 0.0;
+                $orders = 0;
+
+                for ($day = 0; $day < 7; $day++) {
+                    $key = $weekStart->copy()->addDays($day)->toDateString();
+                    $amount += (float) ($daily[$key]->total ?? 0);
+                    $orders += (int) ($daily[$key]->orders ?? 0);
+                }
+
+                $series[$weekStart->format('M d')] = [
+                    'amount' => $amount,
+                    'orders' => $orders,
+                ];
+            }
+
+            return $series;
+        }
+
+        if ($period === 'monthly') {
+            $labels = [];
+            for ($i = 11; $i >= 0; $i--) {
+                $labels[] = now()->subMonths($i);
+            }
+            $start = $labels[0]->copy()->startOfMonth();
+            $end   = $labels[11]->copy()->endOfMonth();
+
+            $buckets = $this->groupOrdersBy($start, $end, DateBucket::month('created_at'));
+
+            $series = [];
+            foreach ($labels as $month) {
+                $key = $month->format('Y-m');
+                $series[$month->format('M Y')] = [
+                    'amount' => (float) ($buckets[$key]->total ?? 0),
+                    'orders' => (int) ($buckets[$key]->orders ?? 0),
+                ];
+            }
+
+            return $series;
+        }
+
+        // daily: the last 7 days including today
+        $labels = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $labels[] = now()->subDays($i);
+        }
+        $start = $labels[0]->copy()->startOfDay();
+        $end   = $labels[6]->copy()->endOfDay();
+
+        $buckets = $this->groupOrdersBy($start, $end, DateBucket::day('created_at'));
+
+        $series = [];
+        foreach ($labels as $day) {
+            $key = $day->toDateString();
+            $series[$day->format('M d')] = [
+                'amount' => (float) ($buckets[$key]->total ?? 0),
+                'orders' => (int) ($buckets[$key]->orders ?? 0),
+            ];
+        }
+
+        return $series;
+    }
+
+    /**
+     * Aggregate orders into time buckets with one range scan.
+     *
+     * The range on the raw timestamp is what the index serves. The bucket
+     * expression is only applied to the rows inside that already-narrow range,
+     * so it never triggers a full scan.
+     *
+     * $bucketExpression must be a raw SQL expression producing the exact key
+     * the caller will look up by. Both constants below are deliberately
+     * portable across MySQL and PostgreSQL, since the app runs on MySQL
+     * locally and PostgreSQL in production.
+     *
+     * @return \Illuminate\Support\Collection<string, object> keyed by bucket
+     */
+    private function groupOrdersBy($start, $end, string $bucketExpression)
+    {
+        return Order::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw(
+                $bucketExpression.' as bucket, '
+                .'COALESCE(SUM(total_amount), 0) as total, COUNT(*) as orders'
+            )
+            ->groupBy('bucket')
+            ->get()
+            ->keyBy(fn ($row) => (string) $row->bucket);
     }
 
     public function exportCsv(Request $request)
@@ -148,9 +260,7 @@ class SalesController extends Controller
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
-        }
+        $query->filterByDay($request->input('date'));
 
         $orders   = $query->get();
         $filename = 'sales_report_' . now()->format('Y-m-d_His') . '.csv';
@@ -184,23 +294,48 @@ class SalesController extends Controller
 
     public function reportsIndex()
     {
-        $totalRevenue     = Order::sum('total_amount');
-        $totalOrders      = Order::count();
-        $thisMonthRevenue = Order::whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->sum('total_amount');
-        $todaySales       = Order::whereDate('created_at', today())->sum('total_amount');
+        $grandTotals = Order::query()
+            ->selectRaw('COUNT(*) as order_count, COALESCE(SUM(total_amount), 0) as sales_total')
+            ->first();
+
+        $totalRevenue = (float) $grandTotals->sales_total;
+        $totalOrders  = (int) $grandTotals->order_count;
+
+        $thisMonthRevenue = Order::forMonth(now())->sum('total_amount');
+        $todaySales       = Order::forDay(now())->sum('total_amount');
+
+        // 12 months of revenue in one grouped scan rather than twelve
+        // whereYear()+whereMonth() pairs.
+        $monthlyRows = Order::query()
+            ->whereBetween('created_at', [
+                now()->subMonths(11)->startOfMonth(),
+                now()->endOfMonth(),
+            ])
+            ->selectRaw(
+                DateBucket::month('created_at').' as bucket, COALESCE(SUM(total_amount), 0) as month_total'
+            )
+            ->groupBy('bucket')
+            ->get()
+            ->keyBy(fn ($row) => (string) $row->bucket);
 
         $monthlyRevenue = [];
         for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
-            $monthlyRevenue[$date->format('M Y')] = (float) Order::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->sum('total_amount');
+            $monthlyRevenue[$date->format('M Y')] = (float) ($monthlyRows[$date->format('Y-m')]->month_total ?? 0);
         }
 
+        // Five status counts become one grouped query.
+        $statusRows = Order::query()
+            ->select('status', DB::raw('COUNT(*) as status_count'))
+            ->groupBy('status')
+            ->pluck('status_count', 'status');
+
         $statusCounts = [
-            'Pending'            => Order::where('status', 'Pending')->count(),
-            'In-Progress'        => Order::where('status', 'In-Progress')->count(),
-            'Ready for Delivery' => Order::where('status', 'Ready for Delivery')->count(),
-            'Delivered'          => Order::where('status', 'Delivered')->count(),
-            'Completed'          => Order::where('status', 'Completed')->count(),
+            'Pending'            => (int) ($statusRows['Pending'] ?? 0),
+            'In-Progress'        => (int) ($statusRows['In-Progress'] ?? 0),
+            'Ready for Delivery' => (int) ($statusRows['Ready for Delivery'] ?? 0),
+            'Delivered'          => (int) ($statusRows['Delivered'] ?? 0),
+            'Completed'          => (int) ($statusRows['Completed'] ?? 0),
         ];
 
         $topProducts = OrderPhaseItem::select('name', DB::raw('SUM(base_qty) as total_sold'), DB::raw('SUM(subtotal) as total_revenue'))
@@ -232,9 +367,7 @@ class SalesController extends Controller
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
-        }
+        $query->filterByDay($request->input('date'));
 
         $orders = $query->get()->map(fn($o) => [
             'id'       => $o->order_number,

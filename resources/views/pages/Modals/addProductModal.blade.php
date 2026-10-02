@@ -27,6 +27,7 @@
 
         {{-- Form --}}
         <div id="addProductForm" class="p-6 space-y-5">
+            <input type="hidden" id="addProductStatus" name="status" value="In Stock">
 
             {{-- Product Name --}}
             <div>

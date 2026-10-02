@@ -83,3 +83,22 @@ it('leaves both upload paths free of unguarded storage calls', function () {
         ->and(substr_count($controller, '$storage->put('))->toBe(1)
         ->and($controller)->not->toContain('$file->store(');
 });
+
+it('sanitizes undefined or invalid status on create without failing', function () {
+    $response = $this->postJson(route('products.store'), [
+        'name' => 'Safe Status Product',
+        'category' => 'Finished Goods',
+        'unit' => 'pcs',
+        'stock' => 15,
+        'unit_price' => 100,
+        'reorder_point' => 5,
+        'status' => 'undefined',
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['success' => true]);
+
+    $product = Product::where('name', 'Safe Status Product')->first();
+    expect($product)->not->toBeNull()
+        ->and($product->status)->toBe('In Stock');
+});

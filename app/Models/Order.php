@@ -4,11 +4,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\Concerns\FiltersByCalendarDate;
 use App\Models\OrderPhaseItem;
 
 class Order extends Model
 {
-    use HasFactory;
+    use HasFactory, FiltersByCalendarDate;
 
     protected $primaryKey = 'Order_Id';
 
@@ -89,4 +90,10 @@ class Order extends Model
         $nextNum = $last ? intval(str_replace('ORD-', '', $last->order_number)) + 1 : 1;
         return 'ORD-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
     }
+
+
+    // forDay(), forMonth() and filterByDay() come from the
+    // FiltersByCalendarDate trait. They replace whereDate() and
+    // whereYear()+whereMonth(), both of which wrap created_at in a
+    // function and so cannot use orders_created_at_index.
 }

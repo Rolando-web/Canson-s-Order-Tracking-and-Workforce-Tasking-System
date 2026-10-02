@@ -79,7 +79,8 @@ window.openAddProductModal = function () {
     document.getElementById('addProductPrice').value = '';
     document.getElementById('addProductStock').value = '';
     document.getElementById('addProductReorderPoint').value = '50';
-    document.getElementById('addProductStatus').value = 'In Stock';
+    const statusEl = document.getElementById('addProductStatus');
+    if (statusEl) statusEl.value = 'In Stock';
     document.getElementById('addProductImage').value = '';
 
     // Hide image preview, show placeholder

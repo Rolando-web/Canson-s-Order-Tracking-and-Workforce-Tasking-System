@@ -8,6 +8,7 @@ use App\Models\OrderPhaseItem;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Support\DateBucket;
 
 class AnalyticsController extends Controller
 {
@@ -25,14 +26,25 @@ class AnalyticsController extends Controller
         $activeCustomers = Order::whereBetween('created_at', [$startDate, $endDate])
             ->distinct('customer_name')->count('customer_name');
 
+        // 12 months of revenue in one grouped scan, replacing twelve
+        // whereYear()+whereMonth() pairs that could not use an index.
+        $revenueRows = Order::query()
+            ->whereBetween('created_at', [
+                now()->subMonths(11)->startOfMonth(),
+                now()->endOfMonth(),
+            ])
+            ->selectRaw(
+                DateBucket::month('created_at').' as bucket, '
+                .'COALESCE(SUM(total_amount), 0) as month_total'
+            )
+            ->groupBy('bucket')
+            ->get()
+            ->keyBy(fn ($row) => (string) $row->bucket);
+
         $revenueTrend = [];
         for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
-            $monthLabel   = $date->format('M');
-            $monthRevenue = Order::whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
-                ->sum('total_amount');
-            $revenueTrend[$monthLabel] = (float)$monthRevenue;
+            $revenueTrend[$date->format('M')] = (float) ($revenueRows[$date->format('Y-m')]->month_total ?? 0);
         }
 
         $salesByCategory = OrderPhaseItem::select(
@@ -84,14 +96,29 @@ class AnalyticsController extends Controller
                 'initial' => strtoupper(substr($c->customer_name, 0, 1)),
             ])->toArray();
 
-        $prodDays    = [];
+        // Seven correlated EXISTS subqueries collapse into one explicit join
+        // over the same week-long range.
         $dayNames    = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         $startOfWeek = now()->startOfWeek();
+
+        $productionRows = OrderPhaseItem::query()
+            ->join('order_phases', 'order_phases.Phase_Id', '=', 'order_phase_items.phase_id')
+            ->join('orders', 'orders.Order_Id', '=', 'order_phases.order_id')
+            ->whereBetween('orders.created_at', [
+                $startOfWeek->copy()->startOfDay(),
+                $startOfWeek->copy()->addDays(6)->endOfDay(),
+            ])
+            ->selectRaw(
+                DateBucket::day('orders.created_at').' as day_key, '
+                .'COALESCE(SUM(order_phase_items.base_qty), 0) as day_qty'
+            )
+            ->groupBy('day_key')
+            ->pluck('day_qty', 'day_key');
+
+        $prodDays = [];
         foreach ($dayNames as $i => $dayName) {
             $date = $startOfWeek->copy()->addDays($i);
-            $prodDays[$dayName] = (int) OrderPhaseItem::whereHas('phase.order', function ($q) use ($date) {
-                $q->whereDate('created_at', $date);
-            })->sum('base_qty');
+            $prodDays[$dayName] = (int) ($productionRows[$date->toDateString()] ?? 0);
         }
 
         $orderStatusCounts = [

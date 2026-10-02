@@ -13,9 +13,15 @@ return [
     | framework. This connection is utilized if another isn't explicitly
     | specified when running a cache operation inside the application.
     |
+    | Defaults to "file" rather than Laravel's shipped "database" for the same
+    | reason the session driver does: a single container gains nothing from
+    | routing cache reads and writes to a remote database. The cache and
+    | cache_locks tables are left in place so this is a one-line revert when
+    | scaling past one instance.
+    |
     */
 
-    'default' => env('CACHE_STORE', 'database'),
+    'default' => env('CACHE_STORE', 'file'),
 
     /*
     |--------------------------------------------------------------------------

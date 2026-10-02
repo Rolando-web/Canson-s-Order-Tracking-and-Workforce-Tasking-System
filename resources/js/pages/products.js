@@ -138,7 +138,7 @@ window.submitAddProduct = function() {
     formData.append('unit_price', price);
     formData.append('stock', stock);
     formData.append('reorder_point', reorderPoint || 50);
-    formData.append('status', status);
+    if (status && status !== 'undefined') formData.append('status', status);
     if (image) formData.append('image', image);
 
     fetch('/products', {
@@ -150,9 +150,9 @@ window.submitAddProduct = function() {
         },
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+    .then(async response => {
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.success) {
             closeAddProductModal();
             window.location.reload();
         } else {

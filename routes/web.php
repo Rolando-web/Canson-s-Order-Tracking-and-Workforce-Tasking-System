@@ -30,9 +30,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 | Application Routes
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return redirect('/dashboard');
-});
+Route::get('/', [LoginController::class, 'root'])->name('root');
 
 /*
 |--------------------------------------------------------------------------

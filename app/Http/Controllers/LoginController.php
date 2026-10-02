@@ -41,6 +41,19 @@ class LoginController extends Controller
     }
 
     /**
+     * Send the site root to the dashboard.
+     *
+     * This is a controller rather than an inline closure in routes/web.php
+     * because `php artisan route:cache` cannot serialise closures, and the
+     * cached route file is what keeps route resolution off the filesystem
+     * in production.
+     */
+    public function root()
+    {
+        return redirect('/dashboard');
+    }
+
+    /**
      * Log the user out.
      */
     public function logout(Request $request)

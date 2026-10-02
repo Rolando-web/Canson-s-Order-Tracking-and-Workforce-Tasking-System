@@ -178,12 +178,20 @@ class InventoryController extends Controller
             'image' => 'nullable|image|max:2048',
         ]);
 
-        $lastItem = Product::orderBy('Product_Id', 'desc')->first();
-        $nextId = $lastItem ? intval(str_replace('INV-', '', $lastItem->item_code)) + 1 : 1;
+        $maxCodeNumber = Product::all()->map(function ($product) {
+            return intval(preg_replace('/[^0-9]/', '', $product->item_code));
+        })->max() ?: 0;
+        $nextId = $maxCodeNumber + 1;
         $validated['item_code'] = 'INV-'.str_pad($nextId, 3, '0', STR_PAD_LEFT);
+        while (Product::where('item_code', $validated['item_code'])->exists()) {
+            $nextId++;
+            $validated['item_code'] = 'INV-'.str_pad($nextId, 3, '0', STR_PAD_LEFT);
+        }
 
-        if (empty($validated['status'])) {
-            $validated['status'] = 'In Stock'; // will be corrected by updateStockStatus()
+        if (empty($validated['status']) || !in_array($validated['status'], ['In Stock', 'Low Stock', 'Out of Stock'], true)) {
+            $stock = (int) ($validated['stock'] ?? 0);
+            $reorder = (int) ($validated['reorder_point'] ?? 50);
+            $validated['status'] = $stock <= 0 ? 'Out of Stock' : ($stock < $reorder ? 'Low Stock' : 'In Stock');
         }
 
         if ($request->hasFile('image')) {
@@ -195,7 +203,7 @@ class InventoryController extends Controller
                 if ($request->expectsJson()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Image upload failed.',
+                        'message' => 'Image upload failed: ' . (config('app.debug') ? $e->getMessage() : 'Please check storage credentials.'),
                     ], 500);
                 }
 
@@ -207,8 +215,27 @@ class InventoryController extends Controller
 
         unset($validated['image']);
 
-        $item = Product::create($validated);
-        $item->updateStockStatus();
+        try {
+            $item = Product::create($validated);
+            $item->updateStockStatus();
+        } catch (\Throwable $e) {
+            report($e);
+
+            if (!empty($validated['image_path'])) {
+                app(ImageStorage::class)->delete($validated['image_path']);
+            }
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to save product: ' . (config('app.debug') ? $e->getMessage() : 'Database error.'),
+                ], 500);
+            }
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to save product.');
+        }
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'item' => $item]);

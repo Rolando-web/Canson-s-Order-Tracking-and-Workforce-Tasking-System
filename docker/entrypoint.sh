@@ -93,6 +93,8 @@ done
 # Environment variables are injected at runtime, so drop anything cached
 # into the image at build time.
 php artisan config:clear --no-interaction
+php artisan route:clear --no-interaction
+php artisan view:clear --no-interaction
 
 # Migrations run on every container start, including each wake from Render's
 # free-tier sleep. migrate --force is idempotent, so this is safe to repeat.
@@ -116,5 +118,42 @@ esac
 # Only meaningful while profile images are still on the local disk. Once the
 # profile_images disk points at Supabase Storage this is a no-op.
 php artisan storage:link --force --no-interaction >/dev/null 2>&1 || true
+
+# Build the framework caches, as the last step before serving traffic. This is
+# the single largest win available without touching application code:
+#
+#   config:cache  - collapses ~50 config/*.php files into one array that is
+#                   unserialised instead of parsed on every request.
+#   route:cache   - collapses the route table into one file, so the router
+#                   stops touching routes/web.php for every URL. This is why
+#                   the root route became a controller method; a closure
+#                   cannot be serialised and route:cache would throw.
+#   view:cache    - precompiles every Blade template, so no view is parsed and
+#                   written to storage/framework/views while serving traffic.
+#
+# Clearing happens first, above, because a cache file baked into the image at
+# build time would hold build-time environment values rather than the ones
+# Render injects. Running last means every artisan call above this block sees
+# uncached config, so there is no ordering hazard between migrate/seed and the
+# cache that is about to be written.
+#
+# Each step is individually non-fatal. This script runs under `set -e`, so a
+# bare failure here would abort the boot and leave Render crash-looping the
+# container. These caches are pure optimisations: without them the app still
+# serves traffic correctly, just more slowly. route:cache in particular throws
+# if any route is ever defined as a closure, and that should degrade to "no
+# route cache" rather than take the site offline.
+echo "==> Caching config, routes and views"
+php artisan config:cache --no-interaction || echo "!! config:cache failed; continuing without it" >&2
+php artisan route:cache  --no-interaction || echo "!! route:cache failed; continuing without it" >&2
+php artisan view:cache   --no-interaction || echo "!! view:cache failed; continuing without it" >&2
+
+# This script runs as root, so the files just written are root-owned and
+# unreadable-in-practice by the www-data pool that will serve them. The
+# Dockerfile pre-chowns these paths, but newly created files need the same
+# treatment or php-fpm workers fail to open the config cache.
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+
+echo "==> Ready"
 
 exec "$@"
