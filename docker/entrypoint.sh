@@ -99,6 +99,20 @@ php artisan config:clear --no-interaction
 echo "==> Running migrations"
 php artisan migrate --force --no-interaction
 
+# Seeding is opt-in. Render's free tier has no shell, so there is no way to run
+# this by hand on the running container; set SEED_ON_DEPLOY=true, deploy once,
+# then unset it.
+#
+# Deliberately not run on every boot. DatabaseSeeder uses updateOrCreate with a
+# hardcoded password, so every run resets the seeded accounts' credentials.
+# Matching case variants so a capitalised "True" is not silently ignored.
+case "${SEED_ON_DEPLOY:-false}" in
+    true|TRUE|True|yes|YES|Yes|1)
+        echo "==> Running database seeder"
+        php artisan db:seed --force --no-interaction
+        ;;
+esac
+
 # Only meaningful while profile images are still on the local disk. Once the
 # profile_images disk points at Supabase Storage this is a no-op.
 php artisan storage:link --force --no-interaction >/dev/null 2>&1 || true
