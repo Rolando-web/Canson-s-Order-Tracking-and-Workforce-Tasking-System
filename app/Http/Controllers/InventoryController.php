@@ -67,7 +67,7 @@ class InventoryController extends Controller
             ->values()
             ->take(50);
 
-        $todayCount = StockIn::whereDate('created_at', today())->count();
+        $todayCount = StockIn::forDay(today())->count();
         $suppliers = Supplier::active()->orderBy('name')->get();
         $archivedSuppliers = Supplier::where('archived', true)->orderBy('name')->get();
 
@@ -111,7 +111,7 @@ class InventoryController extends Controller
             ->values()
             ->take(50);
 
-        $todayCount = StockOut::whereDate('created_at', today())->count();
+        $todayCount = StockOut::forDay(today())->count();
 
         return view('pages.stock-out', compact('batches', 'todayCount'));
     }
@@ -187,7 +187,22 @@ class InventoryController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $validated['image_path'] = app(ImageStorage::class)->put($request->file('image'), 'products');
+            try {
+                $validated['image_path'] = app(ImageStorage::class)->put($request->file('image'), 'products');
+            } catch (\Throwable $e) {
+                report($e);
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Image upload failed.',
+                    ], 500);
+                }
+
+                return back()
+                    ->withInput()
+                    ->with('error', 'Image upload failed. Check the application log for details.');
+            }
         }
 
         unset($validated['image']);
