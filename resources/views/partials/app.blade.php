@@ -68,6 +68,15 @@
         </footer>
     </div>
 
+    {{-- Toast notification data from Laravel session flashes --}}
+    <div id="session-toast-data" class="hidden"
+         data-success="{{ session('success') }}"
+         data-error="{{ session('error') }}"
+         data-warning="{{ session('warning') }}"
+         data-info="{{ session('info') }}"
+         data-status="{{ session('status') }}">
+    </div>
+
     @stack('scripts')
 </body>
 </html>

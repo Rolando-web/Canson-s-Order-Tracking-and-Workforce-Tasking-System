@@ -62,7 +62,7 @@ window.submitEditProduct = function() {
     const image = document.getElementById('editProductImage')?.files[0];
 
     if (!name || price === '' || price === null) {
-        alert('Please fill in all required fields.');
+        toast.warning('Please fill in all required fields.');
         return;
     }
 
@@ -84,15 +84,16 @@ window.submitEditProduct = function() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            sessionStorage.setItem('toast_success', 'Product updated successfully!');
             closeEditProductModal();
             window.location.reload();
         } else {
-            alert(data.message || 'Failed to update product.');
+            toast.error(data.message || 'Failed to update product.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while updating the product.');
+        toast.error('An error occurred while updating the product.');
     });
 };
 
@@ -128,7 +129,7 @@ window.submitAddProduct = function() {
     const image = document.getElementById('addProductImage')?.files[0];
 
     if (!name || !category || !unit || !price || !stock) {
-        alert('Please fill in all required fields.');
+        toast.warning('Please fill in all required fields.');
         return;
     }
 
@@ -153,15 +154,16 @@ window.submitAddProduct = function() {
     .then(async response => {
         const data = await response.json().catch(() => ({}));
         if (response.ok && data.success) {
+            sessionStorage.setItem('toast_success', 'Product added successfully!');
             closeAddProductModal();
             window.location.reload();
         } else {
-            alert(data.message || 'Failed to add product.');
+            toast.error(data.message || 'Failed to add product.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while adding the product.');
+        toast.error('An error occurred while adding the product.');
     });
 };
 

@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const maxBytes = 2 * 1024 * 1024;
         if (file.size > maxBytes) {
-            alert('Image must be 2MB or below.');
+            toast.warning('Image must be 2MB or below.');
             profileImageInput.value = '';
             return;
         }

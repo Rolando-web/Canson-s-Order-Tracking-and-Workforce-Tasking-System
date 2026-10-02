@@ -53,21 +53,13 @@ window.filterInventory = function () {
     });
 };
 
-// ========== Toast ==========
+// ========== Toast (legacy – now handled by global toast module) ==========
 function showInventoryToast(message, color = 'green') {
-    const bg = color === 'red' ? 'bg-red-600' : 'bg-green-600';
-    const toast = document.createElement('div');
-    toast.className = `fixed bottom-6 right-6 z-[60] ${bg} text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium`;
-    toast.innerHTML = `
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        ${message}
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    if (color === 'red') {
+        toast.error(message);
+    } else {
+        toast.success(message);
+    }
 }
 
 // ========== Add Product Modal ==========
@@ -120,11 +112,11 @@ window.submitAddProduct = function () {
     const price    = document.getElementById('addProductPrice').value;
     const stock    = document.getElementById('addProductStock').value;
 
-    if (!name)     { alert('Please enter a product name.'); return; }
-    if (!category) { alert('Please select a category.'); return; }
-    if (!unit)     { alert('Please select a unit.'); return; }
-    if (!price || parseFloat(price) < 0) { alert('Please enter a valid unit price.'); return; }
-    if (!stock || parseInt(stock) < 0)   { alert('Please enter a valid initial stock.'); return; }
+    if (!name)     { toast.warning('Please enter a product name.'); return; }
+    if (!category) { toast.warning('Please select a category.'); return; }
+    if (!unit)     { toast.warning('Please select a unit.'); return; }
+    if (!price || parseFloat(price) < 0) { toast.warning('Please enter a valid unit price.'); return; }
+    if (!stock || parseInt(stock) < 0)   { toast.warning('Please enter a valid initial stock.'); return; }
 
     console.log('Add Product submitted (UI only):', {
         name,

@@ -488,7 +488,7 @@ window.saveScheduleNote = function() {
     })
     .then(r => r.json())
     .then(() => { closeScheduleModal(); location.reload(); })
-    .catch(err => { console.error(err); alert('Failed to save note'); });
+    .catch(err => { console.error(err); toast.error('Failed to save note'); });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

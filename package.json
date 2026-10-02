@@ -15,6 +15,7 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
-        "@tailwindcss/cli": "^4.3.3"
+        "@tailwindcss/cli": "^4.3.3",
+        "sweetalert2": "^11.26.25"
     }
 }

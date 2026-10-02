@@ -336,7 +336,7 @@ window.submitSupplier = function() {
     const phone   = document.getElementById('supplierPhone').value.trim();
 
     if (!name || !address || !email || !phone) {
-        alert('Please fill in all required fields.');
+        toast.warning('Please fill in all required fields.');
         return;
     }
 
@@ -362,12 +362,12 @@ window.submitSupplier = function() {
             showToast(id ? 'Supplier updated successfully!' : 'Supplier added successfully!');
             setTimeout(() => location.reload(), 800);
         } else {
-            alert('Failed to save supplier.');
+            toast.error('Failed to save supplier.');
             if (btn) btn.disabled = false;
         }
     })
     .catch(() => {
-        alert('An error occurred. Please try again.');
+        toast.error('An error occurred. Please try again.');
         if (btn) btn.disabled = false;
     });
 };
@@ -388,10 +388,10 @@ window.deleteSupplier = function(id, name) {
             showToast('Supplier removed successfully!');
             setTimeout(() => location.reload(), 800);
         } else {
-            alert('Failed to remove supplier.');
+            toast.error('Failed to remove supplier.');
         }
     })
-    .catch(() => alert('An error occurred. Please try again.'));
+    .catch(() => toast.error('An error occurred. Please try again.'));
 };
 
 // ========== Supplier Toggle ==========

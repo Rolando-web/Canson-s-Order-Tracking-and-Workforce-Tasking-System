@@ -45,17 +45,17 @@ window.saveEmployee = function() {
     const password = document.getElementById('empPassword').value;
 
     if (!firstName || !lastName) {
-        alert('Please enter both first name and last name.');
+        toast.warning('Please enter both first name and last name.');
         return;
     }
 
     if (currentMode === 'create' && password.length < 6) {
-        alert('Password must be at least 6 characters.');
+        toast.warning('Password must be at least 6 characters.');
         return;
     }
 
     if (currentMode === 'edit' && password && password.length < 6) {
-        alert('Password must be at least 6 characters.');
+        toast.warning('Password must be at least 6 characters.');
         return;
     }
 

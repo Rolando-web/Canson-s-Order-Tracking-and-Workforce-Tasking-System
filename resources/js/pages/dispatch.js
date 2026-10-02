@@ -245,7 +245,7 @@ window.submitDamageReport = function() {
         }
     });
 
-    if (!valid) { alert('Please provide a damage reason for all checked items.'); return; }
+    if (!valid) { toast.warning('Please provide a damage reason for all checked items.'); return; }
 
     if (damages.length === 0) {
         submitDelivery(currentDeliveryDispatchKey, []);
@@ -265,7 +265,7 @@ window.submitDelivery = function(dispatchKey, damages, btn, originalText) {
 
     // Find the order entry by dispatch_key
     var order = window.allOrders.find(function(o) { return o.dispatch_key === dispatchKey; });
-    if (!order) { alert('Order not found.'); return; }
+    if (!order) { toast.error('Order not found.'); return; }
 
     var phaseId = (order.current_phase) ? order.current_phase.id : null;
 
@@ -294,7 +294,7 @@ window.submitDelivery = function(dispatchKey, damages, btn, originalText) {
             closeDamageModal();
             window.location.reload();
         } else {
-            alert(data.message || 'Failed to deliver order.');
+            toast.error(data.message || 'Failed to deliver order.');
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit & Deliver'; }
             if (skipBtn) { skipBtn.disabled = false; }
             if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
@@ -302,7 +302,7 @@ window.submitDelivery = function(dispatchKey, damages, btn, originalText) {
     })
     .catch(function(error) {
         console.error('Error:', error);
-        alert('An error occurred.');
+        toast.error('An error occurred.');
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit & Deliver'; }
         if (skipBtn) { skipBtn.disabled = false; }
         if (btn) { btn.disabled = false; btn.innerHTML = originalText; }

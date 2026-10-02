@@ -339,7 +339,7 @@ window.submitAddOrder = function(event) {
     });
 
     if (orderData.items.length === 0) {
-        alert('Please add at least one item to the order.');
+        toast.warning('Please add at least one item to the order.');
         return;
     }
 
@@ -378,7 +378,7 @@ window.submitAddOrder = function(event) {
             const qty = parseInt(row.querySelector('.item-qty')?.value) || 0;
             if (qty > stock) {
                 stockError = true;
-                alert('"' + sel.value + '" only has ' + stock + ' in stock. Please reduce the quantity.');
+                toast.warning('"' + sel.value + '" only has ' + stock + ' in stock. Please reduce the quantity.');
             }
         }
     });
@@ -399,15 +399,15 @@ window.submitAddOrder = function(event) {
     .then(data => {
         if (data.success) {
             closeAddOrderModal();
-            showOrderToast('Order created successfully!');
+            toast.success('Order created successfully!');
             setTimeout(() => location.reload(), 800);
         } else {
-            alert(data.message || 'Failed to create order.');
+            toast.error(data.message || 'Failed to create order.');
         }
     })
     .catch(err => {
         console.error('Order creation error:', err);
-        alert('Something went wrong. Please try again.');
+        toast.error('Something went wrong. Please try again.');
     });
 };
 
@@ -451,20 +451,9 @@ window.onItemSelected = function(selectEl) {
     recalcOrderTotal();
 };
 
-// ========== Toast ==========
+// ========== Toast (legacy – now handled by global toast module) ==========
 window.showOrderToast = function(message) {
-    const toast = document.createElement('div');
-    toast.className = 'fixed top-6 right-6 z-[60] bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium animate-slide-up';
-    toast.innerHTML = `
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        ${message}
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    toast.success(message);
 }
 
 // ========== Filter Orders ==========
@@ -773,13 +762,13 @@ function generatePhaseInvoice(phaseNumber) {
 
 window.addPhase = function() {
     if (document.querySelectorAll('.phase-card').length >= 5) {
-        alert('Maximum of 5 phases allowed.');
+        toast.warning('Maximum of 5 phases allowed.');
         return;
     }
 
     var orderItems = getOrderItems();
     if (orderItems.length === 0) {
-        alert('Please add Order Items first before adding a phase.');
+        toast.warning('Please add Order Items first before adding a phase.');
         return;
     }
 
